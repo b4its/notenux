@@ -2,8 +2,196 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+@source '../js/**/*.js';
 
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-pixel: 'Press Start 2P', monospace;
+    --font-arcade: 'VT323', monospace;
+    --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-serif: 'Merriweather', Georgia, serif;
+}
+
+/* Custom retro gaming styling & variables */
+:root {
+    --bg-main: #f0f7ff;
+    --bg-surface: #ffffff;
+    --bg-surface-alt: #e1effe;
+    --border-color: #3b82f6;
+    --border-dark: #1d4ed8;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --accent-blue: #2563eb;
+    --accent-cyan: #0284c7;
+    --retro-shadow: 4px 4px 0px #1e3a8a;
+    --retro-shadow-sm: 2px 2px 0px #1e3a8a;
+    --scanline-opacity: 0.03;
+}
+
+.dark {
+    --bg-main: #050b18;
+    --bg-surface: #0a1329;
+    --bg-surface-alt: #101e40;
+    --border-color: #2563eb;
+    --border-dark: #000000;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #00f0ff;
+    --retro-shadow: 4px 4px 0px #000000;
+    --retro-shadow-sm: 2px 2px 0px #000000;
+    --scanline-opacity: 0.08;
+}
+
+/* CRT Scanline retro overlay */
+.retro-crt-screen {
+    position: relative;
+}
+
+.retro-crt-screen::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    z-index: 40;
+    background-size: 100% 3px, 6px 100%;
+    pointer-events: none;
+    opacity: var(--scanline-opacity);
+}
+
+/* Retro arcade button & box helpers */
+.arcade-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    transition: all 0.1s ease;
+    border: 2px solid #000000;
+    box-shadow: 3px 3px 0px #000000;
+    user-select: none;
+}
+
+.dark .arcade-btn {
+    border: 2px solid #000000;
+    box-shadow: 3px 3px 0px #000000;
+}
+
+.arcade-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px #000000;
+}
+
+.arcade-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px #000000;
+}
+
+.arcade-card {
+    border: 2px solid var(--border-color);
+    box-shadow: var(--retro-shadow);
+    background-color: var(--bg-surface);
+}
+
+/* Editor content typography customization */
+.notenux-editor {
+    outline: none;
+    min-height: 480px;
+    line-height: 1.75;
+}
+
+.notenux-editor h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+    color: var(--accent-cyan);
+    border-bottom: 2px dashed var(--border-color);
+    padding-bottom: 0.35rem;
+}
+
+.notenux-editor h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent-blue);
+}
+
+.notenux-editor h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.notenux-editor p {
+    margin-bottom: 0.75rem;
+}
+
+.notenux-editor blockquote {
+    border-left: 4px solid var(--accent-cyan);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    background: rgba(59, 130, 246, 0.08);
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+.notenux-editor pre, .notenux-editor code {
+    font-family: var(--font-mono);
+    background: rgba(15, 23, 42, 0.15);
+    border-radius: 4px;
+}
+
+.dark .notenux-editor pre, .dark .notenux-editor code {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.notenux-editor pre {
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.notenux-editor code {
+    padding: 0.15rem 0.35rem;
+}
+
+.notenux-editor ul {
+    list-style-type: square;
+    margin-left: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.notenux-editor ol {
+    list-style-type: decimal;
+    margin-left: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.notenux-editor hr {
+    border: 0;
+    border-top: 2px dashed var(--border-color);
+    margin: 1.5rem 0;
+}
+
+/* Floating XP retro badge keyframes */
+@keyframes floatUpFade {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-35px) scale(1.15);
+    }
+}
+
+.xp-burst {
+    animation: floatUpFade 1.2s forwards ease-out;
 }
