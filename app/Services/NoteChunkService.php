@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Note;
 use App\Models\NoteChunk;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 
 class NoteChunkService
@@ -239,6 +240,92 @@ class NoteChunkService
             ->orderBy('chunk_index', 'asc')
             ->pluck('content')
             ->implode('');
+    }
+
+    /**
+     * Deletes a specific chunk, reindexes the remaining chunks, and synchronizes the parent note.
+     */
+    public function deleteChunk(NoteChunk $chunk): Note
+    {
+        $note = $chunk->note;
+        $chunk->delete();
+
+        // Reindex remaining chunks
+        $remaining = $note->chunks()->orderBy('chunk_index', 'asc')->get();
+        foreach ($remaining as $idx => $item) {
+            if ($item->chunk_index !== $idx) {
+                $item->update(['chunk_index' => $idx]);
+            }
+        }
+
+        $reassembled = $this->reassemble($note);
+        $this->updateNoteMetrics($note, $reassembled);
+
+        return $note->fresh();
+    }
+
+    /**
+     * Reorders chunks according to the given array of chunk IDs or chunk UIDs.
+     *
+     * @param  array<int|string>  $orderedIdentities
+     * @return Collection<int, NoteChunk>
+     */
+    public function reorderChunks(Note $note, array $orderedIdentities): Collection
+    {
+        $chunks = $note->chunks()->get()->keyBy(function (NoteChunk $chunk) {
+            return (string) $chunk->id;
+        });
+
+        $chunksByUid = $chunks->keyBy('chunk_uid');
+
+        foreach ($orderedIdentities as $index => $identity) {
+            $strIdentity = (string) $identity;
+            $chunk = $chunks->get($strIdentity) ?? $chunksByUid->get($strIdentity);
+            if ($chunk) {
+                $chunk->update(['chunk_index' => $index]);
+            }
+        }
+
+        $reassembled = $this->reassemble($note);
+        $this->updateNoteMetrics($note, $reassembled);
+
+        return $note->chunks()->orderBy('chunk_index', 'asc')->get();
+    }
+
+    /**
+     * Imports raw Markdown or text content into a newly created Note with chunking.
+     */
+    public function importMarkdown(string $rawMarkdown, ?string $filename = null, ?string $category = 'quest'): Note
+    {
+        $title = null;
+        if (preg_match('/^#\s+(.+)$/m', $rawMarkdown, $matches)) {
+            $title = trim($matches[1]);
+        } elseif ($filename) {
+            $title = ucwords(str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME)));
+        }
+
+        if (empty($title)) {
+            $title = 'Imported Scroll '.now()->format('Y-m-d H:i');
+        }
+
+        $html = Str::markdown($rawMarkdown);
+        $html = str_replace('<table>', '<table class="retro-table">', $html);
+
+        $allowedCategories = ['quest', 'lore', 'strategy', 'spellbook', 'archive', 'general'];
+        $validCategory = in_array($category, $allowedCategories, true) ? $category : 'quest';
+
+        $note = Note::create([
+            'title' => Str::limit($title, 120, ''),
+            'category' => $validCategory,
+            'content' => '',
+            'font_family' => 'pixel',
+            'font_size' => '16px',
+            'theme_color' => 'blue',
+        ]);
+
+        $this->syncChunks($note, $html);
+
+        return $note->fresh();
     }
 
     /**

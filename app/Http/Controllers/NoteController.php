@@ -345,6 +345,90 @@ class NoteController extends Controller
     }
 
     /**
+     * Delete an individual chunk directly from a note.
+     */
+    public function deleteChunk(Note $note, NoteChunk $chunk): JsonResponse
+    {
+        if ($chunk->note_id !== $note->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Chunk does not belong to this scroll.',
+            ], 404);
+        }
+
+        $updatedNote = $this->chunkService->deleteChunk($chunk);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Shard deleted and parent scroll reassembled successfully.',
+            'data' => [
+                'note' => $updatedNote,
+                'remaining_chunks' => $updatedNote->chunks()->count(),
+            ],
+        ]);
+    }
+
+    /**
+     * Reorder chunks for a note.
+     */
+    public function reorderChunks(Request $request, Note $note): JsonResponse
+    {
+        $validated = $request->validate([
+            'order' => ['required', 'array'],
+            'order.*' => ['required'],
+        ]);
+
+        $reordered = $this->chunkService->reorderChunks($note, $validated['order']);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Shards reordered and scroll reassembled successfully.',
+            'data' => [
+                'chunks' => $reordered,
+                'note' => $note->fresh(),
+            ],
+        ]);
+    }
+
+    /**
+     * Import a Markdown or plain text file / payload into a new Note with chunking.
+     */
+    public function import(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'file' => ['nullable', 'file', 'max:5120'],
+            'content' => ['required_without:file', 'nullable', 'string'],
+            'category' => ['nullable', 'string', 'in:quest,lore,strategy,spellbook,archive,general'],
+            'title' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $rawMarkdown = '';
+        $filename = null;
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filename = $file->getClientOriginalName();
+            $rawMarkdown = file_get_contents($file->getRealPath());
+        } else {
+            $rawMarkdown = $validated['content'] ?? '';
+            $filename = $validated['title'] ?? null;
+        }
+
+        $category = $validated['category'] ?? 'quest';
+        $note = $this->chunkService->importMarkdown($rawMarkdown, $filename, $category);
+
+        if (! empty($validated['title'])) {
+            $note->update(['title' => $validated['title']]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Scroll imported and indexed successfully into database shards!',
+            'data' => $note->load('chunks'),
+        ], 201);
+    }
+
+    /**
      * Return gamified stats overview for the player.
      */
     public function stats(): JsonResponse

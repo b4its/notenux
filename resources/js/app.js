@@ -386,6 +386,32 @@ class NotenuxPanel {
             chunkModalBytes: document.getElementById('chunk-modal-bytes'),
             verifyChunksBtn: document.getElementById('verify-chunks-btn'),
             chunkVerifyStatus: document.getElementById('chunk-verify-status'),
+
+            crtToggleBtn: document.getElementById('crt-toggle-btn'),
+            shortcutsModalBtn: document.getElementById('shortcuts-modal-btn'),
+            shortcutsModal: document.getElementById('shortcuts-modal'),
+            closeShortcutsModalBtn: document.getElementById('close-shortcuts-modal-btn'),
+
+            importNoteBtn: document.getElementById('import-note-btn'),
+            importModal: document.getElementById('import-modal'),
+            closeImportModalBtn: document.getElementById('close-import-modal-btn'),
+            cancelImportBtn: document.getElementById('cancel-import-btn'),
+            confirmImportBtn: document.getElementById('confirm-import-btn'),
+            importFileInput: document.getElementById('import-file-input'),
+            importRawContent: document.getElementById('import-raw-content'),
+            importTitleInput: document.getElementById('import-title-input'),
+            importCategorySelect: document.getElementById('import-category-select'),
+
+            findReplaceToggleBtn: document.getElementById('find-replace-toggle-btn'),
+            findReplaceBar: document.getElementById('find-replace-bar'),
+            findInput: document.getElementById('find-input'),
+            replaceInput: document.getElementById('replace-input'),
+            findMatchBadge: document.getElementById('find-match-badge'),
+            findPrevBtn: document.getElementById('find-prev-btn'),
+            findNextBtn: document.getElementById('find-next-btn'),
+            replaceOneBtn: document.getElementById('replace-one-btn'),
+            replaceAllBtn: document.getElementById('replace-all-btn'),
+            closeFindBarBtn: document.getElementById('close-find-bar-btn'),
         };
 
         this.init();
@@ -393,12 +419,16 @@ class NotenuxPanel {
 
     init() {
         this.initTheme();
+        this.initCrtMode();
         this.initSidebars();
         this.initSoundToggle();
         this.initZoom();
         this.initEditorToolbar();
         this.initPasteInterceptor();
         this.initGoalTracking();
+        this.initFindReplace();
+        this.initImportModal();
+        this.initShortcutsModal();
         this.bindEvents();
         this.bindKeyboardShortcuts();
         this.loadNotesFromDOM();
@@ -447,6 +477,324 @@ class NotenuxPanel {
                 theme === 'dark' ? 'fa-solid fa-moon text-cyan-400' : 'fa-solid fa-sun text-amber-400'
             );
         }
+    }
+
+    /* ---------------- CRT SCANLINES FX ---------------- */
+    initCrtMode() {
+        const crtStored = localStorage.getItem('notenux_crt') === 'true';
+        if (crtStored) {
+            document.body.classList.add('crt-mode');
+        }
+
+        if (this.dom.crtToggleBtn) {
+            this.dom.crtToggleBtn.addEventListener('click', () => {
+                this.audio.playWarp();
+                const isCrt = document.body.classList.toggle('crt-mode');
+                localStorage.setItem('notenux_crt', isCrt ? 'true' : 'false');
+                this.toast.show(
+                    isCrt ? 'CRT Scanlines & Arcade Flicker ON' : 'CRT Scanlines OFF',
+                    'info',
+                    'Display Matrix',
+                    'fa-solid fa-tv text-purple-400'
+                );
+            });
+        }
+    }
+
+    /* ---------------- SHORTCUTS GUIDE MODAL ---------------- */
+    initShortcutsModal() {
+        if (this.dom.shortcutsModalBtn && this.dom.shortcutsModal) {
+            this.dom.shortcutsModalBtn.addEventListener('click', () => {
+                this.audio.playClick();
+                this.dom.shortcutsModal.classList.toggle('hidden');
+            });
+        }
+        if (this.dom.closeShortcutsModalBtn && this.dom.shortcutsModal) {
+            this.dom.closeShortcutsModalBtn.addEventListener('click', () => {
+                this.audio.playClick();
+                this.dom.shortcutsModal.classList.add('hidden');
+            });
+        }
+    }
+
+    /* ---------------- IMPORT MARKDOWN / FILE MODAL ---------------- */
+    initImportModal() {
+        if (!this.dom.importModal) return;
+
+        if (this.dom.importNoteBtn) {
+            this.dom.importNoteBtn.addEventListener('click', () => {
+                this.audio.playClick();
+                this.dom.importModal.classList.remove('hidden');
+                if (this.dom.importRawContent) this.dom.importRawContent.focus();
+            });
+        }
+
+        const closeModal = () => {
+            this.audio.playClick();
+            this.dom.importModal.classList.add('hidden');
+        };
+
+        if (this.dom.closeImportModalBtn) this.dom.closeImportModalBtn.addEventListener('click', closeModal);
+        if (this.dom.cancelImportBtn) this.dom.cancelImportBtn.addEventListener('click', closeModal);
+
+        if (this.dom.confirmImportBtn) {
+            this.dom.confirmImportBtn.addEventListener('click', async () => {
+                const file = this.dom.importFileInput?.files?.[0];
+                const rawContent = this.dom.importRawContent?.value || '';
+                const title = this.dom.importTitleInput?.value || '';
+                const category = this.dom.importCategorySelect?.value || 'quest';
+
+                if (!file && !rawContent.trim()) {
+                    this.toast.show('Please upload a file or paste Markdown content.', 'warning');
+                    return;
+                }
+
+                this.audio.playCoin();
+                this.dom.confirmImportBtn.disabled = true;
+                this.dom.confirmImportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> IMPORTING...';
+
+                try {
+                    let response;
+                    if (file) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        if (title) formData.append('title', title);
+                        formData.append('category', category);
+
+                        response = await fetch('/api/notes/import', {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json' },
+                            body: formData,
+                        });
+                    } else {
+                        response = await fetch('/api/notes/import', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                content: rawContent,
+                                title: title,
+                                category: category,
+                            }),
+                        });
+                    }
+
+                    const data = await response.json();
+                    if (response.ok && data.status === 'success') {
+                        const importedNote = data.data;
+                        this.audio.playLevelUp();
+                        this.toast.show(`Imported scroll "${importedNote.title}" and generated ${importedNote.chunks?.length || 1} shards!`, 'success', 'Import Success', 'fa-solid fa-file-import text-emerald-400');
+                        this.dom.importModal.classList.add('hidden');
+                        if (this.dom.importRawContent) this.dom.importRawContent.value = '';
+                        if (this.dom.importFileInput) this.dom.importFileInput.value = '';
+
+                        this.notes.unshift(importedNote);
+                        this.renderNotesList();
+                        this.selectNote(importedNote);
+                        this.refreshPlayerStats();
+                    } else {
+                        throw new Error(data.message || 'Import failed');
+                    }
+                } catch (e) {
+                    this.toast.show('Failed to import scroll: ' + e.message, 'danger');
+                } finally {
+                    this.dom.confirmImportBtn.disabled = false;
+                    this.dom.confirmImportBtn.innerHTML = '<i class="fa-solid fa-bolt mr-1"></i> IMPORT & CHUNK';
+                }
+            });
+        }
+    }
+
+    /* ---------------- IN-CANVAS FIND & REPLACE ---------------- */
+    initFindReplace() {
+        if (!this.dom.findReplaceBar) return;
+
+        this.findMatches = [];
+        this.currentMatchIndex = -1;
+
+        if (this.dom.findReplaceToggleBtn) {
+            this.dom.findReplaceToggleBtn.addEventListener('click', () => {
+                this.audio.playClick();
+                this.toggleFindBar();
+            });
+        }
+
+        if (this.dom.closeFindBarBtn) {
+            this.dom.closeFindBarBtn.addEventListener('click', () => {
+                this.audio.playClick();
+                this.toggleFindBar(false);
+            });
+        }
+
+        if (this.dom.findInput) {
+            this.dom.findInput.addEventListener('input', () => {
+                this.performFind();
+            });
+            this.dom.findInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        this.findNext(-1);
+                    } else {
+                        this.findNext(1);
+                    }
+                }
+            });
+        }
+
+        if (this.dom.findNextBtn) {
+            this.dom.findNextBtn.addEventListener('click', () => this.findNext(1));
+        }
+
+        if (this.dom.findPrevBtn) {
+            this.dom.findPrevBtn.addEventListener('click', () => this.findNext(-1));
+        }
+
+        if (this.dom.replaceOneBtn) {
+            this.dom.replaceOneBtn.addEventListener('click', () => this.replaceCurrentMatch());
+        }
+
+        if (this.dom.replaceAllBtn) {
+            this.dom.replaceAllBtn.addEventListener('click', () => this.replaceAllMatches());
+        }
+    }
+
+    toggleFindBar(forceState = null) {
+        if (!this.dom.findReplaceBar) return;
+        const isHidden = this.dom.findReplaceBar.classList.contains('hidden');
+        const show = forceState !== null ? forceState : isHidden;
+
+        if (show) {
+            this.dom.findReplaceBar.classList.remove('hidden');
+            this.dom.findInput?.focus();
+            this.dom.findInput?.select();
+            this.performFind();
+        } else {
+            this.dom.findReplaceBar.classList.add('hidden');
+            this.clearFindHighlights();
+        }
+    }
+
+    clearFindHighlights() {
+        if (!this.dom.editorArea) return;
+        const marks = this.dom.editorArea.querySelectorAll('mark.search-match');
+        marks.forEach(m => {
+            const parent = m.parentNode;
+            while (m.firstChild) {
+                parent.insertBefore(m.firstChild, m);
+            }
+            parent.removeChild(m);
+        });
+        this.findMatches = [];
+        this.currentMatchIndex = -1;
+        if (this.dom.findMatchBadge) this.dom.findMatchBadge.textContent = '0 matches';
+    }
+
+    performFind() {
+        this.clearFindHighlights();
+        const query = this.dom.findInput?.value || '';
+        if (!query.trim() || !this.dom.editorArea) {
+            return;
+        }
+
+        const walker = document.createTreeWalker(this.dom.editorArea, NodeFilter.SHOW_TEXT, null, false);
+        const textNodes = [];
+        let node;
+        while ((node = walker.nextNode())) {
+            textNodes.push(node);
+        }
+
+        const lowerQuery = query.toLowerCase();
+
+        for (const textNode of textNodes) {
+            let str = textNode.nodeValue;
+            let lowerStr = str.toLowerCase();
+            let idx = lowerStr.indexOf(lowerQuery);
+
+            if (idx !== -1) {
+                const parent = textNode.parentNode;
+                const frag = document.createDocumentFragment();
+                let lastIdx = 0;
+
+                while (idx !== -1) {
+                    if (idx > lastIdx) {
+                        frag.appendChild(document.createTextNode(str.substring(lastIdx, idx)));
+                    }
+                    const mark = document.createElement('mark');
+                    mark.className = 'search-match';
+                    mark.textContent = str.substring(idx, idx + query.length);
+                    frag.appendChild(mark);
+
+                    lastIdx = idx + query.length;
+                    idx = lowerStr.indexOf(lowerQuery, lastIdx);
+                }
+
+                if (lastIdx < str.length) {
+                    frag.appendChild(document.createTextNode(str.substring(lastIdx)));
+                }
+
+                parent.replaceChild(frag, textNode);
+            }
+        }
+
+        this.findMatches = Array.from(this.dom.editorArea.querySelectorAll('mark.search-match'));
+        if (this.dom.findMatchBadge) {
+            this.dom.findMatchBadge.textContent = `${this.findMatches.length} matches`;
+        }
+
+        if (this.findMatches.length > 0) {
+            this.currentMatchIndex = 0;
+            this.highlightCurrentMatch();
+        }
+    }
+
+    highlightCurrentMatch() {
+        this.findMatches.forEach(m => m.classList.remove('search-match-active'));
+        if (this.currentMatchIndex >= 0 && this.currentMatchIndex < this.findMatches.length) {
+            const active = this.findMatches[this.currentMatchIndex];
+            active.classList.add('search-match-active');
+            active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (this.dom.findMatchBadge) {
+                this.dom.findMatchBadge.textContent = `${this.currentMatchIndex + 1} of ${this.findMatches.length}`;
+            }
+        }
+    }
+
+    findNext(direction = 1) {
+        if (this.findMatches.length === 0) return;
+        this.audio.playClick();
+        this.currentMatchIndex = (this.currentMatchIndex + direction + this.findMatches.length) % this.findMatches.length;
+        this.highlightCurrentMatch();
+    }
+
+    replaceCurrentMatch() {
+        if (this.findMatches.length === 0 || this.currentMatchIndex < 0) return;
+        this.audio.playCoin();
+        const replacement = this.dom.replaceInput?.value || '';
+        const match = this.findMatches[this.currentMatchIndex];
+        if (match) {
+            const textNode = document.createTextNode(replacement);
+            match.parentNode.replaceChild(textNode, match);
+            this.handleEditorInput();
+            this.performFind();
+            this.toast.show('Replaced match', 'info');
+        }
+    }
+
+    replaceAllMatches() {
+        if (this.findMatches.length === 0) return;
+        this.audio.playLevelUp();
+        const replacement = this.dom.replaceInput?.value || '';
+        const count = this.findMatches.length;
+        this.findMatches.forEach(match => {
+            const textNode = document.createTextNode(replacement);
+            match.parentNode.replaceChild(textNode, match);
+        });
+        this.handleEditorInput();
+        this.performFind();
+        this.toast.show(`Replaced all ${count} occurrences!`, 'success', 'Batch Replace');
     }
 
     /* ---------------- DUAL SIDEBAR INTERACTION ---------------- */
@@ -602,12 +950,85 @@ class NotenuxPanel {
     /* ---------------- KEYBOARD SHORTCUTS ---------------- */
     bindKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            const isInputTarget = ['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable;
+
+            // Save: Ctrl + S
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
                 e.preventDefault();
                 this.saveActiveNote(true);
+                return;
             }
+
+            // New Scroll: Ctrl + N
+            if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'n') {
+                e.preventDefault();
+                this.createNewNote(true);
+                return;
+            }
+
+            // Find & Replace: Ctrl + F
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                this.toggleFindBar();
+                return;
+            }
+
+            // Duplicate Note: Ctrl + D
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+                e.preventDefault();
+                this.duplicateActiveNote();
+                return;
+            }
+
+            // Toggle RAW Markdown View: Ctrl + M
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'm') {
+                e.preventDefault();
+                this.toggleMarkdownRawView();
+                return;
+            }
+
+            // Toggle Export Menu: Ctrl + E
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'e') {
+                e.preventDefault();
+                this.dom.exportMenu?.classList.toggle('hidden');
+                return;
+            }
+
+            // Zen Mode: Alt + Z
+            if (e.altKey && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                this.toggleZenMode();
+                return;
+            }
+
+            // Chunk Inspector: Ctrl + Alt + C
+            if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'c') {
+                e.preventDefault();
+                this.openChunkInspector();
+                return;
+            }
+
+            // Verify Integrity: Ctrl + Alt + V
+            if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'v') {
+                e.preventDefault();
+                this.verifyChunksIntegrity();
+                return;
+            }
+
+            // Shortcuts Guide: ? or F1 (when not typing in an input)
+            if ((e.key === '?' && !isInputTarget) || e.key === 'F1') {
+                e.preventDefault();
+                this.dom.shortcutsModal?.classList.toggle('hidden');
+                return;
+            }
+
+            // Escape: Close all modals & bars
             if (e.key === 'Escape') {
                 this.closeChunkInspector();
+                this.toggleFindBar(false);
+                if (this.dom.importModal) this.dom.importModal.classList.add('hidden');
+                if (this.dom.shortcutsModal) this.dom.shortcutsModal.classList.add('hidden');
+                if (this.dom.exportMenu) this.dom.exportMenu.classList.add('hidden');
                 if (document.body.classList.contains('zen-mode')) {
                     this.toggleZenMode();
                 }
@@ -1627,6 +2048,7 @@ class NotenuxPanel {
                     return;
                 }
 
+                this.cachedChunks = data.chunks;
                 this.renderChunkCards(data.chunks);
             }
         } catch (e) {
@@ -1643,10 +2065,10 @@ class NotenuxPanel {
     renderChunkCards(chunks) {
         if (!this.dom.chunkModalContent) return;
 
-        this.dom.chunkModalContent.innerHTML = chunks.map(chunk => `
+        this.dom.chunkModalContent.innerHTML = chunks.map((chunk, index) => `
             <div data-chunk-id="${chunk.id}" class="chunk-card p-3 mb-3 border-2 border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-slate-900/90 rounded-lg font-mono text-xs shadow-[2px_2px_0px_#000]">
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b border-blue-200 dark:border-blue-800 pb-2 mb-2">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 flex-wrap">
                         <span class="bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded text-[10px]">#${chunk.chunk_index}</span>
                         <span class="text-cyan-600 dark:text-cyan-400 font-bold">${this.escapeHtml(chunk.chunk_uid)}</span>
                         <button onclick="window.notenux.copyChunkUid('${chunk.chunk_uid}')"
@@ -1654,12 +2076,25 @@ class NotenuxPanel {
                                 title="Copy Chunk UID">
                             <i class="fa-solid fa-copy"></i>
                         </button>
+                        <button onclick="window.notenux.moveChunk(${index}, -1)"
+                                class="arcade-btn bg-surface px-1.5 py-0.5 text-[9px] rounded hover:bg-cyan-200"
+                                title="Move Shard Up">
+                            <i class="fa-solid fa-chevron-up"></i>
+                        </button>
+                        <button onclick="window.notenux.moveChunk(${index}, 1)"
+                                class="arcade-btn bg-surface px-1.5 py-0.5 text-[9px] rounded hover:bg-cyan-200"
+                                title="Move Shard Down">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
                     </div>
                     <div class="flex items-center gap-2 text-[11px] opacity-75">
                         <span class="bg-slate-200 dark:bg-slate-800 px-1 rounded uppercase">${chunk.chunk_type}</span>
                         <span>${chunk.byte_size} bytes</span>
                         <button onclick="window.notenux.toggleChunkEditor(${chunk.id})" class="arcade-btn bg-surface px-2 py-0.5 text-[10px] rounded hover:bg-blue-300">
                             <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button onclick="window.notenux.deleteChunk(${chunk.id})" class="arcade-btn bg-red-600 text-white px-2 py-0.5 text-[10px] rounded hover:bg-red-500" title="Delete Shard">
+                            <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
                 </div>
@@ -1678,6 +2113,71 @@ class NotenuxPanel {
                 </div>
             </div>
         `).join('');
+    }
+
+    async moveChunk(index, direction) {
+        if (!this.cachedChunks || this.cachedChunks.length <= 1) return;
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= this.cachedChunks.length) return;
+
+        this.audio.playClick();
+        const item = this.cachedChunks.splice(index, 1)[0];
+        this.cachedChunks.splice(newIndex, 0, item);
+
+        const orderedIds = this.cachedChunks.map(c => c.id);
+
+        try {
+            const response = await fetch(`/api/notes/${this.activeNote.id}/chunks/reorder`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ order: orderedIds }),
+            });
+
+            const data = await response.json();
+            if (response.ok && data.status === 'success') {
+                this.toast.show('Shards reordered and scroll reassembled!', 'success');
+                this.cachedChunks = data.data.chunks;
+                this.renderChunkCards(this.cachedChunks);
+                if (data.data.note) {
+                    this.activeNote = data.data.note;
+                    this.loadNoteIntoEditor(this.activeNote);
+                }
+            }
+        } catch (e) {
+            this.toast.show('Failed to reorder shards', 'danger');
+        }
+    }
+
+    async deleteChunk(chunkId) {
+        if (!this.activeNote) return;
+        if (!confirm('Are you sure you want to delete this memory shard?')) return;
+
+        this.audio.playDelete();
+        try {
+            const response = await fetch(`/api/notes/${this.activeNote.id}/chunks/${chunkId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+            if (response.ok && data.status === 'success') {
+                this.toast.show('Shard deleted and parent scroll reassembled!', 'success');
+                this.openChunkInspector();
+                if (data.data && data.data.note) {
+                    this.activeNote = data.data.note;
+                    this.loadNoteIntoEditor(this.activeNote);
+                }
+            } else {
+                throw new Error(data.message || 'Error deleting chunk');
+            }
+        } catch (e) {
+            this.toast.show('Failed to delete shard', 'danger');
+        }
     }
 
     toggleChunkEditor(chunkId) {

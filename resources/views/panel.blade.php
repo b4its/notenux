@@ -110,6 +110,20 @@
                     <i class="fa-solid fa-volume-high text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
                 </button>
 
+                <!-- CRT Scanlines Mode Switcher -->
+                <button id="crt-toggle-btn"
+                        class="arcade-btn bg-purple-900/40 hover:bg-purple-800/60 text-purple-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        title="Toggle Retro CRT Scanlines Effect">
+                    <i class="fa-solid fa-tv mr-1.5 text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
+                </button>
+
+                <!-- Arcade Shortcuts Guide Button -->
+                <button id="shortcuts-modal-btn"
+                        class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-900 text-main px-2.5 py-1.5 rounded text-xs font-mono"
+                        title="Arcade Controller & Keyboard Shortcuts Guide">
+                    <i class="fa-solid fa-keyboard text-amber-400 mr-1.5"></i> <span class="hidden xl:inline">KEYS</span>
+                </button>
+
                 <!-- Light / Dark Theme Switcher -->
                 <button id="theme-toggle-btn"
                         class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2.5 py-1.5 rounded text-xs font-mono"
@@ -246,11 +260,18 @@
                     </button>
                 </div>
 
-                <!-- New Note Action Button -->
-                <button id="new-note-btn"
-                        class="arcade-btn w-full bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 rounded text-xs font-mono mb-3 tracking-wider">
-                    <i class="fa-solid fa-plus mr-1.5"></i> NEW SCROLL / NOTE
-                </button>
+                <!-- New Note Action & Import Button Row -->
+                <div class="flex items-center gap-2 mb-3">
+                    <button id="new-note-btn"
+                            class="arcade-btn flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-2.5 rounded text-xs font-mono tracking-wider">
+                        <i class="fa-solid fa-plus mr-1.5"></i> NEW SCROLL
+                    </button>
+                    <button id="import-note-btn"
+                            class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-2.5 rounded text-xs font-mono tracking-wider"
+                            title="Import Markdown (.md) or Text file into a new Scroll">
+                        <i class="fa-solid fa-file-import mr-1"></i> IMPORT
+                    </button>
+                </div>
 
                 <!-- Search Input with Font Awesome Icon -->
                 <div class="relative mb-2">
@@ -538,6 +559,11 @@
                                 title="Toggle Raw Markdown Textarea View">
                             <i class="fa-brands fa-markdown mr-1 text-cyan-400"></i> RAW
                         </button>
+                        <button id="find-replace-toggle-btn"
+                                class="arcade-btn bg-surface hover:bg-amber-200 dark:hover:bg-amber-900/40 px-2 py-0.5 rounded text-xs font-mono"
+                                title="Find & Replace in Scroll (Ctrl+F)">
+                            <i class="fa-solid fa-magnifying-glass mr-1 text-amber-400"></i> FIND
+                        </button>
                     </div>
 
                     <!-- Alignment -->
@@ -606,6 +632,28 @@
                             <i class="fa-solid fa-bolt text-yellow-400 mr-1"></i> +3 XP / Word
                         </span>
                     </div>
+                </div>
+
+                <!-- Find & Replace Bar -->
+                <div id="find-replace-bar" class="hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center gap-1 bg-surface px-2 py-1 rounded border border-black/30">
+                            <i class="fa-solid fa-magnifying-glass text-cyan-400"></i>
+                            <input id="find-input" type="text" placeholder="Find in scroll..." class="bg-transparent border-0 focus:outline-none w-32 sm:w-44 text-xs">
+                        </div>
+                        <div class="flex items-center gap-1 bg-surface px-2 py-1 rounded border border-black/30">
+                            <i class="fa-solid fa-repeat text-amber-400"></i>
+                            <input id="replace-input" type="text" placeholder="Replace with..." class="bg-transparent border-0 focus:outline-none w-32 sm:w-44 text-xs">
+                        </div>
+                        <span id="find-match-badge" class="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-[10px] font-bold">0 matches</span>
+                        <button id="find-prev-btn" class="arcade-btn bg-surface px-2 py-0.5 rounded text-[10px]" title="Previous match"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button id="find-next-btn" class="arcade-btn bg-surface px-2 py-0.5 rounded text-[10px]" title="Next match"><i class="fa-solid fa-arrow-down"></i></button>
+                        <button id="replace-one-btn" class="arcade-btn bg-amber-600 hover:bg-amber-500 text-white px-2 py-0.5 rounded text-[10px]">Replace</button>
+                        <button id="replace-all-btn" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2 py-0.5 rounded text-[10px]">Replace All</button>
+                    </div>
+                    <button id="close-find-bar-btn" class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2 py-0.5 rounded text-[10px]" title="Close Find Bar">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
 
                 <!-- Zoomable Editable Content Area (The Core Canvas) -->
@@ -689,6 +737,122 @@
                 <span class="opacity-80">Each chunk has a unique database key: <code class="text-cyan-600 dark:text-cyan-400">chunk_uid</code></span>
                 <button onclick="window.notenux.closeChunkInspector()" class="arcade-btn bg-blue-600 text-white px-3 py-1 rounded text-xs">
                     GOT IT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- IMPORT SCROLL / MARKDOWN MODAL -->
+    <!-- ============================================================================== -->
+    <div id="import-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-lg bg-[var(--bg-surface)] rounded-xl border-4 border-black dark:border-cyan-500 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden">
+            <div class="p-3.5 bg-emerald-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-file-import text-lg"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">IMPORT SCROLL</h3>
+                </div>
+                <button id="close-import-modal-btn" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-3 font-mono text-xs">
+                <div>
+                    <label class="block font-bold mb-1"><i class="fa-solid fa-file-arrow-up mr-1 text-emerald-500"></i> Upload Markdown / Text File (.md, .txt)</label>
+                    <input type="file" id="import-file-input" accept=".md,.markdown,.txt" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs cursor-pointer">
+                </div>
+                <div class="text-center font-bold text-gray-400 text-[10px]">--- OR PASTE RAW MARKDOWN CONTENT ---</div>
+                <div>
+                    <textarea id="import-raw-content" rows="5" placeholder="# Enter or paste your scroll content here..." class="w-full p-2 bg-surface-alt border border-black/30 rounded focus:outline-none text-xs font-mono resize-y"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">Scroll Title (Optional)</label>
+                        <input type="text" id="import-title-input" placeholder="Auto-detected if empty" class="w-full p-1.5 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Category</label>
+                        <select id="import-category-select" class="w-full p-1.5 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
+                            <option value="quest">Quest Log</option>
+                            <option value="lore">Ancient Lore</option>
+                            <option value="strategy">Battle Tactics</option>
+                            <option value="spellbook">Spellbook</option>
+                            <option value="archive">Archives</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="p-3 border-t-2 border-black/10 bg-surface-alt flex justify-end gap-2">
+                <button id="cancel-import-btn" class="arcade-btn bg-surface px-3 py-1 rounded text-xs font-mono">Cancel</button>
+                <button id="confirm-import-btn" class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-mono">
+                    <i class="fa-solid fa-bolt mr-1"></i> IMPORT & CHUNK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- ARCADE KEYBOARD SHORTCUTS GUIDE MODAL -->
+    <!-- ============================================================================== -->
+    <div id="shortcuts-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-xl bg-[var(--bg-surface)] rounded-xl border-4 border-black dark:border-cyan-500 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden">
+            <div class="p-3.5 bg-blue-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-gamepad text-lg text-yellow-400"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">ARCADE SHORTCUT CHEAT SHEET</h3>
+                </div>
+                <button id="close-shortcuts-modal-btn" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-4 space-y-2.5 font-mono text-xs overflow-y-auto max-h-[70vh]">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Save Active Scroll</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + S</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>New Scroll</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + N</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Find & Replace</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + F</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Duplicate Scroll</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + D</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Toggle RAW MD Mode</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + M</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Export Scroll</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + E</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Zen Focus Mode</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Alt + Z</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Inspect DB Shards</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl+Alt+C</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Verify Shards</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl+Alt+V</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Cheat Sheet (This)</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">? or F1</kbd>
+                    </div>
+                </div>
+            </div>
+            <div class="p-3 border-t-2 border-black/10 bg-surface-alt flex justify-end">
+                <button onclick="document.getElementById('shortcuts-modal').classList.add('hidden')" class="arcade-btn bg-blue-600 text-white px-3 py-1 rounded text-xs font-mono">
+                    READY TO QUEST
                 </button>
             </div>
         </div>

@@ -209,3 +209,63 @@ test('white-box: chunk service updateChunk updates shard, recalculates checksum 
     $refreshedNote = $note->fresh();
     expect($refreshedNote->content)->toContain('Updated Arcane Header');
 });
+
+test('white-box: chunk service importMarkdown correctly extracts title and converts tables to chunks', function () {
+    $service = new NoteChunkService;
+    $markdown = "# Ancient Grimoire of Necromancy\n\nChapter 1: The Gathering.\n\n| Item | Power |\n|---|---|\n| Bone Staff | 85 |";
+
+    $note = $service->importMarkdown($markdown, 'fallback.md', 'spellbook');
+
+    expect($note->title)->toBe('Ancient Grimoire of Necromancy')
+        ->and($note->category)->toBe('spellbook')
+        ->and($note->content)->toContain('Ancient Grimoire of Necromancy')
+        ->and($note->content)->toContain('retro-table')
+        ->and($note->chunks()->count())->toBeGreaterThanOrEqual(1);
+});
+
+test('white-box: chunk service deleteChunk re-indexes remaining chunks sequentially', function () {
+    $service = new NoteChunkService;
+    $para = str_repeat('Lore of the ancient realm. ', 50); // ~1350 chars each
+    $note = Note::factory()->create([
+        'content' => "<h2>Part 1</h2><p>{$para}</p><h2>Part 2</h2><p>{$para}</p><h2>Part 3</h2><p>{$para}</p>",
+    ]);
+    $service->syncChunks($note, $note->content);
+
+    $initialCount = $note->chunks()->count();
+    expect($initialCount)->toBeGreaterThan(1);
+
+    $middleChunk = $note->chunks()->skip(1)->first();
+    expect($middleChunk)->not->toBeNull();
+
+    $service->deleteChunk($middleChunk);
+
+    $remaining = $note->chunks()->orderBy('chunk_index', 'asc')->get();
+    expect($remaining->count())->toBe($initialCount - 1);
+
+    // Verify chunk_index sequential order 0, 1, 2...
+    foreach ($remaining as $idx => $chunk) {
+        expect($chunk->chunk_index)->toBe($idx);
+    }
+});
+
+test('white-box: chunk service reorderChunks updates indexes and reassembles parent note text', function () {
+    $service = new NoteChunkService;
+    $para = str_repeat('Wisdom of the elders. ', 50);
+    $note = Note::factory()->create([
+        'content' => "<h2>Alpha Header</h2><p>{$para}</p><h2>Beta Header</h2><p>{$para}</p>",
+    ]);
+    $service->syncChunks($note, $note->content);
+
+    $chunks = $note->chunks()->orderBy('chunk_index', 'asc')->get();
+    expect($chunks->count())->toBeGreaterThan(1);
+
+    // Reverse the order
+    $reversedIds = $chunks->pluck('id')->reverse()->values()->all();
+    $reordered = $service->reorderChunks($note, $reversedIds);
+
+    expect($reordered->first()->id)->toBe($chunks->last()->id)
+        ->and($reordered->last()->id)->toBe($chunks->first()->id);
+
+    $refreshed = $note->fresh();
+    expect($refreshed->content)->toBe($service->reassemble($refreshed));
+});

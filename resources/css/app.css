@@ -298,3 +298,30 @@
 .xp-burst {
     animation: floatUpFade 1.2s forwards ease-out;
 }
+
+/* CRT Active Fullscreen overlay effect */
+.crt-mode::before {
+    content: " ";
+    display: block;
+    position: fixed;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+    z-index: 9990;
+    background-size: 100% 3px, 6px 100%;
+    pointer-events: none;
+}
+
+/* In-canvas search match highlighting */
+.notenux-editor mark.search-match {
+    background-color: #facc15;
+    color: #000;
+    padding: 0 2px;
+    border-radius: 2px;
+    outline: 1px solid #ca8a04;
+}
+
+.notenux-editor mark.search-match-active {
+    background-color: #f97316;
+    color: #fff;
+    outline: 2px solid #ea580c;
+}

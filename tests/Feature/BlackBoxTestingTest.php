@@ -3,6 +3,7 @@
 use App\Models\Note;
 use App\Services\NoteChunkService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 
 uses(RefreshDatabase::class);
 
@@ -107,9 +108,9 @@ test('black-box: user searches notes by title and content keyword', function () 
 });
 
 test('black-box: user filters notes by category and sort order', function () {
-    Note::factory()->create(['title' => 'B Note', 'category' => 'spellbook', 'word_count' => 100]);
-    Note::factory()->create(['title' => 'A Note', 'category' => 'spellbook', 'word_count' => 500]);
-    Note::factory()->create(['title' => 'C Note', 'category' => 'quest', 'word_count' => 300]);
+    Note::factory()->create(['title' => 'B Note', 'category' => 'spellbook', 'word_count' => 100, 'is_pinned' => false]);
+    Note::factory()->create(['title' => 'A Note', 'category' => 'spellbook', 'word_count' => 500, 'is_pinned' => false]);
+    Note::factory()->create(['title' => 'C Note', 'category' => 'quest', 'word_count' => 300, 'is_pinned' => false]);
 
     // Filter category
     $resCat = $this->getJson('/api/notes?category=spellbook');
@@ -249,4 +250,76 @@ test('black-box: user updates individual chunk via api and prevents cross-note c
     ]);
     $invalidRes->assertStatus(422)
         ->assertJsonValidationErrors(['content']);
+});
+
+test('black-box: user imports markdown scroll via uploaded file or raw payload', function () {
+    // 1. Import via uploaded file
+    $file = UploadedFile::fake()->createWithContent(
+        'campaign_lore.md',
+        "# The Northern Citadel\n\nGuarded by Frost Wyrms.\n\n| Level | Threat |\n|---|---|\n| 50 | Mythic |"
+    );
+
+    $fileRes = $this->postJson('/api/notes/import', [
+        'file' => $file,
+        'category' => 'lore',
+    ]);
+
+    $fileRes->assertStatus(201)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.title', 'The Northern Citadel')
+        ->assertJsonPath('data.category', 'lore');
+
+    expect($fileRes->json('data.chunks'))->not->toBeEmpty();
+
+    // 2. Import via raw text payload
+    $rawRes = $this->postJson('/api/notes/import', [
+        'title' => 'Custom Strategy Guide',
+        'content' => "# Dragon Tactics\n\nAim for the wings first.",
+        'category' => 'strategy',
+    ]);
+
+    $rawRes->assertStatus(201)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.title', 'Custom Strategy Guide')
+        ->assertJsonPath('data.category', 'strategy');
+});
+
+test('black-box: user deletes individual shard via api and note reassembles automatically', function () {
+    $note = Note::factory()->create([
+        'title' => 'Shard Deletion Test',
+        'content' => '<h2>Part A</h2><p>Content A</p><h2>Part B</h2><p>Content B</p>',
+    ]);
+    app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    $chunkToDelete = $note->chunks()->first();
+
+    $response = $this->deleteJson("/api/notes/{$note->id}/chunks/{$chunkToDelete->id}");
+
+    $response->assertStatus(200)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.remaining_chunks', $note->chunks()->count());
+
+    // Shard should no longer exist
+    expect($note->chunks()->where('id', $chunkToDelete->id)->exists())->toBeFalse();
+});
+
+test('black-box: user reorders shards via api and verify new indices', function () {
+    $note = Note::factory()->create([
+        'title' => 'Reorder Test Scroll',
+        'content' => '<h2>1. Alpha</h2><p>Body 1</p><h2>2. Beta</h2><p>Body 2</p>',
+    ]);
+    app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    $chunks = $note->chunks()->orderBy('chunk_index', 'asc')->get();
+    $reversedIds = $chunks->pluck('id')->reverse()->values()->all();
+
+    $response = $this->postJson("/api/notes/{$note->id}/chunks/reorder", [
+        'order' => $reversedIds,
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJsonPath('status', 'success');
+
+    $newOrderChunks = $response->json('data.chunks');
+    expect($newOrderChunks[0]['id'])->toBe($reversedIds[0]);
 });
