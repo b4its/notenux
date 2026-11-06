@@ -186,3 +186,67 @@ test('black-box: player stats reflect real-time user activity telemetry', functi
     expect($response->json('data.total_notes'))->toBe(2)
         ->and($response->json('data.total_words'))->toBe(400);
 });
+
+test('black-box: user audits note cryptographic integrity via api endpoint', function () {
+    $note = Note::factory()->create([
+        'title' => 'Audit Scroll',
+        'content' => '<h2>Integrity Chamber</h2><p>Cryptographically secure text storage.</p>',
+    ]);
+    app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    $response = $this->getJson("/api/notes/{$note->id}/chunks/verify");
+
+    $response->assertStatus(200)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.verified', true)
+        ->assertJsonPath('data.corrupted_chunks', 0)
+        ->assertJsonStructure([
+            'status',
+            'note_id',
+            'note_uuid',
+            'data' => [
+                'status',
+                'verified',
+                'total_chunks',
+                'valid_chunks',
+                'corrupted_chunks',
+                'details' => [
+                    '*' => ['chunk_uid', 'chunk_index', 'is_valid', 'checksum_matches', 'bytes_match'],
+                ],
+            ],
+        ]);
+});
+
+test('black-box: user updates individual chunk via api and prevents cross-note chunk tampering', function () {
+    $noteA = Note::factory()->create(['title' => 'Scroll A', 'content' => '<p>Alpha content</p>']);
+    $noteB = Note::factory()->create(['title' => 'Scroll B', 'content' => '<p>Beta content</p>']);
+
+    $service = app(NoteChunkService::class);
+    $service->syncChunks($noteA, $noteA->content);
+    $service->syncChunks($noteB, $noteB->content);
+
+    $chunkA = $noteA->chunks()->first();
+    $chunkB = $noteB->chunks()->first();
+
+    // 1. Valid update to chunk A on note A
+    $updateRes = $this->putJson("/api/notes/{$noteA->id}/chunks/{$chunkA->id}", [
+        'content' => '<p>Enhanced Alpha Content</p>',
+    ]);
+    $updateRes->assertStatus(200)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.chunk.content', '<p>Enhanced Alpha Content</p>');
+
+    // 2. Reject mismatched note and chunk
+    $mismatchRes = $this->putJson("/api/notes/{$noteA->id}/chunks/{$chunkB->id}", [
+        'content' => '<p>Hacked content</p>',
+    ]);
+    $mismatchRes->assertStatus(404)
+        ->assertJsonPath('status', 'error');
+
+    // 3. Validation rejection on empty content
+    $invalidRes = $this->putJson("/api/notes/{$noteA->id}/chunks/{$chunkA->id}", [
+        'content' => '',
+    ]);
+    $invalidRes->assertStatus(422)
+        ->assertJsonValidationErrors(['content']);
+});

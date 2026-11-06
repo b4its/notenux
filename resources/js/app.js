@@ -183,7 +183,6 @@ class MarkdownEngine {
     static parse(md) {
         if (!md) return '';
 
-        // If marked.js is available on window, use it
         if (typeof window.marked !== 'undefined' && typeof window.marked.parse === 'function') {
             return window.marked.parse(md);
         }
@@ -203,9 +202,7 @@ class MarkdownEngine {
             const lines = tableBlock.trim().split('\n').map(l => l.trim()).filter(Boolean);
             if (lines.length < 2) return tableBlock;
 
-            // Header line
             const headerCols = lines[0].split('|').map(c => c.trim()).slice(1, -1);
-            // Check separator
             if (!lines[1].includes('---')) return tableBlock;
 
             let tableHtml = '<table class="retro-table"><thead><tr>';
@@ -214,7 +211,6 @@ class MarkdownEngine {
             });
             tableHtml += '</tr></thead><tbody>';
 
-            // Data rows
             for (let i = 2; i < lines.length; i++) {
                 const rowCols = lines[i].split('|').map(c => c.trim()).slice(1, -1);
                 tableHtml += '<tr>';
@@ -258,7 +254,7 @@ class MarkdownEngine {
         html = html.replace(/^\s*\d+\.\s+(.*)$/gim, '<ol><li>$1</li></ol>');
         html = html.replace(/<\/ol>\s*<ol>/gim, '');
 
-        // Paragraphs for remaining text blocks
+        // Paragraphs
         const blocks = html.split(/\n{2,}/);
         html = blocks.map(b => {
             const trimmed = b.trim();
@@ -270,6 +266,29 @@ class MarkdownEngine {
         }).join('');
 
         return html;
+    }
+
+    static toMarkdown(html) {
+        if (!html) return '';
+        let md = html;
+        md = md.replace(/<h1>(.*?)<\/h1>/gi, '# $1\n\n');
+        md = md.replace(/<h2>(.*?)<\/h2>/gi, '## $1\n\n');
+        md = md.replace(/<h3>(.*?)<\/h3>/gi, '### $1\n\n');
+        md = md.replace(/<p>(.*?)<\/p>/gi, '$1\n\n');
+        md = md.replace(/<strong>(.*?)<\/strong>/gi, '**$1**');
+        md = md.replace(/<b>(.*?)<\/b>/gi, '**$1**');
+        md = md.replace(/<em>(.*?)<\/em>/gi, '*$1*');
+        md = md.replace(/<i>(.*?)<\/i>/gi, '*$1*');
+        md = md.replace(/<del>(.*?)<\/del>/gi, '~~$1~~');
+        md = md.replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n\n');
+        md = md.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```\n\n');
+        md = md.replace(/<code>(.*?)<\/code>/gi, '`$1`');
+        md = md.replace(/<li>(.*?)<\/li>/gi, '- $1\n');
+        md = md.replace(/<ul[^>]*>/gi, '');
+        md = md.replace(/<\/ul>/gi, '\n');
+        md = md.replace(/<hr[^>]*>/gi, '---\n\n');
+        md = md.replace(/<br[^>]*>/gi, '\n');
+        return md.replace(/<[^>]+>/g, '').trim();
     }
 
     static escape(str) {
@@ -289,17 +308,18 @@ class NotenuxPanel {
         this.activeCategory = 'all';
         this.searchQuery = '';
         this.currentSort = 'updated_desc';
+        this.wordGoal = parseInt(localStorage.getItem('notenux_word_goal') || '250', 10);
         this.saveTimeout = null;
         this.xpGainedSession = 0;
         this.currentZoom = 100;
+        this.isRawMarkdownMode = false;
+        this.goalCelebrated = false;
 
         this.dom = {
-            // Dual Sidebars
             primaryNavSidebar: document.getElementById('primary-nav-sidebar'),
             notesExplorerSidebar: document.getElementById('notes-explorer-sidebar'),
             sidebarOverlay: document.getElementById('sidebar-overlay'),
 
-            // Toggles
             primarySidebarToggleBtn: document.getElementById('primary-sidebar-toggle-btn'),
             explorerToggleBtn: document.getElementById('explorer-toggle-btn'),
             mobileNavToggleBtn: document.getElementById('mobile-nav-toggle-btn'),
@@ -307,12 +327,10 @@ class NotenuxPanel {
             closeMobileNavBtn: document.getElementById('close-mobile-nav-btn'),
             closeMobileExplorerBtn: document.getElementById('close-mobile-explorer-btn'),
 
-            // Global controls
             themeToggleBtn: document.getElementById('theme-toggle-btn'),
             soundToggleBtn: document.getElementById('sound-toggle-btn'),
             inspectChunksBtn: document.getElementById('inspect-chunks-btn'),
 
-            // Explorer & List
             notesList: document.getElementById('notes-list'),
             searchInput: document.getElementById('search-notes-input'),
             sortNotesSelect: document.getElementById('sort-notes-select'),
@@ -320,10 +338,10 @@ class NotenuxPanel {
             categoryPills: document.querySelectorAll('.category-filter-btn'),
             navCategoryLinks: document.querySelectorAll('.nav-category-link'),
 
-            // Editor elements
             noteTitleInput: document.getElementById('note-title-input'),
             noteCategorySelect: document.getElementById('note-category-select'),
             editorArea: document.getElementById('editor-content'),
+            markdownRawEditor: document.getElementById('markdown-raw-editor'),
             editorZoomWrapper: document.getElementById('editor-zoom-wrapper'),
             fontFamilySelect: document.getElementById('font-family-select'),
             fontSizeSelect: document.getElementById('font-size-select'),
@@ -337,18 +355,20 @@ class NotenuxPanel {
             zenModeBtn: document.getElementById('zen-mode-btn'),
             deleteNoteBtn: document.getElementById('delete-note-btn'),
 
-            // Zoom controls
             zoomInBtn: document.getElementById('zoom-in-btn'),
             zoomOutBtn: document.getElementById('zoom-out-btn'),
             zoomResetBtn: document.getElementById('zoom-reset-btn'),
             zoomLevelDisplay: document.getElementById('zoom-level-display'),
 
-            // Table, Task & Markdown tools
             insertTableBtn: document.getElementById('insert-table-btn'),
             insertTaskBtn: document.getElementById('insert-task-btn'),
+            insertMediaBtn: document.getElementById('insert-media-btn'),
             markdownPasteBtn: document.getElementById('markdown-paste-btn'),
+            markdownViewToggleBtn: document.getElementById('markdown-view-toggle-btn'),
 
-            // Gamification stats
+            questGoalText: document.getElementById('quest-goal-text'),
+            questGoalSelect: document.getElementById('quest-goal-select'),
+
             playerLevelBadge: document.getElementById('player-level-badge'),
             playerRankTitle: document.getElementById('player-rank-title'),
             playerXpText: document.getElementById('player-xp-text'),
@@ -359,12 +379,13 @@ class NotenuxPanel {
             readingTimeBadge: document.getElementById('reading-time-badge'),
             chunkCountBadge: document.getElementById('chunk-count-badge'),
 
-            // Modal elements
             chunkModal: document.getElementById('chunk-inspector-modal'),
             chunkModalClose: document.getElementById('chunk-modal-close'),
             chunkModalContent: document.getElementById('chunk-modal-content'),
             chunkModalCount: document.getElementById('chunk-modal-count'),
             chunkModalBytes: document.getElementById('chunk-modal-bytes'),
+            verifyChunksBtn: document.getElementById('verify-chunks-btn'),
+            chunkVerifyStatus: document.getElementById('chunk-verify-status'),
         };
 
         this.init();
@@ -377,6 +398,7 @@ class NotenuxPanel {
         this.initZoom();
         this.initEditorToolbar();
         this.initPasteInterceptor();
+        this.initGoalTracking();
         this.bindEvents();
         this.bindKeyboardShortcuts();
         this.loadNotesFromDOM();
@@ -429,7 +451,6 @@ class NotenuxPanel {
 
     /* ---------------- DUAL SIDEBAR INTERACTION ---------------- */
     initSidebars() {
-        // Restore desktop collapse states
         const primaryCollapsed = localStorage.getItem('notenux_primary_collapsed') === 'true';
         const explorerCollapsed = localStorage.getItem('notenux_explorer_collapsed') === 'true';
 
@@ -440,7 +461,6 @@ class NotenuxPanel {
             this.dom.notesExplorerSidebar?.classList.add('collapsed');
         }
 
-        // Primary Sidebar Desktop Toggle
         this.dom.primarySidebarToggleBtn?.addEventListener('click', () => {
             this.audio.playBlip();
             this.dom.primaryNavSidebar?.classList.toggle('collapsed');
@@ -449,7 +469,6 @@ class NotenuxPanel {
             this.toast.show(isColl ? 'Main navigation collapsed' : 'Main navigation expanded', 'info');
         });
 
-        // Notes Explorer Desktop Toggle
         this.dom.explorerToggleBtn?.addEventListener('click', () => {
             this.audio.playBlip();
             this.dom.notesExplorerSidebar?.classList.toggle('collapsed');
@@ -458,7 +477,6 @@ class NotenuxPanel {
             this.toast.show(isColl ? 'Scroll Explorer collapsed' : 'Scroll Explorer expanded', 'info');
         });
 
-        // Mobile Nav Drawer Toggle
         this.dom.mobileNavToggleBtn?.addEventListener('click', () => {
             this.audio.playBlip();
             this.dom.primaryNavSidebar?.classList.toggle('-translate-x-full');
@@ -466,7 +484,6 @@ class NotenuxPanel {
             this.updateMobileOverlay();
         });
 
-        // Mobile Explorer Drawer Toggle
         this.dom.mobileExplorerToggleBtn?.addEventListener('click', () => {
             this.audio.playBlip();
             this.dom.notesExplorerSidebar?.classList.toggle('-translate-x-full');
@@ -568,15 +585,27 @@ class NotenuxPanel {
         });
     }
 
+    /* ---------------- QUEST GOAL TRACKING ---------------- */
+    initGoalTracking() {
+        if (this.dom.questGoalSelect) {
+            this.dom.questGoalSelect.value = String(this.wordGoal);
+            this.dom.questGoalSelect.addEventListener('change', (e) => {
+                this.wordGoal = parseInt(e.target.value, 10);
+                localStorage.setItem('notenux_word_goal', String(this.wordGoal));
+                this.goalCelebrated = false;
+                this.updateWordAndCharMetrics();
+                this.toast.show(`Daily Quest Target set to ${this.wordGoal} words`, 'info', 'Quest Goal');
+            });
+        }
+    }
+
     /* ---------------- KEYBOARD SHORTCUTS ---------------- */
     bindKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Ctrl+S or Cmd+S -> Save/Inscribe
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
                 this.saveActiveNote(true);
             }
-            // Escape -> Close Modals or Zen mode
             if (e.key === 'Escape') {
                 this.closeChunkInspector();
                 if (document.body.classList.contains('zen-mode')) {
@@ -611,20 +640,17 @@ class NotenuxPanel {
 
     /* ---------------- EVENTS ---------------- */
     bindEvents() {
-        // Search notes
         this.dom.searchInput?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value.toLowerCase().trim();
             this.renderNotesList();
         });
 
-        // Sort notes select
         this.dom.sortNotesSelect?.addEventListener('change', (e) => {
             this.currentSort = e.target.value;
             this.renderNotesList();
             this.toast.show(`Scrolls sorted by ${e.target.options[e.target.selectedIndex].text}`, 'info', 'Sorting');
         });
 
-        // Category filter in explorer
         this.dom.categoryPills.forEach(pill => {
             pill.addEventListener('click', () => {
                 this.audio.playBlip();
@@ -632,14 +658,12 @@ class NotenuxPanel {
             });
         });
 
-        // Category links in primary navigation sidebar
         this.dom.navCategoryLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.audio.playBlip();
                 const cat = link.dataset.category || 'all';
                 this.setCategory(cat);
-                // ensure explorer is open on mobile
                 if (window.innerWidth < 1024) {
                     this.dom.primaryNavSidebar?.classList.add('-translate-x-full');
                     this.dom.notesExplorerSidebar?.classList.remove('-translate-x-full');
@@ -648,12 +672,10 @@ class NotenuxPanel {
             });
         });
 
-        // New note button
         this.dom.newNoteBtn?.addEventListener('click', () => {
             this.createNewNote(true);
         });
 
-        // Note title input
         this.dom.noteTitleInput?.addEventListener('input', () => {
             if (!this.activeNote) return;
             this.activeNote.title = this.dom.noteTitleInput.value;
@@ -661,7 +683,6 @@ class NotenuxPanel {
             this.scheduleAutoSave();
         });
 
-        // Note category select
         this.dom.noteCategorySelect?.addEventListener('change', (e) => {
             if (!this.activeNote) return;
             this.activeNote.category = e.target.value;
@@ -670,32 +691,34 @@ class NotenuxPanel {
             this.toast.show(`Scroll moved to category "${e.target.value.toUpperCase()}"`, 'info', 'Category');
         });
 
-        // Editor input
         this.dom.editorArea?.addEventListener('input', () => {
             this.handleEditorInput();
         });
 
-        // Save Now Button
+        this.dom.markdownRawEditor?.addEventListener('input', () => {
+            if (!this.activeNote) return;
+            const mdText = this.dom.markdownRawEditor.value;
+            const html = MarkdownEngine.parse(mdText);
+            this.dom.editorArea.innerHTML = html;
+            this.handleEditorInput();
+        });
+
         this.dom.saveNowBtn?.addEventListener('click', () => {
             this.saveActiveNote(true);
         });
 
-        // Pin Toggle
         this.dom.pinNoteBtn?.addEventListener('click', () => {
             this.togglePinActiveNote();
         });
 
-        // Favorite Toggle
         this.dom.favoriteNoteBtn?.addEventListener('click', () => {
             this.toggleFavoriteActiveNote();
         });
 
-        // Duplicate Note
         this.dom.duplicateNoteBtn?.addEventListener('click', () => {
             this.duplicateActiveNote();
         });
 
-        // Export Dropdown
         this.dom.exportNoteBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             this.dom.exportMenu?.classList.toggle('hidden');
@@ -708,42 +731,45 @@ class NotenuxPanel {
         });
 
         this.dom.exportMenu?.querySelectorAll('[data-export-format]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', () => {
                 const format = btn.dataset.exportFormat || 'md';
                 this.exportActiveNote(format);
                 this.dom.exportMenu?.classList.add('hidden');
             });
         });
 
-        // Zen Mode Toggle
         this.dom.zenModeBtn?.addEventListener('click', () => {
             this.toggleZenMode();
         });
 
-        // Delete Note
         this.dom.deleteNoteBtn?.addEventListener('click', () => {
             this.deleteActiveNote();
         });
 
-        // Table Insertion
         this.dom.insertTableBtn?.addEventListener('click', (e) => {
             e.preventDefault();
             this.insertRetroTable();
         });
 
-        // Task / Checklist Insertion
         this.dom.insertTaskBtn?.addEventListener('click', (e) => {
             e.preventDefault();
             this.insertInteractiveTask();
         });
 
-        // Markdown Paste / Import modal button
+        this.dom.insertMediaBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.insertMedia();
+        });
+
         this.dom.markdownPasteBtn?.addEventListener('click', (e) => {
             e.preventDefault();
             this.promptMarkdownInput();
         });
 
-        // Chunk Inspector Modal
+        this.dom.markdownViewToggleBtn?.addEventListener('click', () => {
+            this.toggleMarkdownRawView();
+        });
+
         this.dom.inspectChunksBtn?.addEventListener('click', () => {
             this.openChunkInspector();
         });
@@ -753,7 +779,10 @@ class NotenuxPanel {
             this.closeChunkInspector();
         });
 
-        // Font family change
+        this.dom.verifyChunksBtn?.addEventListener('click', () => {
+            this.verifyChunksIntegrity();
+        });
+
         this.dom.fontFamilySelect?.addEventListener('change', (e) => {
             this.audio.playClick();
             this.applyFontFamily(e.target.value);
@@ -761,7 +790,6 @@ class NotenuxPanel {
             this.scheduleAutoSave();
         });
 
-        // Font size change
         this.dom.fontSizeSelect?.addEventListener('change', (e) => {
             this.audio.playClick();
             this.applyFontSize(e.target.value);
@@ -818,7 +846,6 @@ class NotenuxPanel {
             });
         });
 
-        // Custom Color pickers
         document.querySelectorAll('[data-color]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -843,7 +870,6 @@ class NotenuxPanel {
             const textPlain = clipboardData.getData('text/plain') || '';
             const textHtml = clipboardData.getData('text/html') || '';
 
-            // Check if plain text looks like Markdown or contains a Markdown table
             const isMarkdown =
                 /(^|\n)#{1,6}\s+/m.test(textPlain) ||
                 /\|[^\n]+\|\r?\n\|[-:\s|]+\|/m.test(textPlain) ||
@@ -866,7 +892,6 @@ class NotenuxPanel {
                 return;
             }
 
-            // If pasting rich HTML that contains table, sanitize & ensure retro table class
             if (textHtml && textHtml.includes('<table')) {
                 e.preventDefault();
                 const parser = new DOMParser();
@@ -877,7 +902,6 @@ class NotenuxPanel {
                 document.execCommand('insertHTML', false, doc.body.innerHTML);
                 this.handleEditorInput();
                 this.toast.show('Pasted HTML Table formatted cleanly!', 'info', 'Table Injected', 'fa-solid fa-table text-cyan-400');
-                return;
             }
         });
     }
@@ -934,6 +958,54 @@ class NotenuxPanel {
         this.toast.show('Interactive quest task item added', 'info', 'Checklist');
     }
 
+    insertMedia() {
+        this.audio.playClick();
+        const choice = prompt('Enter Image URL (or type "sword", "crystal", "shield" for retro presets):', 'crystal');
+        if (!choice) return;
+
+        let src = choice;
+        let alt = 'Media Item';
+
+        if (choice === 'crystal') {
+            src = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80';
+            alt = 'Cyan Mana Crystal';
+        } else if (choice === 'sword') {
+            src = 'https://images.unsplash.com/photo-1595590424283-b8f17842773f?auto=format&fit=crop&w=400&q=80';
+            alt = 'Ancient Relic Blade';
+        } else if (choice === 'shield') {
+            src = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
+            alt = 'Guardian Shield';
+        }
+
+        const imgHtml = `<p><img src="${src}" alt="${alt}" class="rounded-lg border-2 border-blue-500 max-h-72 shadow-md my-2"></p><p><br></p>`;
+        document.execCommand('insertHTML', false, imgHtml);
+        this.dom.editorArea.focus();
+        this.handleEditorInput();
+        this.toast.show('Artifact image injected into scroll', 'success', 'Media Ready');
+    }
+
+    toggleMarkdownRawView() {
+        this.audio.playBlip();
+        this.isRawMarkdownMode = !this.isRawMarkdownMode;
+
+        if (this.isRawMarkdownMode) {
+            const md = MarkdownEngine.toMarkdown(this.dom.editorArea.innerHTML);
+            this.dom.markdownRawEditor.value = md;
+            this.dom.editorArea.classList.add('hidden');
+            this.dom.markdownRawEditor.classList.remove('hidden');
+            this.dom.markdownViewToggleBtn.innerHTML = '<i class="fa-solid fa-eye mr-1 text-cyan-400"></i> WYSIWYG';
+            this.toast.show('Raw Markdown View activated', 'info');
+        } else {
+            const html = MarkdownEngine.parse(this.dom.markdownRawEditor.value);
+            this.dom.editorArea.innerHTML = html;
+            this.dom.markdownRawEditor.classList.add('hidden');
+            this.dom.editorArea.classList.remove('hidden');
+            this.dom.markdownViewToggleBtn.innerHTML = '<i class="fa-brands fa-markdown mr-1 text-cyan-400"></i> RAW MD';
+            this.toast.show('WYSIWYG Rich Editor restored', 'info');
+            this.handleEditorInput();
+        }
+    }
+
     promptMarkdownInput() {
         const mdText = prompt('Paste your raw Markdown (.md) here to convert into rich document:');
         if (mdText) {
@@ -988,6 +1060,7 @@ class NotenuxPanel {
         this.activeNote.content = this.dom.editorArea.innerHTML;
         this.updateWordAndCharMetrics();
         this.triggerXpBurst();
+        this.saveDraftLocal();
         this.scheduleAutoSave();
     }
 
@@ -1001,9 +1074,39 @@ class NotenuxPanel {
         if (this.dom.charCountBadge) this.dom.charCountBadge.innerHTML = `<i class="fa-solid fa-font mr-1 text-blue-500"></i> ${chars} Chars`;
         if (this.dom.readingTimeBadge) this.dom.readingTimeBadge.innerHTML = `<i class="fa-solid fa-clock mr-1 text-cyan-500"></i> ${minutes}m Read`;
 
+        // Quest Word Goal progress calculation
+        if (this.dom.questGoalText) {
+            const percent = Math.min(100, Math.round((words / this.wordGoal) * 100));
+            this.dom.questGoalText.textContent = `Goal: ${words}/${this.wordGoal}w (${percent}%)`;
+
+            if (percent >= 100 && !this.goalCelebrated) {
+                this.goalCelebrated = true;
+                this.audio.playLevelUp();
+                this.toast.show(
+                    `🎉 Daily Quest Target achieved! (${words}/${this.wordGoal} words written)`,
+                    'xp',
+                    'Quest Complete',
+                    'fa-solid fa-bullseye text-yellow-400'
+                );
+            }
+        }
+
         if (this.activeNote) {
             this.activeNote.word_count = words;
             this.activeNote.char_count = chars;
+        }
+    }
+
+    saveDraftLocal() {
+        if (!this.activeNote) return;
+        try {
+            localStorage.setItem(`notenux_draft_${this.activeNote.id}`, JSON.stringify({
+                title: this.activeNote.title,
+                content: this.activeNote.content,
+                timestamp: Date.now(),
+            }));
+        } catch (e) {
+            // LocalStorage full or disabled
         }
     }
 
@@ -1071,6 +1174,9 @@ class NotenuxPanel {
                 if (index !== -1) {
                     this.notes[index] = data.data;
                 }
+
+                // Clear draft backup since persisted
+                localStorage.removeItem(`notenux_draft_${this.activeNote.id}`);
 
                 if (this.dom.saveStatusText) {
                     this.dom.saveStatusText.innerHTML = '<span class="text-emerald-500"><i class="fa-solid fa-check mr-1"></i> Synchronized</span>';
@@ -1165,7 +1271,7 @@ class NotenuxPanel {
                 this.renderNotesList();
 
                 this.toast.show(
-                    this.activeNote.is_pinned ? 'Scroll pinned to the top of the Grimoire' : 'Scroll unpinned',
+                    this.activeNote.is_pinned ? 'Scroll pinned to top of Grimoire' : 'Scroll unpinned',
                     'info',
                     'Pin Status',
                     'fa-solid fa-thumbtack text-amber-400'
@@ -1313,6 +1419,10 @@ class NotenuxPanel {
             this.dom.editorArea.innerHTML = note.content || '';
         }
 
+        if (this.dom.markdownRawEditor) {
+            this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(note.content || '');
+        }
+
         const font = note.font_family || 'pixel';
         const size = note.font_size || '16px';
 
@@ -1376,9 +1486,7 @@ class NotenuxPanel {
             );
         }
 
-        // Apply sorting
         filtered.sort((a, b) => {
-            // Pinned notes always on top first
             if (a.is_pinned && !b.is_pinned) return -1;
             if (!a.is_pinned && b.is_pinned) return 1;
 
@@ -1442,7 +1550,6 @@ class NotenuxPanel {
             `;
         }).join('');
 
-        // Bind clicks to rendered note cards
         this.dom.notesList.querySelectorAll('.note-list-card').forEach(card => {
             card.addEventListener('click', () => {
                 const id = parseInt(card.dataset.noteId, 10);
@@ -1477,13 +1584,18 @@ class NotenuxPanel {
         }
     }
 
-    /* ---------------- CHUNK INSPECTOR MODAL ---------------- */
+    /* ---------------- CHUNK INSPECTOR & INTEGRITY AUDITOR ---------------- */
     async openChunkInspector() {
         if (!this.activeNote) return;
         this.audio.playCoin();
 
         if (this.dom.chunkModal) {
             this.dom.chunkModal.classList.remove('hidden');
+        }
+
+        if (this.dom.chunkVerifyStatus) {
+            this.dom.chunkVerifyStatus.className = 'hidden';
+            this.dom.chunkVerifyStatus.textContent = '';
         }
 
         if (this.dom.chunkModalContent) {
@@ -1515,31 +1627,7 @@ class NotenuxPanel {
                     return;
                 }
 
-                this.dom.chunkModalContent.innerHTML = data.chunks.map(chunk => `
-                    <div class="p-3 mb-3 border-2 border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-slate-900/90 rounded-lg font-mono text-xs shadow-[2px_2px_0px_#000]">
-                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-blue-200 dark:border-blue-800 pb-2 mb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded text-[10px]">#${chunk.chunk_index}</span>
-                                <span class="text-cyan-600 dark:text-cyan-400 font-bold">${this.escapeHtml(chunk.chunk_uid)}</span>
-                                <button onclick="window.notenux.copyChunkUid('${chunk.chunk_uid}')"
-                                        class="arcade-btn bg-surface px-1.5 py-0.5 text-[9px] rounded hover:bg-cyan-200"
-                                        title="Copy Chunk UID">
-                                    <i class="fa-solid fa-copy"></i>
-                                </button>
-                            </div>
-                            <div class="flex items-center gap-2 text-[11px] opacity-75">
-                                <span class="bg-slate-200 dark:bg-slate-800 px-1 rounded uppercase">${chunk.chunk_type}</span>
-                                <span>${chunk.byte_size} bytes</span>
-                            </div>
-                        </div>
-                        <div class="text-[11px] text-gray-500 dark:text-gray-400 truncate mb-1">
-                            SHA-256: <span class="font-mono">${chunk.checksum || 'N/A'}</span>
-                        </div>
-                        <div class="bg-white dark:bg-black/50 p-2 rounded border border-gray-300 dark:border-gray-800 max-h-24 overflow-y-auto text-main text-[11px] whitespace-pre-wrap">
-                            ${this.escapeHtml(chunk.content)}
-                        </div>
-                    </div>
-                `).join('');
+                this.renderChunkCards(data.chunks);
             }
         } catch (e) {
             if (this.dom.chunkModalContent) {
@@ -1548,6 +1636,126 @@ class NotenuxPanel {
                         Error fetching chunk telemetry.
                     </div>
                 `;
+            }
+        }
+    }
+
+    renderChunkCards(chunks) {
+        if (!this.dom.chunkModalContent) return;
+
+        this.dom.chunkModalContent.innerHTML = chunks.map(chunk => `
+            <div data-chunk-id="${chunk.id}" class="chunk-card p-3 mb-3 border-2 border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-slate-900/90 rounded-lg font-mono text-xs shadow-[2px_2px_0px_#000]">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-blue-200 dark:border-blue-800 pb-2 mb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded text-[10px]">#${chunk.chunk_index}</span>
+                        <span class="text-cyan-600 dark:text-cyan-400 font-bold">${this.escapeHtml(chunk.chunk_uid)}</span>
+                        <button onclick="window.notenux.copyChunkUid('${chunk.chunk_uid}')"
+                                class="arcade-btn bg-surface px-1.5 py-0.5 text-[9px] rounded hover:bg-cyan-200"
+                                title="Copy Chunk UID">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2 text-[11px] opacity-75">
+                        <span class="bg-slate-200 dark:bg-slate-800 px-1 rounded uppercase">${chunk.chunk_type}</span>
+                        <span>${chunk.byte_size} bytes</span>
+                        <button onclick="window.notenux.toggleChunkEditor(${chunk.id})" class="arcade-btn bg-surface px-2 py-0.5 text-[10px] rounded hover:bg-blue-300">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                    </div>
+                </div>
+                <div class="text-[11px] text-gray-500 dark:text-gray-400 truncate mb-1">
+                    SHA-256: <span class="font-mono">${chunk.checksum || 'N/A'}</span>
+                </div>
+                <div id="chunk-view-${chunk.id}" class="bg-white dark:bg-black/50 p-2 rounded border border-gray-300 dark:border-gray-800 max-h-24 overflow-y-auto text-main text-[11px] whitespace-pre-wrap">
+                    ${this.escapeHtml(chunk.content)}
+                </div>
+                <div id="chunk-edit-${chunk.id}" class="hidden mt-2">
+                    <textarea class="w-full p-2 bg-white dark:bg-black/80 border border-blue-500 rounded text-[11px] font-mono text-main leading-relaxed" rows="3">${this.escapeHtml(chunk.content)}</textarea>
+                    <div class="flex justify-end gap-2 mt-1">
+                        <button onclick="window.notenux.toggleChunkEditor(${chunk.id})" class="arcade-btn bg-surface px-2 py-0.5 text-[10px] rounded">Cancel</button>
+                        <button onclick="window.notenux.saveIndividualChunk(${chunk.id})" class="arcade-btn bg-emerald-600 text-white px-2 py-0.5 text-[10px] rounded">Save Shard</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    toggleChunkEditor(chunkId) {
+        this.audio.playClick();
+        const viewEl = document.getElementById(`chunk-view-${chunkId}`);
+        const editEl = document.getElementById(`chunk-edit-${chunkId}`);
+        if (viewEl && editEl) {
+            viewEl.classList.toggle('hidden');
+            editEl.classList.toggle('hidden');
+        }
+    }
+
+    async saveIndividualChunk(chunkId) {
+        if (!this.activeNote) return;
+        const editEl = document.getElementById(`chunk-edit-${chunkId}`);
+        const textarea = editEl?.querySelector('textarea');
+        if (!textarea) return;
+
+        const newContent = textarea.value;
+        this.audio.playCoin();
+
+        try {
+            const response = await fetch(`/api/notes/${this.activeNote.id}/chunks/${chunkId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ content: newContent }),
+            });
+
+            const data = await response.json();
+            if (response.ok && data.status === 'success') {
+                this.toast.show('Shard updated & checksum recomputed!', 'success', 'Chunk Saved');
+                this.openChunkInspector();
+                if (data.data && data.data.note) {
+                    this.activeNote = data.data.note;
+                    this.loadNoteIntoEditor(this.activeNote);
+                }
+            } else {
+                throw new Error(data.message || 'Error updating chunk');
+            }
+        } catch (e) {
+            this.toast.show('Failed to save individual chunk', 'danger');
+        }
+    }
+
+    async verifyChunksIntegrity() {
+        if (!this.activeNote) return;
+        this.audio.playClick();
+
+        if (this.dom.chunkVerifyStatus) {
+            this.dom.chunkVerifyStatus.className = 'px-4 py-2 text-xs font-mono bg-blue-100 dark:bg-blue-900/50 text-blue-900 dark:text-cyan-300 border-b border-blue-400';
+            this.dom.chunkVerifyStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Running cryptographic SHA-256 integrity verification...';
+        }
+
+        try {
+            const response = await fetch(`/api/notes/${this.activeNote.id}/chunks/verify`);
+            const data = await response.json();
+
+            if (response.ok && data.status === 'success') {
+                const report = data.data;
+                if (report.verified) {
+                    this.audio.playLevelUp();
+                    this.dom.chunkVerifyStatus.className = 'px-4 py-2 text-xs font-mono bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-b border-emerald-500 font-bold';
+                    this.dom.chunkVerifyStatus.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5"></i> All ${report.total_chunks} shards verified! 100% cryptographic checksum & byte match.`;
+                    this.toast.show('Cryptographic verification successful: All shards intact.', 'success', 'Integrity Verified');
+                } else {
+                    this.audio.playDelete();
+                    this.dom.chunkVerifyStatus.className = 'px-4 py-2 text-xs font-mono bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-b border-rose-500 font-bold';
+                    this.dom.chunkVerifyStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Warning: ${report.corrupted_chunks} shard(s) checksum mismatch detected!`;
+                    this.toast.show('Integrity warning: Shard discrepancy detected.', 'danger', 'Integrity Warning');
+                }
+            }
+        } catch (e) {
+            if (this.dom.chunkVerifyStatus) {
+                this.dom.chunkVerifyStatus.className = 'px-4 py-2 text-xs font-mono bg-rose-100 text-rose-800 border-b border-rose-500';
+                this.dom.chunkVerifyStatus.textContent = 'Integrity audit service unavailable.';
             }
         }
     }

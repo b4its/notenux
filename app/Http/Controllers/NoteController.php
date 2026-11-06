@@ -297,6 +297,54 @@ class NoteController extends Controller
     }
 
     /**
+     * Update an individual chunk directly by its identity.
+     */
+    public function updateChunk(Request $request, Note $note, NoteChunk $chunk): JsonResponse
+    {
+        if ($chunk->note_id !== $note->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Chunk does not belong to this scroll.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'content' => ['required', 'string'],
+            'chunk_type' => ['nullable', 'string', 'max:32'],
+        ]);
+
+        $updatedChunk = $this->chunkService->updateChunk(
+            $chunk,
+            $validated['content'],
+            $validated['chunk_type'] ?? null
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Shard {$chunk->chunk_uid} updated & checksum recomputed!",
+            'data' => [
+                'chunk' => $updatedChunk,
+                'note' => $note->fresh(),
+            ],
+        ]);
+    }
+
+    /**
+     * Run a cryptographic audit verifying all chunks' checksums and integrity.
+     */
+    public function verifyChunks(Note $note): JsonResponse
+    {
+        $report = $this->chunkService->verifyIntegrity($note);
+
+        return response()->json([
+            'status' => 'success',
+            'note_id' => $note->id,
+            'note_uuid' => $note->uuid,
+            'data' => $report,
+        ]);
+    }
+
+    /**
      * Return gamified stats overview for the player.
      */
     public function stats(): JsonResponse

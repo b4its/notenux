@@ -15,6 +15,8 @@ Route::prefix('api/notes')->group(function () {
     Route::post('/{note}/favorite', [NoteController::class, 'toggleFavorite'])->name('notes.favorite');
     Route::post('/{note}/duplicate', [NoteController::class, 'duplicate'])->name('notes.duplicate');
     Route::get('/{note}/chunks', [NoteController::class, 'chunks'])->name('notes.chunks');
+    Route::get('/{note}/chunks/verify', [NoteController::class, 'verifyChunks'])->name('notes.chunks.verify');
+    Route::put('/{note}/chunks/{chunk}', [NoteController::class, 'updateChunk'])->name('notes.chunks.update');
     Route::get('/{note}/export/{format?}', [NoteController::class, 'export'])->name('notes.export');
 });
 

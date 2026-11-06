@@ -153,3 +153,59 @@ test('white-box: controller exports markdown, txt, and html with correct headers
         ->assertSee('<!DOCTYPE html>', false)
         ->assertSee('<h1>Arcane Export Scroll</h1>', false);
 });
+
+test('white-box: chunk service verifyIntegrity correctly verifies untampered note shards', function () {
+    $service = new NoteChunkService;
+    $note = Note::factory()->create([
+        'content' => '<h2>Integrity Test</h2><p>All shards are cryptographically hashed using SHA-256.</p>',
+    ]);
+    $service->syncChunks($note, $note->content);
+
+    $report = $service->verifyIntegrity($note);
+
+    expect($report['status'])->toBe('verified')
+        ->and($report['verified'])->toBeTrue()
+        ->and($report['total_chunks'])->toBeGreaterThan(0)
+        ->and($report['corrupted_chunks'])->toBe(0)
+        ->and($report['valid_chunks'])->toBe($report['total_chunks']);
+});
+
+test('white-box: chunk service verifyIntegrity flags corrupted or altered shards', function () {
+    $service = new NoteChunkService;
+    $note = Note::factory()->create([
+        'content' => '<h2>Untampered</h2><p>Legitimate text.</p>',
+    ]);
+    $chunks = $service->syncChunks($note, $note->content);
+
+    // Intentionally tamper with a chunk directly in DB without recalculating checksum
+    $firstChunk = $note->chunks()->first();
+    $firstChunk->update(['content' => 'Tampered malicious injection']);
+
+    $report = $service->verifyIntegrity($note);
+
+    expect($report['status'])->toBe('corrupted')
+        ->and($report['verified'])->toBeFalse()
+        ->and($report['corrupted_chunks'])->toBe(1)
+        ->and($report['valid_chunks'])->toBe($note->chunks()->count() - 1);
+});
+
+test('white-box: chunk service updateChunk updates shard, recalculates checksum and synchronizes parent note', function () {
+    $service = new NoteChunkService;
+    $note = Note::factory()->create([
+        'content' => '<h2>Original Heading</h2><p>Original body text.</p>',
+    ]);
+    $service->syncChunks($note, $note->content);
+
+    $chunkToEdit = $note->chunks()->first();
+    $newContent = '<h2>Updated Arcane Header</h2>';
+
+    $updatedChunk = $service->updateChunk($chunkToEdit, $newContent);
+
+    expect($updatedChunk->content)->toBe($newContent)
+        ->and($updatedChunk->checksum)->toBe(hash('sha256', $newContent))
+        ->and($updatedChunk->byte_size)->toBe(strlen($newContent));
+
+    // Verify parent note was reassembled
+    $refreshedNote = $note->fresh();
+    expect($refreshedNote->content)->toContain('Updated Arcane Header');
+});

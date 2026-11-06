@@ -45,19 +45,7 @@ class NoteChunkService
         }
 
         // Calculate metrics
-        $cleanText = trim(strip_tags($rawContent));
-        $wordCount = $cleanText === '' ? 0 : str_word_count($cleanText);
-        $charCount = mb_strlen($cleanText);
-        $xp = max(10, (int) round($wordCount * 3));
-        $level = max(1, (int) floor($xp / 120) + 1);
-
-        $note->forceFill([
-            'content' => $rawContent,
-            'word_count' => $wordCount,
-            'char_count' => $charCount,
-            'xp' => $xp,
-            'level' => $level,
-        ])->save();
+        $this->updateNoteMetrics($note, $rawContent);
 
         return $createdChunks;
     }
@@ -175,6 +163,74 @@ class NoteChunkService
     }
 
     /**
+     * Updates an individual chunk directly by its identity, recomputing checksum and parent note text.
+     */
+    public function updateChunk(NoteChunk $chunk, string $newContent, ?string $type = null): NoteChunk
+    {
+        $type = $type ?: $this->detectChunkType($newContent);
+
+        $chunk->update([
+            'content' => $newContent,
+            'chunk_type' => $type,
+            'byte_size' => strlen($newContent),
+            'checksum' => hash('sha256', $newContent),
+        ]);
+
+        $note = $chunk->note;
+        $reassembled = $this->reassemble($note);
+        $this->updateNoteMetrics($note, $reassembled);
+
+        return $chunk->fresh();
+    }
+
+    /**
+     * Verifies cryptographic checksum and byte size integrity for all chunks belonging to a note.
+     *
+     * @return array{status: string, verified: bool, total_chunks: int, valid_chunks: int, corrupted_chunks: int, details: array<int, array<string, mixed>>}
+     */
+    public function verifyIntegrity(Note $note): array
+    {
+        $chunks = $note->chunks()->orderBy('chunk_index', 'asc')->get();
+        $total = $chunks->count();
+        $valid = 0;
+        $corrupted = 0;
+        $details = [];
+
+        foreach ($chunks as $chunk) {
+            $expectedChecksum = hash('sha256', $chunk->content);
+            $expectedBytes = strlen($chunk->content);
+            $checksumMatches = ($chunk->checksum === $expectedChecksum);
+            $bytesMatch = ($chunk->byte_size === $expectedBytes);
+            $isChunkValid = $checksumMatches && $bytesMatch;
+
+            if ($isChunkValid) {
+                $valid++;
+            } else {
+                $corrupted++;
+            }
+
+            $details[] = [
+                'chunk_uid' => $chunk->chunk_uid,
+                'chunk_index' => $chunk->chunk_index,
+                'is_valid' => $isChunkValid,
+                'checksum_matches' => $checksumMatches,
+                'bytes_match' => $bytesMatch,
+            ];
+        }
+
+        $allVerified = ($total > 0 && $corrupted === 0);
+
+        return [
+            'status' => $allVerified ? 'verified' : ($total === 0 ? 'empty' : 'corrupted'),
+            'verified' => $allVerified,
+            'total_chunks' => $total,
+            'valid_chunks' => $valid,
+            'corrupted_chunks' => $corrupted,
+            'details' => $details,
+        ];
+    }
+
+    /**
      * Reconstruct complete text from chunks in order.
      */
     public function reassemble(Note $note): string
@@ -183,5 +239,25 @@ class NoteChunkService
             ->orderBy('chunk_index', 'asc')
             ->pluck('content')
             ->implode('');
+    }
+
+    /**
+     * Recalculates metrics and saves them on the note.
+     */
+    protected function updateNoteMetrics(Note $note, string $rawContent): void
+    {
+        $cleanText = trim(strip_tags($rawContent));
+        $wordCount = $cleanText === '' ? 0 : str_word_count($cleanText);
+        $charCount = mb_strlen($cleanText);
+        $xp = max(10, (int) round($wordCount * 3));
+        $level = max(1, (int) floor($xp / 120) + 1);
+
+        $note->forceFill([
+            'content' => $rawContent,
+            'word_count' => $wordCount,
+            'char_count' => $charCount,
+            'xp' => $xp,
+            'level' => $level,
+        ])->save();
     }
 }

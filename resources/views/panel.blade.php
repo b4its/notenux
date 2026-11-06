@@ -511,7 +511,7 @@
                         </button>
                     </div>
 
-                    <!-- Table, Checklist & Markdown Tools -->
+                    <!-- Table, Checklist, Media, Raw Markdown Tools -->
                     <div class="flex items-center gap-1 bg-surface-alt p-1 rounded border border-black/30 dark:border-blue-800">
                         <button id="insert-table-btn"
                                 class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-mono"
@@ -523,10 +523,20 @@
                                 title="Insert Interactive Quest Checklist">
                             <i class="fa-solid fa-square-check mr-1"></i> TASK
                         </button>
+                        <button id="insert-media-btn"
+                                class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs font-mono"
+                                title="Insert Image / Pixel Artifact">
+                            <i class="fa-solid fa-image mr-1 text-cyan-400"></i> IMG
+                        </button>
                         <button id="markdown-paste-btn"
                                 class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2 py-0.5 rounded text-xs font-mono"
                                 title="Paste or Convert Raw Markdown (.md)">
                             <i class="fa-solid fa-file-code mr-1"></i> MD
+                        </button>
+                        <button id="markdown-view-toggle-btn"
+                                class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/40 px-2 py-0.5 rounded text-xs font-mono"
+                                title="Toggle Raw Markdown Textarea View">
+                            <i class="fa-brands fa-markdown mr-1 text-cyan-400"></i> RAW
                         </button>
                     </div>
 
@@ -560,7 +570,7 @@
                 </div>
 
                 <!-- Gamified Live Metrics & Quest Status Bar -->
-                <div class="flex items-center justify-between gap-2 px-1 text-xs font-mono">
+                <div class="flex items-center justify-between gap-2 px-1 text-xs font-mono flex-wrap">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span id="word-count-badge" class="px-2 py-0.5 rounded border border-black/30 bg-blue-100 dark:bg-blue-900/40 font-bold">
                             <i class="fa-solid fa-pen-nib mr-1 text-blue-500"></i> 0 Words
@@ -571,6 +581,18 @@
                         <span id="reading-time-badge" class="px-2 py-0.5 rounded border border-black/30 bg-blue-100 dark:bg-blue-900/40">
                             <i class="fa-solid fa-clock mr-1 text-cyan-500"></i> 1m Read
                         </span>
+
+                        <!-- Quest Daily Word Goal Tracker -->
+                        <div class="flex items-center gap-1 bg-surface-alt px-2 py-0.5 rounded border border-black/30 text-xs font-mono">
+                            <i class="fa-solid fa-bullseye text-amber-500 mr-1"></i>
+                            <span id="quest-goal-text">Goal: 0/250w</span>
+                            <select id="quest-goal-select" class="bg-transparent border-0 text-[10px] focus:outline-none ml-1 cursor-pointer">
+                                <option value="100">100w</option>
+                                <option value="250" selected>250w</option>
+                                <option value="500">500w</option>
+                                <option value="1000">1000w</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-2">
@@ -589,6 +611,7 @@
                 <!-- Zoomable Editable Content Area (The Core Canvas) -->
                 <div class="arcade-card flex-1 p-4 sm:p-6 rounded-xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000]">
                     <div id="editor-zoom-wrapper" class="zoom-canvas-container">
+                        <!-- Rich Editable Canvas -->
                         <div id="editor-content"
                              contenteditable="true"
                              spellcheck="false"
@@ -596,6 +619,11 @@
                              style="font-family: 'Press Start 2P', monospace; font-size: 16px;">
                             {!! $activeNote->content ?? '<h2>Mission Briefing: Act I</h2><p>Begin scribing your thoughts...</p>' !!}
                         </div>
+
+                        <!-- Raw Markdown Editor Textarea (Hidden by default, toggleable via RAW MD button) -->
+                        <textarea id="markdown-raw-editor"
+                                  spellcheck="false"
+                                  class="hidden w-full h-[500px] p-4 font-mono text-sm bg-black/80 text-cyan-300 border-2 border-cyan-500 rounded-lg focus:outline-none leading-relaxed resize-y"></textarea>
                     </div>
                 </div>
 
@@ -617,7 +645,7 @@
     </div>
 
     <!-- ============================================================================== -->
-    <!-- DATABASE CHUNK INSPECTOR MODAL -->
+    <!-- DATABASE CHUNK INSPECTOR & INTEGRITY AUDITOR MODAL -->
     <!-- ============================================================================== -->
     <div id="chunk-inspector-modal"
          class="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
@@ -629,7 +657,7 @@
                     <i class="fa-solid fa-cubes text-xl"></i>
                     <div>
                         <h3 class="font-pixel text-xs sm:text-sm tracking-wider">DATABASE CHUNK INSPECTOR</h3>
-                        <p class="text-[10px] font-mono text-cyan-200">Identity-backed chunked text storage telemetry</p>
+                        <p class="text-[10px] font-mono text-cyan-200">Identity-backed chunked text storage telemetry & cryptographic verification</p>
                     </div>
                 </div>
                 <button id="chunk-modal-close" class="arcade-btn bg-black text-white hover:bg-gray-800 px-2.5 py-1 rounded text-xs font-mono">
@@ -637,11 +665,19 @@
                 </button>
             </div>
 
-            <!-- Modal Subheader Stats -->
-            <div class="px-4 py-2 bg-surface-alt border-b border-black/10 dark:border-white/10 flex items-center justify-between font-mono text-xs">
-                <span id="chunk-modal-count" class="font-bold text-blue-600 dark:text-cyan-400">Loading chunks...</span>
-                <span id="chunk-modal-bytes" class="opacity-75">0 Bytes</span>
+            <!-- Modal Subheader Stats & Audit Action -->
+            <div class="px-4 py-2 bg-surface-alt border-b border-black/10 dark:border-white/10 flex items-center justify-between font-mono text-xs flex-wrap gap-2">
+                <div class="flex items-center gap-3">
+                    <span id="chunk-modal-count" class="font-bold text-blue-600 dark:text-cyan-400">Loading chunks...</span>
+                    <span id="chunk-modal-bytes" class="opacity-75">0 Bytes</span>
+                </div>
+                <button id="verify-chunks-btn" class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-0.5 rounded text-[11px] font-mono">
+                    <i class="fa-solid fa-shield-halved mr-1"></i> VERIFY INTEGRITY
+                </button>
             </div>
+
+            <!-- Integrity status alert banner -->
+            <div id="chunk-verify-status" class="hidden px-4 py-2 text-xs font-mono border-b border-black/10"></div>
 
             <!-- Modal Body (Chunks List) -->
             <div id="chunk-modal-content" class="p-4 overflow-y-auto flex-1 space-y-2">
