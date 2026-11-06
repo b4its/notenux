@@ -34,8 +34,26 @@ test('it renders the main gamified panel view with initial notes and dual sideba
         ->assertSee('font-size-select')
         ->assertSee('editor-content')
         ->assertSee('chunk-inspector-modal')
+        ->assertSee('delete-confirm-modal')
+        ->assertSee('delete-modal-scroll-title')
+        ->assertSee('cancel-delete-modal-btn')
+        ->assertSee('confirm-delete-modal-btn')
+        ->assertSee('archive-note-btn')
         ->assertSee('font-awesome', false)
         ->assertSee('Arcane Quest 01');
+});
+
+test('it renders interactive visual delete confirmation modal instead of default browser alert', function () {
+    $response = $this->get(route('panel'));
+
+    $response->assertOk()
+        ->assertSee('delete-confirm-modal')
+        ->assertSee('BANISH SCROLL CONFIRMATION')
+        ->assertSee('Banish Scroll to Digital Void?')
+        ->assertSee('close-delete-modal-x')
+        ->assertSee('cancel-delete-modal-btn')
+        ->assertSee('confirm-delete-modal-btn')
+        ->assertSee('YES, BANISH SCROLL');
 });
 
 test('it supports responsive mobile dual-sidebar drawers and theme attributes', function () {

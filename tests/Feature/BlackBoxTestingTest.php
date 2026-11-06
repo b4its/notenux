@@ -354,3 +354,28 @@ test('black-box: system avoids excessive data load on list while seamlessly deli
             ],
         ]);
 });
+
+test('black-box: studio view features clean command deck, semantic toolbar clusters, and visual delete modal', function () {
+    $note = Note::factory()->create([
+        'title' => 'Ancient Quest Scroll of Legend',
+        'category' => 'quest',
+    ]);
+
+    $response = $this->get('/');
+    $response->assertOk()
+        ->assertSee('note-title-input')
+        ->assertSee('note-category-select')
+        ->assertSee('favorite-note-btn')
+        ->assertSee('pin-note-btn')
+        ->assertSee('duplicate-note-btn')
+        ->assertSee('export-note-btn')
+        ->assertSee('zen-mode-btn')
+        ->assertSee('archive-note-btn')
+        ->assertSee('delete-note-btn')
+        ->assertSee('save-now-btn')
+        ->assertSee('delete-confirm-modal')
+        ->assertSee('delete-modal-scroll-title')
+        ->assertSee('cancel-delete-modal-btn')
+        ->assertSee('confirm-delete-modal-btn')
+        ->assertSee('BANISH SCROLL CONFIRMATION');
+});

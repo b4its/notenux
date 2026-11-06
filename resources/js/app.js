@@ -271,6 +271,28 @@ class MarkdownEngine {
     static toMarkdown(html) {
         if (!html) return '';
         let md = html;
+
+        // Table to Markdown
+        md = md.replace(/<table[^>]*>([\s\S]*?)<\/table>/gi, (match, tableContent) => {
+            const rows = [];
+            const trMatches = tableContent.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [];
+            trMatches.forEach((trHtml, idx) => {
+                const cellMatches = trHtml.match(/<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/gi) || [];
+                const cells = cellMatches.map(c => c.replace(/<[^>]+>/g, '').trim());
+                if (cells.length > 0) {
+                    rows.push(`| ${cells.join(' | ')} |`);
+                    if (idx === 0) {
+                        rows.push(`| ${cells.map(() => '---').join(' | ')} |`);
+                    }
+                }
+            });
+            return rows.length > 0 ? ('\n\n' + rows.join('\n') + '\n\n') : '';
+        });
+
+        // Task / Checklist items to Markdown
+        md = md.replace(/<li[^>]*>\s*<input[^>]*checked[^>]*>\s*([\s\S]*?)<\/li>/gi, '- [x] $1\n');
+        md = md.replace(/<li[^>]*>\s*<input[^>]*type="checkbox"[^>]*>\s*([\s\S]*?)<\/li>/gi, '- [ ] $1\n');
+
         md = md.replace(/<h1>(.*?)<\/h1>/gi, '# $1\n\n');
         md = md.replace(/<h2>(.*?)<\/h2>/gi, '## $1\n\n');
         md = md.replace(/<h3>(.*?)<\/h3>/gi, '### $1\n\n');
@@ -286,6 +308,8 @@ class MarkdownEngine {
         md = md.replace(/<li>(.*?)<\/li>/gi, '- $1\n');
         md = md.replace(/<ul[^>]*>/gi, '');
         md = md.replace(/<\/ul>/gi, '\n');
+        md = md.replace(/<ol[^>]*>/gi, '');
+        md = md.replace(/<\/ol>/gi, '\n');
         md = md.replace(/<hr[^>]*>/gi, '---\n\n');
         md = md.replace(/<br[^>]*>/gi, '\n');
         return md.replace(/<[^>]+>/g, '').trim();
@@ -353,7 +377,13 @@ class NotenuxPanel {
             exportNoteBtn: document.getElementById('export-note-btn'),
             exportMenu: document.getElementById('export-menu'),
             zenModeBtn: document.getElementById('zen-mode-btn'),
+            archiveNoteBtn: document.getElementById('archive-note-btn'),
             deleteNoteBtn: document.getElementById('delete-note-btn'),
+            deleteConfirmModal: document.getElementById('delete-confirm-modal'),
+            deleteModalScrollTitle: document.getElementById('delete-modal-scroll-title'),
+            closeDeleteModalX: document.getElementById('close-delete-modal-x'),
+            cancelDeleteModalBtn: document.getElementById('cancel-delete-modal-btn'),
+            confirmDeleteModalBtn: document.getElementById('confirm-delete-modal-btn'),
 
             zoomInBtn: document.getElementById('zoom-in-btn'),
             zoomOutBtn: document.getElementById('zoom-out-btn'),
@@ -1024,6 +1054,7 @@ class NotenuxPanel {
 
             // Escape: Close all modals & bars
             if (e.key === 'Escape') {
+                this.closeDeleteConfirmModal();
                 this.closeChunkInspector();
                 this.toggleFindBar(false);
                 if (this.dom.importModal) this.dom.importModal.classList.add('hidden');
@@ -1119,6 +1150,31 @@ class NotenuxPanel {
             this.handleEditorInput();
         });
 
+        // Interactive Checklist State Persistence
+        this.dom.editorArea?.addEventListener('change', (e) => {
+            if (e.target && e.target.type === 'checkbox') {
+                if (e.target.checked) {
+                    e.target.setAttribute('checked', 'checked');
+                } else {
+                    e.target.removeAttribute('checked');
+                }
+                this.audio.playBlip();
+                this.handleEditorInput();
+            }
+        });
+
+        // Ctrl + Mouse Wheel Canvas Zoom
+        this.dom.editorArea?.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) {
+                    this.adjustZoom(10);
+                } else {
+                    this.adjustZoom(-10);
+                }
+            }
+        }, { passive: false });
+
         this.dom.markdownRawEditor?.addEventListener('input', () => {
             if (!this.activeNote) return;
             const mdText = this.dom.markdownRawEditor.value;
@@ -1141,6 +1197,10 @@ class NotenuxPanel {
 
         this.dom.duplicateNoteBtn?.addEventListener('click', () => {
             this.duplicateActiveNote();
+        });
+
+        this.dom.archiveNoteBtn?.addEventListener('click', () => {
+            this.archiveActiveNote();
         });
 
         this.dom.exportNoteBtn?.addEventListener('click', (e) => {
@@ -1166,8 +1226,27 @@ class NotenuxPanel {
             this.toggleZenMode();
         });
 
+        // Visual Delete Confirmation Modal triggers
         this.dom.deleteNoteBtn?.addEventListener('click', () => {
-            this.deleteActiveNote();
+            this.openDeleteConfirmModal();
+        });
+
+        this.dom.closeDeleteModalX?.addEventListener('click', () => {
+            this.closeDeleteConfirmModal();
+        });
+
+        this.dom.cancelDeleteModalBtn?.addEventListener('click', () => {
+            this.closeDeleteConfirmModal();
+        });
+
+        this.dom.confirmDeleteModalBtn?.addEventListener('click', () => {
+            this.executeDeleteActiveNote();
+        });
+
+        this.dom.deleteConfirmModal?.addEventListener('click', (e) => {
+            if (e.target === this.dom.deleteConfirmModal) {
+                this.closeDeleteConfirmModal();
+            }
         });
 
         this.dom.insertTableBtn?.addEventListener('click', (e) => {
@@ -1507,10 +1586,10 @@ class NotenuxPanel {
                 this.goalCelebrated = true;
                 this.audio.playLevelUp();
                 this.toast.show(
-                    `🎉 Daily Quest Target achieved! (${words}/${this.wordGoal} words written)`,
+                    `Daily Quest Target achieved! (${words}/${this.wordGoal} words written)`,
                     'xp',
                     'Quest Complete',
-                    'fa-solid fa-bullseye text-yellow-400'
+                    'fa-solid fa-trophy text-yellow-400'
                 );
             }
         }
@@ -1777,17 +1856,55 @@ class NotenuxPanel {
         this.toast.show(`Exporting scroll as .${format.toUpperCase()}`, 'info', 'Export Started', 'fa-solid fa-download text-blue-400');
     }
 
-    async deleteActiveNote() {
+    archiveActiveNote() {
         if (!this.activeNote) return;
-        if (!confirm(`Are you sure you want to banish scroll "${this.activeNote.title}" to the digital void?`)) {
+        this.activeNote.category = 'archive';
+        if (this.dom.noteCategorySelect) {
+            this.dom.noteCategorySelect.value = 'archive';
+        }
+        this.updateActiveNoteInList();
+        this.saveActiveNote(true);
+        this.toast.show(
+            `Scroll "${this.activeNote.title}" moved to Library Vault!`,
+            'info',
+            'Scroll Archived',
+            'fa-solid fa-box-archive text-amber-500'
+        );
+    }
+
+    openDeleteConfirmModal() {
+        if (!this.activeNote) {
+            this.toast.show('No active scroll selected to banish', 'warning');
             return;
         }
 
-        const title = this.activeNote.title;
+        if (this.dom.deleteModalScrollTitle) {
+            this.dom.deleteModalScrollTitle.textContent = this.activeNote.title || 'Untitled Scroll';
+        }
+
+        if (this.dom.deleteConfirmModal) {
+            this.dom.deleteConfirmModal.classList.remove('hidden');
+            this.audio.playBip();
+            this.dom.cancelDeleteModalBtn?.focus();
+        }
+    }
+
+    closeDeleteConfirmModal() {
+        if (this.dom.deleteConfirmModal) {
+            this.dom.deleteConfirmModal.classList.add('hidden');
+        }
+    }
+
+    async executeDeleteActiveNote() {
+        if (!this.activeNote) return;
+
+        const noteId = this.activeNote.id;
+        const title = this.activeNote.title || 'Untitled Scroll';
+        this.closeDeleteConfirmModal();
         this.audio.playDelete();
 
         try {
-            const response = await fetch(`/api/notes/${this.activeNote.id}`, {
+            const response = await fetch(`/api/notes/${noteId}`, {
                 method: 'DELETE',
                 headers: {
                     'Accept': 'application/json',
@@ -1795,7 +1912,7 @@ class NotenuxPanel {
             });
 
             if (response.ok) {
-                this.notes = this.notes.filter(n => n.id !== this.activeNote.id);
+                this.notes = this.notes.filter(n => n.id !== noteId);
                 this.activeNote = this.notes.length > 0 ? this.notes[0] : null;
 
                 this.renderNotesList();
@@ -1807,15 +1924,21 @@ class NotenuxPanel {
                 this.refreshPlayerStats();
 
                 this.toast.show(
-                    `Scroll "${title}" banished into the void.`,
+                    `Scroll "${title}" banished to the digital void!`,
                     'danger',
                     'Scroll Banished',
-                    'fa-solid fa-trash-can text-rose-400'
+                    'fa-solid fa-skull-crossbones text-rose-500'
                 );
+            } else {
+                this.toast.show('Failed to banish scroll from database', 'danger');
             }
         } catch (e) {
-            this.toast.show('Failed to delete scroll', 'danger');
+            this.toast.show('Network error while banishing scroll', 'danger');
         }
+    }
+
+    deleteActiveNote() {
+        this.openDeleteConfirmModal();
     }
 
     async selectNote(note) {
@@ -2151,7 +2274,6 @@ class NotenuxPanel {
 
     async deleteChunk(chunkId) {
         if (!this.activeNote) return;
-        if (!confirm('Are you sure you want to delete this memory shard?')) return;
 
         this.audio.playDelete();
         try {
