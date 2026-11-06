@@ -12,7 +12,10 @@ Route::prefix('api/notes')->group(function () {
     Route::put('/{note}', [NoteController::class, 'update'])->name('notes.update');
     Route::delete('/{note}', [NoteController::class, 'destroy'])->name('notes.destroy');
     Route::post('/{note}/pin', [NoteController::class, 'togglePin'])->name('notes.pin');
+    Route::post('/{note}/favorite', [NoteController::class, 'toggleFavorite'])->name('notes.favorite');
+    Route::post('/{note}/duplicate', [NoteController::class, 'duplicate'])->name('notes.duplicate');
     Route::get('/{note}/chunks', [NoteController::class, 'chunks'])->name('notes.chunks');
+    Route::get('/{note}/export/{format?}', [NoteController::class, 'export'])->name('notes.export');
 });
 
 Route::get('/api/player-stats', [NoteController::class, 'stats'])->name('api.stats');

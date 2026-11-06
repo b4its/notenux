@@ -163,6 +163,10 @@ class NoteChunkService
             return 'table';
         }
 
+        if (preg_match('/^[-*]\s+\[[ xX]\]/', $trimmed) || preg_match('/class=["\'][^"\']*task/i', $trimmed)) {
+            return 'task';
+        }
+
         if (preg_match('/^<(?:ul|ol|li)/i', $trimmed) || preg_match('/^[-*+]\s/', $trimmed) || preg_match('/^\d+\.\s/', $trimmed)) {
             return 'list';
         }

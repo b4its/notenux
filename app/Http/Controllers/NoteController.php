@@ -7,6 +7,8 @@ use App\Models\NoteChunk;
 use App\Services\NoteChunkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class NoteController extends Controller
@@ -20,7 +22,7 @@ class NoteController extends Controller
      */
     public function index(Request $request): View|JsonResponse
     {
-        $query = Note::withCount('chunks')->prioritized();
+        $query = Note::withCount('chunks');
 
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
@@ -37,6 +39,31 @@ class NoteController extends Controller
 
         if ($request->boolean('pinned_only')) {
             $query->where('is_pinned', true);
+        }
+
+        if ($request->boolean('favorites_only')) {
+            $query->where('is_favorite', true);
+        }
+
+        // Sorting
+        $sort = $request->input('sort', 'updated_desc');
+        switch ($sort) {
+            case 'title_asc':
+                $query->orderBy('is_pinned', 'desc')->orderBy('title', 'asc');
+                break;
+            case 'word_count_desc':
+                $query->orderBy('is_pinned', 'desc')->orderBy('word_count', 'desc');
+                break;
+            case 'level_desc':
+                $query->orderBy('is_pinned', 'desc')->orderBy('level', 'desc');
+                break;
+            case 'updated_asc':
+                $query->orderBy('is_pinned', 'desc')->orderBy('updated_at', 'asc');
+                break;
+            case 'updated_desc':
+            default:
+                $query->prioritized();
+                break;
         }
 
         $notes = $query->get();
@@ -70,7 +97,7 @@ class NoteController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:64'],
             'content' => ['nullable', 'string'],
-            'font_family' => ['nullable', 'string', 'in:pixel,sans,mono,serif'],
+            'font_family' => ['nullable', 'string', 'in:pixel,arcade,mono,sans,serif'],
             'font_size' => ['nullable', 'string', 'max:16'],
             'theme_color' => ['nullable', 'string', 'max:32'],
         ]);
@@ -115,7 +142,7 @@ class NoteController extends Controller
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'category' => ['sometimes', 'nullable', 'string', 'max:64'],
             'content' => ['sometimes', 'nullable', 'string'],
-            'font_family' => ['sometimes', 'string', 'in:pixel,sans,mono,serif'],
+            'font_family' => ['sometimes', 'string', 'in:pixel,arcade,mono,sans,serif'],
             'font_size' => ['sometimes', 'string', 'max:16'],
             'theme_color' => ['sometimes', 'string', 'max:32'],
             'is_pinned' => ['sometimes', 'boolean'],
@@ -162,6 +189,93 @@ class NoteController extends Controller
             'status' => 'success',
             'is_pinned' => $note->is_pinned,
             'message' => $note->is_pinned ? 'Scroll pinned to spellbook!' : 'Scroll unpinned.',
+        ]);
+    }
+
+    /**
+     * Toggle favorite state for bookmarking.
+     */
+    public function toggleFavorite(Note $note): JsonResponse
+    {
+        $note->is_favorite = ! $note->is_favorite;
+        $note->save();
+
+        return response()->json([
+            'status' => 'success',
+            'is_favorite' => $note->is_favorite,
+            'message' => $note->is_favorite ? 'Scroll marked as favorite!' : 'Scroll removed from favorites.',
+        ]);
+    }
+
+    /**
+     * Duplicate an existing note with all its contents.
+     */
+    public function duplicate(Note $note): JsonResponse
+    {
+        $clone = $note->replicate(['uuid']);
+        $clone->title = "{$note->title} (Copy)";
+        $clone->is_pinned = false;
+        $clone->save();
+
+        $this->chunkService->syncChunks($clone, $note->content);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Scroll duplicated as '{$clone->title}'!",
+            'data' => $clone->fresh()->load('chunks'),
+        ], 201);
+    }
+
+    /**
+     * Export note in Markdown (.md), Plain Text (.txt), or HTML (.html) format.
+     */
+    public function export(Note $note, string $format = 'md'): Response
+    {
+        $format = strtolower($format);
+        $filename = Str::slug($note->title) ?: 'scroll';
+
+        if ($format === 'txt') {
+            $text = "TITLE: {$note->title}\n";
+            $text .= "CATEGORY: {$note->category}\n";
+            $text .= "WORDS: {$note->word_count} | XP: {$note->xp}\n";
+            $text .= "UPDATED: {$note->updated_at}\n";
+            $text .= str_repeat('-', 40)."\n\n";
+            $text .= trim(strip_tags($note->content));
+
+            return response($text, 200, [
+                'Content-Type' => 'text/plain; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}.txt\"",
+            ]);
+        }
+
+        if ($format === 'html') {
+            $html = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{$note->title}</title>\n";
+            $html .= "<style>body{font-family:sans-serif;max-width:800px;margin:2rem auto;line-height:1.6;padding:1rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}</style>\n";
+            $html .= "</head>\n<body>\n<h1>{$note->title}</h1>\n{$note->content}\n</body>\n</html>";
+
+            return response($html, 200, [
+                'Content-Type' => 'text/html; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}.html\"",
+            ]);
+        }
+
+        // Default Markdown (.md)
+        $markdown = "# {$note->title}\n\n";
+        $markdown .= "> Category: {$note->category} | Level: {$note->level} | Word Count: {$note->word_count}\n\n";
+
+        $content = (string) ($note->content ?? '');
+        $content = preg_replace('/<h2>(.*?)<\/h2>/i', "## $1\n", $content);
+        $content = preg_replace('/<h3>(.*?)<\/h3>/i', "### $1\n", $content);
+        $content = preg_replace('/<p>(.*?)<\/p>/i', "$1\n\n", $content);
+        $content = preg_replace('/<strong>(.*?)<\/strong>/i', '**$1**', $content);
+        $content = preg_replace('/<em>(.*?)<\/em>/i', '*$1*', $content);
+        $content = preg_replace('/<blockquote>(.*?)<\/blockquote>/i', "> $1\n\n", $content);
+        $content = strip_tags($content);
+        $markdown .= trim($content)."\n";
+
+        return response($markdown, 200, [
+            'Content-Type' => 'text/markdown; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}.md\"",
         ]);
     }
 

@@ -1,0 +1,155 @@
+<?php
+
+use App\Models\Note;
+use App\Services\NoteChunkService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
+/*
+|--------------------------------------------------------------------------
+| WHITE BOX TESTING: Internal Logic, Edge Cases, Data Integrity & Methods
+|--------------------------------------------------------------------------
+*/
+
+test('white-box: chunk service handles empty or whitespace-only content', function () {
+    $service = new NoteChunkService;
+    $chunks = $service->splitIntoChunks('   ');
+
+    expect($chunks)->toHaveCount(1)
+        ->and($chunks[0]['chunk_uid'])->toStartWith('chk_')
+        ->and($chunks[0]['chunk_type'])->toBe('paragraph')
+        ->and($chunks[0]['content'])->toBe('');
+});
+
+test('white-box: chunk service detects all semantic block types including tables and tasks', function () {
+    $service = new NoteChunkService;
+
+    expect($service->detectChunkType('# Heading 1'))->toBe('heading')
+        ->and($service->detectChunkType('<h2>Subheading</h2>'))->toBe('heading')
+        ->and($service->detectChunkType('```python\nprint(1)\n```'))->toBe('code')
+        ->and($service->detectChunkType('<pre><code>code</code></pre>'))->toBe('code')
+        ->and($service->detectChunkType('> Wisdom from the void'))->toBe('quote')
+        ->and($service->detectChunkType('<blockquote>Arcane</blockquote>'))->toBe('quote')
+        ->and($service->detectChunkType('| Header 1 | Header 2 |'))->toBe('table')
+        ->and($service->detectChunkType('<table class="retro-table"><tr><td>Data</td></tr></table>'))->toBe('table')
+        ->and($service->detectChunkType('- [ ] Defeat the dragon'))->toBe('task')
+        ->and($service->detectChunkType('* [x] Brew health potion'))->toBe('task')
+        ->and($service->detectChunkType('<ul class="task-list"><li><input type="checkbox"> Test</li></ul>'))->toBe('task')
+        ->and($service->detectChunkType('- Normal item'))->toBe('list')
+        ->and($service->detectChunkType('1. Numbered item'))->toBe('list')
+        ->and($service->detectChunkType('<p>Plain narrative story text</p>'))->toBe('paragraph');
+});
+
+test('white-box: chunk service maintains exact checksum and byte size integrity', function () {
+    $service = new NoteChunkService;
+    $note = Note::factory()->create();
+
+    $content = '<h2>Arcane Checksum Test</h2><p>Data integrity is paramount for memory matrices.</p>';
+    $chunks = $service->syncChunks($note, $content);
+
+    foreach ($chunks as $chunk) {
+        expect($chunk->byte_size)->toBe(strlen($chunk->content))
+            ->and($chunk->checksum)->toBe(hash('sha256', $chunk->content));
+    }
+
+    $reassembled = $service->reassemble($note);
+    expect($reassembled)->toBe($content);
+});
+
+test('white-box: note model booted method auto-generates uuid if empty', function () {
+    $note = Note::create([
+        'title' => 'Test UUID Generation',
+        'content' => 'Sample content',
+    ]);
+
+    expect($note->uuid)->not->toBeEmpty()
+        ->and(Str::isUuid($note->uuid))->toBeTrue();
+});
+
+test('white-box: note reading time accessor handles varying word counts', function () {
+    $noteShort = Note::factory()->create(['word_count' => 50]);
+    $noteLong = Note::factory()->create(['word_count' => 600]);
+
+    expect($noteShort->reading_time)->toBe('1 min read')
+        ->and($noteLong->reading_time)->toBe('4 min read');
+});
+
+test('white-box: controller rejects invalid font family', function () {
+    $response = $this->postJson(route('notes.store'), [
+        'title' => 'Invalid Font Test',
+        'font_family' => 'comic-sans-unsupported',
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['font_family']);
+});
+
+test('white-box: controller rejects title exceeding max length', function () {
+    $response = $this->postJson(route('notes.store'), [
+        'title' => str_repeat('A', 300),
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['title']);
+});
+
+test('white-box: controller duplicate method clones note with fresh uuid and independent chunks', function () {
+    $original = Note::factory()->create(['title' => 'Spell of Fire', 'content' => '<p>Burn brightly</p>']);
+    $service = app(NoteChunkService::class);
+    $service->syncChunks($original, $original->content);
+
+    $response = $this->postJson(route('notes.duplicate', $original));
+
+    $response->assertCreated()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.title', 'Spell of Fire (Copy)');
+
+    $cloneId = $response->json('data.id');
+    $clone = Note::find($cloneId);
+
+    expect($clone)->not->toBeNull()
+        ->and($clone->id)->not->toBe($original->id)
+        ->and($clone->uuid)->not->toBe($original->uuid)
+        ->and($clone->chunks()->count())->toBe($original->chunks()->count());
+});
+
+test('white-box: controller toggleFavorite flips boolean status', function () {
+    $note = Note::factory()->create(['is_favorite' => false]);
+
+    $res1 = $this->postJson(route('notes.favorite', $note));
+    $res1->assertOk()->assertJsonPath('is_favorite', true);
+    expect($note->fresh()->is_favorite)->toBeTrue();
+
+    $res2 = $this->postJson(route('notes.favorite', $note));
+    $res2->assertOk()->assertJsonPath('is_favorite', false);
+    expect($note->fresh()->is_favorite)->toBeFalse();
+});
+
+test('white-box: controller exports markdown, txt, and html with correct headers', function () {
+    $note = Note::factory()->create([
+        'title' => 'Arcane Export Scroll',
+        'category' => 'spellbook',
+        'content' => '<h2>Spell</h2><p>Cast light.</p>',
+    ]);
+
+    // Markdown
+    $resMd = $this->get(route('notes.export', ['note' => $note, 'format' => 'md']));
+    $resMd->assertOk()
+        ->assertHeader('Content-Type', 'text/markdown; charset=UTF-8')
+        ->assertSee('# Arcane Export Scroll');
+
+    // Plain text
+    $resTxt = $this->get(route('notes.export', ['note' => $note, 'format' => 'txt']));
+    $resTxt->assertOk()
+        ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
+        ->assertSee('TITLE: Arcane Export Scroll');
+
+    // HTML
+    $resHtml = $this->get(route('notes.export', ['note' => $note, 'format' => 'html']));
+    $resHtml->assertOk()
+        ->assertHeader('Content-Type', 'text/html; charset=UTF-8')
+        ->assertSee('<!DOCTYPE html>', false)
+        ->assertSee('<h1>Arcane Export Scroll</h1>', false);
+});

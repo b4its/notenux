@@ -236,6 +236,11 @@ class MarkdownEngine {
         // Blockquotes
         html = html.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
 
+        // Task / Checklist items
+        html = html.replace(/^\s*[-*]\s+\[ \]\s+(.*)$/gim, '<ul class="task-list"><li><input type="checkbox"> $1</li></ul>');
+        html = html.replace(/^\s*[-*]\s+\[[xX]\]\s+(.*)$/gim, '<ul class="task-list"><li><input type="checkbox" checked> $1</li></ul>');
+        html = html.replace(/<\/ul>\s*<ul class="task-list">/gim, '');
+
         // Bold & Italic
         html = html.replace(/\*\*\*(.*?)\*\*\*/gim, '<strong><em>$1</em></strong>');
         html = html.replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>');
@@ -283,6 +288,7 @@ class NotenuxPanel {
         this.activeNote = null;
         this.activeCategory = 'all';
         this.searchQuery = '';
+        this.currentSort = 'updated_desc';
         this.saveTimeout = null;
         this.xpGainedSession = 0;
         this.currentZoom = 100;
@@ -309,12 +315,14 @@ class NotenuxPanel {
             // Explorer & List
             notesList: document.getElementById('notes-list'),
             searchInput: document.getElementById('search-notes-input'),
+            sortNotesSelect: document.getElementById('sort-notes-select'),
             newNoteBtn: document.getElementById('new-note-btn'),
             categoryPills: document.querySelectorAll('.category-filter-btn'),
             navCategoryLinks: document.querySelectorAll('.nav-category-link'),
 
             // Editor elements
             noteTitleInput: document.getElementById('note-title-input'),
+            noteCategorySelect: document.getElementById('note-category-select'),
             editorArea: document.getElementById('editor-content'),
             editorZoomWrapper: document.getElementById('editor-zoom-wrapper'),
             fontFamilySelect: document.getElementById('font-family-select'),
@@ -322,6 +330,11 @@ class NotenuxPanel {
             saveStatusText: document.getElementById('save-status-text'),
             saveNowBtn: document.getElementById('save-now-btn'),
             pinNoteBtn: document.getElementById('pin-note-btn'),
+            favoriteNoteBtn: document.getElementById('favorite-note-btn'),
+            duplicateNoteBtn: document.getElementById('duplicate-note-btn'),
+            exportNoteBtn: document.getElementById('export-note-btn'),
+            exportMenu: document.getElementById('export-menu'),
+            zenModeBtn: document.getElementById('zen-mode-btn'),
             deleteNoteBtn: document.getElementById('delete-note-btn'),
 
             // Zoom controls
@@ -330,8 +343,9 @@ class NotenuxPanel {
             zoomResetBtn: document.getElementById('zoom-reset-btn'),
             zoomLevelDisplay: document.getElementById('zoom-level-display'),
 
-            // Table & Markdown tools
+            // Table, Task & Markdown tools
             insertTableBtn: document.getElementById('insert-table-btn'),
+            insertTaskBtn: document.getElementById('insert-task-btn'),
             markdownPasteBtn: document.getElementById('markdown-paste-btn'),
 
             // Gamification stats
@@ -364,6 +378,7 @@ class NotenuxPanel {
         this.initEditorToolbar();
         this.initPasteInterceptor();
         this.bindEvents();
+        this.bindKeyboardShortcuts();
         this.loadNotesFromDOM();
         this.refreshPlayerStats();
     }
@@ -553,6 +568,24 @@ class NotenuxPanel {
         });
     }
 
+    /* ---------------- KEYBOARD SHORTCUTS ---------------- */
+    bindKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+S or Cmd+S -> Save/Inscribe
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                this.saveActiveNote(true);
+            }
+            // Escape -> Close Modals or Zen mode
+            if (e.key === 'Escape') {
+                this.closeChunkInspector();
+                if (document.body.classList.contains('zen-mode')) {
+                    this.toggleZenMode();
+                }
+            }
+        });
+    }
+
     /* ---------------- INITIAL DOM STATE ---------------- */
     loadNotesFromDOM() {
         const initialDataEl = document.getElementById('initial-notes-data');
@@ -582,6 +615,13 @@ class NotenuxPanel {
         this.dom.searchInput?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value.toLowerCase().trim();
             this.renderNotesList();
+        });
+
+        // Sort notes select
+        this.dom.sortNotesSelect?.addEventListener('change', (e) => {
+            this.currentSort = e.target.value;
+            this.renderNotesList();
+            this.toast.show(`Scrolls sorted by ${e.target.options[e.target.selectedIndex].text}`, 'info', 'Sorting');
         });
 
         // Category filter in explorer
@@ -621,6 +661,15 @@ class NotenuxPanel {
             this.scheduleAutoSave();
         });
 
+        // Note category select
+        this.dom.noteCategorySelect?.addEventListener('change', (e) => {
+            if (!this.activeNote) return;
+            this.activeNote.category = e.target.value;
+            this.updateActiveNoteInList();
+            this.scheduleAutoSave();
+            this.toast.show(`Scroll moved to category "${e.target.value.toUpperCase()}"`, 'info', 'Category');
+        });
+
         // Editor input
         this.dom.editorArea?.addEventListener('input', () => {
             this.handleEditorInput();
@@ -636,6 +685,41 @@ class NotenuxPanel {
             this.togglePinActiveNote();
         });
 
+        // Favorite Toggle
+        this.dom.favoriteNoteBtn?.addEventListener('click', () => {
+            this.toggleFavoriteActiveNote();
+        });
+
+        // Duplicate Note
+        this.dom.duplicateNoteBtn?.addEventListener('click', () => {
+            this.duplicateActiveNote();
+        });
+
+        // Export Dropdown
+        this.dom.exportNoteBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.dom.exportMenu?.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!this.dom.exportMenu?.contains(e.target) && e.target !== this.dom.exportNoteBtn) {
+                this.dom.exportMenu?.classList.add('hidden');
+            }
+        });
+
+        this.dom.exportMenu?.querySelectorAll('[data-export-format]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const format = btn.dataset.exportFormat || 'md';
+                this.exportActiveNote(format);
+                this.dom.exportMenu?.classList.add('hidden');
+            });
+        });
+
+        // Zen Mode Toggle
+        this.dom.zenModeBtn?.addEventListener('click', () => {
+            this.toggleZenMode();
+        });
+
         // Delete Note
         this.dom.deleteNoteBtn?.addEventListener('click', () => {
             this.deleteActiveNote();
@@ -645,6 +729,12 @@ class NotenuxPanel {
         this.dom.insertTableBtn?.addEventListener('click', (e) => {
             e.preventDefault();
             this.insertRetroTable();
+        });
+
+        // Task / Checklist Insertion
+        this.dom.insertTaskBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.insertInteractiveTask();
         });
 
         // Markdown Paste / Import modal button
@@ -827,6 +917,23 @@ class NotenuxPanel {
         this.toast.show('3x4 Retro Data Table inserted into editor', 'success', 'Table Added', 'fa-solid fa-table text-cyan-400');
     }
 
+    insertInteractiveTask() {
+        this.audio.playClick();
+        const taskHtml = `
+            <ul class="task-list my-2">
+                <li class="flex items-center gap-2">
+                    <input type="checkbox" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                    <span>New Quest Objective</span>
+                </li>
+            </ul>
+            <p><br></p>
+        `;
+        document.execCommand('insertHTML', false, taskHtml);
+        this.dom.editorArea.focus();
+        this.handleEditorInput();
+        this.toast.show('Interactive quest task item added', 'info', 'Checklist');
+    }
+
     promptMarkdownInput() {
         const mdText = prompt('Paste your raw Markdown (.md) here to convert into rich document:');
         if (mdText) {
@@ -835,6 +942,18 @@ class NotenuxPanel {
             this.handleEditorInput();
             this.toast.show('Markdown (.md) converted and inscribed!', 'success', 'Markdown Inscribed', 'fa-solid fa-file-code text-cyan-400');
         }
+    }
+
+    toggleZenMode() {
+        this.audio.playWarp();
+        document.body.classList.toggle('zen-mode');
+        const isZen = document.body.classList.contains('zen-mode');
+        this.toast.show(
+            isZen ? 'Distraction-Free Zen Writing Mode engaged. Press Zen button or ESC to exit.' : 'Exited Zen Writing Mode.',
+            'info',
+            'Studio Layout',
+            'fa-solid fa-expand text-purple-400'
+        );
     }
 
     applyFontFamily(font) {
@@ -933,6 +1052,7 @@ class NotenuxPanel {
                 font_size: this.activeNote.font_size || '16px',
                 theme_color: this.activeNote.theme_color || 'blue',
                 is_pinned: this.activeNote.is_pinned || false,
+                is_favorite: this.activeNote.is_favorite || false,
             };
 
             const response = await fetch(`/api/notes/${this.activeNote.id}`, {
@@ -953,7 +1073,7 @@ class NotenuxPanel {
                 }
 
                 if (this.dom.saveStatusText) {
-                    this.dom.saveStatusText.innerHTML = '<span class="text-emerald-500"><i class="fa-solid fa-check mr-1"></i> Inscribed & Chunked</span>';
+                    this.dom.saveStatusText.innerHTML = '<span class="text-emerald-500"><i class="fa-solid fa-check mr-1"></i> Synchronized</span>';
                 }
 
                 this.renderNotesList();
@@ -1056,6 +1176,77 @@ class NotenuxPanel {
         }
     }
 
+    async toggleFavoriteActiveNote() {
+        if (!this.activeNote) return;
+        this.audio.playClick();
+
+        try {
+            const response = await fetch(`/api/notes/${this.activeNote.id}/favorite`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                this.activeNote.is_favorite = data.is_favorite;
+                this.updateFavoriteButtonUI();
+                this.renderNotesList();
+
+                this.toast.show(
+                    this.activeNote.is_favorite ? 'Scroll saved to bookmarks!' : 'Scroll removed from favorites',
+                    'info',
+                    'Favorite',
+                    'fa-solid fa-star text-amber-400'
+                );
+            }
+        } catch (e) {
+            this.toast.show('Error updating favorite status', 'danger');
+        }
+    }
+
+    async duplicateActiveNote() {
+        if (!this.activeNote) return;
+        this.audio.playCoin();
+
+        try {
+            const response = await fetch(`/api/notes/${this.activeNote.id}/duplicate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+            if (response.ok && data.status === 'success') {
+                const clone = data.data;
+                this.notes.unshift(clone);
+                this.renderNotesList();
+                this.selectNote(clone);
+                this.refreshPlayerStats();
+
+                this.toast.show(
+                    `Scroll duplicated as "${clone.title}"`,
+                    'success',
+                    'Scroll Cloned',
+                    'fa-solid fa-copy text-cyan-400'
+                );
+            }
+        } catch (e) {
+            this.toast.show('Failed to duplicate scroll', 'danger');
+        }
+    }
+
+    exportActiveNote(format) {
+        if (!this.activeNote) return;
+        this.audio.playCoin();
+        window.open(`/api/notes/${this.activeNote.id}/export/${format}`, '_blank');
+        this.toast.show(`Exporting scroll as .${format.toUpperCase()}`, 'info', 'Export Started', 'fa-solid fa-download text-blue-400');
+    }
+
     async deleteActiveNote() {
         if (!this.activeNote) return;
         if (!confirm(`Are you sure you want to banish scroll "${this.activeNote.title}" to the digital void?`)) {
@@ -1114,6 +1305,10 @@ class NotenuxPanel {
             this.dom.noteTitleInput.value = note.title;
         }
 
+        if (this.dom.noteCategorySelect) {
+            this.dom.noteCategorySelect.value = note.category || 'quest';
+        }
+
         if (this.dom.editorArea) {
             this.dom.editorArea.innerHTML = note.content || '';
         }
@@ -1128,6 +1323,7 @@ class NotenuxPanel {
         this.applyFontSize(size);
         this.updateWordAndCharMetrics();
         this.updatePinButtonUI();
+        this.updateFavoriteButtonUI();
 
         if (this.dom.chunkCountBadge) {
             const count = note.chunks ? note.chunks.length : (note.chunks_count || 1);
@@ -1152,11 +1348,22 @@ class NotenuxPanel {
         }
     }
 
+    updateFavoriteButtonUI() {
+        if (!this.dom.favoriteNoteBtn || !this.activeNote) return;
+        if (this.activeNote.is_favorite) {
+            this.dom.favoriteNoteBtn.innerHTML = '<i class="fa-solid fa-star text-amber-400"></i>';
+            this.dom.favoriteNoteBtn.title = 'Remove Favorite';
+        } else {
+            this.dom.favoriteNoteBtn.innerHTML = '<i class="fa-regular fa-star text-amber-400"></i>';
+            this.dom.favoriteNoteBtn.title = 'Add to Favorites';
+        }
+    }
+
     /* ---------------- RENDER NOTES LIST ---------------- */
     renderNotesList() {
         if (!this.dom.notesList) return;
 
-        let filtered = this.notes;
+        let filtered = [...this.notes];
 
         if (this.activeCategory !== 'all') {
             filtered = filtered.filter(n => n.category === this.activeCategory);
@@ -1169,11 +1376,25 @@ class NotenuxPanel {
             );
         }
 
-        // Sort: pinned first, then newest updated
+        // Apply sorting
         filtered.sort((a, b) => {
+            // Pinned notes always on top first
             if (a.is_pinned && !b.is_pinned) return -1;
             if (!a.is_pinned && b.is_pinned) return 1;
-            return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+
+            switch (this.currentSort) {
+                case 'title_asc':
+                    return a.title.localeCompare(b.title);
+                case 'word_count_desc':
+                    return (b.word_count || 0) - (a.word_count || 0);
+                case 'level_desc':
+                    return (b.level || 1) - (a.level || 1);
+                case 'updated_asc':
+                    return new Date(a.updated_at || 0) - new Date(b.updated_at || 0);
+                case 'updated_desc':
+                default:
+                    return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+            }
         });
 
         if (filtered.length === 0) {
@@ -1202,6 +1423,7 @@ class NotenuxPanel {
                     <div class="flex items-center justify-between gap-1 mb-1">
                         <div class="flex items-center gap-1.5 overflow-hidden">
                             ${note.is_pinned ? '<i title="Pinned Scroll" class="fa-solid fa-thumbtack text-amber-400 text-xs shrink-0"></i>' : ''}
+                            ${note.is_favorite ? '<i title="Favorite Scroll" class="fa-solid fa-star text-amber-400 text-xs shrink-0"></i>' : ''}
                             <h4 class="font-bold text-sm truncate ${isActive ? 'text-white' : 'text-main'}">
                                 ${this.escapeHtml(note.title)}
                             </h4>
