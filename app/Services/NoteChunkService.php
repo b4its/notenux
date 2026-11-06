@@ -345,6 +345,6 @@ class NoteChunkService
             'char_count' => $charCount,
             'xp' => $xp,
             'level' => $level,
-        ])->save();
+        ])->saveQuietly();
     }
 }

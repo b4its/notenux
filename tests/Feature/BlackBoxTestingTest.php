@@ -323,3 +323,34 @@ test('black-box: user reorders shards via api and verify new indices', function 
     $newOrderChunks = $response->json('data.chunks');
     expect($newOrderChunks[0]['id'])->toBe($reversedIds[0]);
 });
+
+test('black-box: system avoids excessive data load on list while seamlessly delivering full content and chunks on demand', function () {
+    $note = Note::factory()->create([
+        'title' => 'Performance Partitioned Scroll',
+        'content' => '<h2>Performance Test</h2><p>Content loaded on-demand to preserve low memory footprint.</p>',
+    ]);
+    app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    // 1. List query does not transmit monolithic content
+    $listRes = $this->getJson('/api/notes');
+    $listRes->assertOk();
+    $found = collect($listRes->json('data'))->firstWhere('id', $note->id);
+    expect($found)->not->toBeNull()
+        ->and(array_key_exists('content', $found))->toBeFalse();
+
+    // 2. Fetching individual note delivers complete content and its chunks
+    $singleRes = $this->getJson("/api/notes/{$note->id}");
+    $singleRes->assertOk()
+        ->assertJsonPath('data.title', 'Performance Partitioned Scroll')
+        ->assertJsonStructure([
+            'status',
+            'data' => [
+                'id',
+                'title',
+                'content',
+                'chunks' => [
+                    '*' => ['id', 'chunk_uid', 'chunk_index', 'chunk_type', 'byte_size', 'checksum'],
+                ],
+            ],
+        ]);
+});

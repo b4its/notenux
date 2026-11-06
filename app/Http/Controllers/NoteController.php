@@ -19,10 +19,27 @@ class NoteController extends Controller
 
     /**
      * Display the main panel or return notes list as JSON.
+     * Prevents excessive data loading by omitting heavy content on index queries.
      */
     public function index(Request $request): View|JsonResponse
     {
-        $query = Note::withCount('chunks');
+        $query = Note::select([
+            'id',
+            'uuid',
+            'title',
+            'category',
+            'font_family',
+            'font_size',
+            'theme_color',
+            'word_count',
+            'char_count',
+            'is_pinned',
+            'is_favorite',
+            'level',
+            'xp',
+            'created_at',
+            'updated_at',
+        ])->withCount('chunks');
 
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
@@ -78,7 +95,7 @@ class NoteController extends Controller
         $stats = $this->calculateStats();
         $initialNote = $notes->first();
         if ($initialNote) {
-            $initialNote->load('chunks');
+            $initialNote = Note::with('chunks')->find($initialNote->id);
         }
 
         return view('panel', [

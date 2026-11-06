@@ -1052,6 +1052,9 @@ class NotenuxPanel {
 
         if (this.notes.length > 0) {
             this.activeNote = this.notes.find(n => n.id === activeId) || this.notes[0];
+            if (this.dom.editorArea && (!this.activeNote.content || this.activeNote.content === '')) {
+                this.activeNote.content = this.dom.editorArea.innerHTML;
+            }
             this.renderNotesList();
             this.loadNoteIntoEditor(this.activeNote);
         } else {
@@ -1815,11 +1818,29 @@ class NotenuxPanel {
         }
     }
 
-    selectNote(note) {
+    async selectNote(note) {
         this.audio.playBlip();
         this.activeNote = note;
-        this.loadNoteIntoEditor(note);
         this.renderNotesList();
+
+        // If content is not yet in memory (due to optimized lightweight list queries), fetch on demand
+        if (note.content === undefined || note.content === null) {
+            try {
+                const response = await fetch(`/api/notes/${note.id}`);
+                const data = await response.json();
+                if (response.ok && data.data) {
+                    this.activeNote = data.data;
+                    const idx = this.notes.findIndex(n => n.id === note.id);
+                    if (idx !== -1) {
+                        this.notes[idx] = data.data;
+                    }
+                }
+            } catch (e) {
+                // Fallback
+            }
+        }
+
+        this.loadNoteIntoEditor(this.activeNote);
         if (window.innerWidth < 1024) {
             this.closeMobileDrawers();
         }
@@ -2066,50 +2087,27 @@ class NotenuxPanel {
         if (!this.dom.chunkModalContent) return;
 
         this.dom.chunkModalContent.innerHTML = chunks.map((chunk, index) => `
-            <div data-chunk-id="${chunk.id}" class="chunk-card p-3 mb-3 border-2 border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-slate-900/90 rounded-lg font-mono text-xs shadow-[2px_2px_0px_#000]">
+            <div data-chunk-id="${chunk.id}" class="chunk-card p-3 mb-2.5 border-2 border-blue-400 dark:border-blue-700 bg-blue-50 dark:bg-slate-900/90 rounded-lg font-mono text-xs shadow-[2px_2px_0px_#000]">
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b border-blue-200 dark:border-blue-800 pb-2 mb-2">
                     <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class="bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded text-[10px]">#${chunk.chunk_index}</span>
-                        <span class="text-cyan-600 dark:text-cyan-400 font-bold">${this.escapeHtml(chunk.chunk_uid)}</span>
+                        <span class="bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded text-[10px]">SHARD #${chunk.chunk_index}</span>
+                        <code class="text-cyan-600 dark:text-cyan-400 font-bold">${this.escapeHtml(chunk.chunk_uid)}</code>
                         <button onclick="window.notenux.copyChunkUid('${chunk.chunk_uid}')"
                                 class="arcade-btn bg-surface px-1.5 py-0.5 text-[9px] rounded hover:bg-cyan-200"
-                                title="Copy Chunk UID">
-                            <i class="fa-solid fa-copy"></i>
-                        </button>
-                        <button onclick="window.notenux.moveChunk(${index}, -1)"
-                                class="arcade-btn bg-surface px-1.5 py-0.5 text-[9px] rounded hover:bg-cyan-200"
-                                title="Move Shard Up">
-                            <i class="fa-solid fa-chevron-up"></i>
-                        </button>
-                        <button onclick="window.notenux.moveChunk(${index}, 1)"
-                                class="arcade-btn bg-surface px-1.5 py-0.5 text-[9px] rounded hover:bg-cyan-200"
-                                title="Move Shard Down">
-                            <i class="fa-solid fa-chevron-down"></i>
+                                title="Copy Chunk Identity Key">
+                            <i class="fa-solid fa-copy mr-1"></i> COPY UID
                         </button>
                     </div>
                     <div class="flex items-center gap-2 text-[11px] opacity-75">
-                        <span class="bg-slate-200 dark:bg-slate-800 px-1 rounded uppercase">${chunk.chunk_type}</span>
+                        <span class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded uppercase font-bold text-blue-600 dark:text-cyan-300">${chunk.chunk_type}</span>
                         <span>${chunk.byte_size} bytes</span>
-                        <button onclick="window.notenux.toggleChunkEditor(${chunk.id})" class="arcade-btn bg-surface px-2 py-0.5 text-[10px] rounded hover:bg-blue-300">
-                            <i class="fa-solid fa-pen-to-square"></i> Edit
-                        </button>
-                        <button onclick="window.notenux.deleteChunk(${chunk.id})" class="arcade-btn bg-red-600 text-white px-2 py-0.5 text-[10px] rounded hover:bg-red-500" title="Delete Shard">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
                     </div>
                 </div>
-                <div class="text-[11px] text-gray-500 dark:text-gray-400 truncate mb-1">
-                    SHA-256: <span class="font-mono">${chunk.checksum || 'N/A'}</span>
+                <div class="text-[10px] text-gray-500 dark:text-gray-400 truncate mb-1">
+                    SHA-256 Checksum: <span class="font-mono text-cyan-600 dark:text-cyan-400">${chunk.checksum || 'N/A'}</span>
                 </div>
-                <div id="chunk-view-${chunk.id}" class="bg-white dark:bg-black/50 p-2 rounded border border-gray-300 dark:border-gray-800 max-h-24 overflow-y-auto text-main text-[11px] whitespace-pre-wrap">
+                <div id="chunk-view-${chunk.id}" class="bg-white dark:bg-black/50 p-2.5 rounded border border-gray-300 dark:border-gray-800 max-h-28 overflow-y-auto text-main text-[11px] whitespace-pre-wrap leading-relaxed">
                     ${this.escapeHtml(chunk.content)}
-                </div>
-                <div id="chunk-edit-${chunk.id}" class="hidden mt-2">
-                    <textarea class="w-full p-2 bg-white dark:bg-black/80 border border-blue-500 rounded text-[11px] font-mono text-main leading-relaxed" rows="3">${this.escapeHtml(chunk.content)}</textarea>
-                    <div class="flex justify-end gap-2 mt-1">
-                        <button onclick="window.notenux.toggleChunkEditor(${chunk.id})" class="arcade-btn bg-surface px-2 py-0.5 text-[10px] rounded">Cancel</button>
-                        <button onclick="window.notenux.saveIndividualChunk(${chunk.id})" class="arcade-btn bg-emerald-600 text-white px-2 py-0.5 text-[10px] rounded">Save Shard</button>
-                    </div>
                 </div>
             </div>
         `).join('');

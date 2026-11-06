@@ -704,8 +704,8 @@
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-cubes text-xl"></i>
                     <div>
-                        <h3 class="font-pixel text-xs sm:text-sm tracking-wider">DATABASE CHUNK INSPECTOR</h3>
-                        <p class="text-[10px] font-mono text-cyan-200">Identity-backed chunked text storage telemetry & cryptographic verification</p>
+                        <h3 class="font-pixel text-xs sm:text-sm tracking-wider">DATABASE CHUNK TELEMETRY</h3>
+                        <p class="text-[10px] font-mono text-cyan-200">Otomatis dipartisi di backend untuk performa & pencegahan overload memori</p>
                     </div>
                 </div>
                 <button id="chunk-modal-close" class="arcade-btn bg-black text-white hover:bg-gray-800 px-2.5 py-1 rounded text-xs font-mono">
@@ -719,9 +719,9 @@
                     <span id="chunk-modal-count" class="font-bold text-blue-600 dark:text-cyan-400">Loading chunks...</span>
                     <span id="chunk-modal-bytes" class="opacity-75">0 Bytes</span>
                 </div>
-                <button id="verify-chunks-btn" class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-0.5 rounded text-[11px] font-mono">
-                    <i class="fa-solid fa-shield-halved mr-1"></i> VERIFY INTEGRITY
-                </button>
+                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                    <i class="fa-solid fa-bolt mr-1"></i> Auto-Chunked Backend Performance
+                </span>
             </div>
 
             <!-- Integrity status alert banner -->
@@ -734,9 +734,9 @@
 
             <!-- Modal Footer -->
             <div class="p-3 border-t-2 border-black dark:border-blue-800 bg-surface-alt flex items-center justify-between text-[11px] font-mono">
-                <span class="opacity-80">Each chunk has a unique database key: <code class="text-cyan-600 dark:text-cyan-400">chunk_uid</code></span>
+                <span class="opacity-80">Setiap chunk memiliki identitas unik: <code class="text-cyan-600 dark:text-cyan-400">chunk_uid</code></span>
                 <button onclick="window.notenux.closeChunkInspector()" class="arcade-btn bg-blue-600 text-white px-3 py-1 rounded text-xs">
-                    GOT IT
+                    TUTUP
                 </button>
             </div>
         </div>

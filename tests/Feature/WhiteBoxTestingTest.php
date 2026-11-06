@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Note;
+use App\Models\NoteChunk;
 use App\Services\NoteChunkService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -268,4 +269,43 @@ test('white-box: chunk service reorderChunks updates indexes and reassembles par
 
     $refreshed = $note->fresh();
     expect($refreshed->content)->toBe($service->reassemble($refreshed));
+});
+
+test('white-box: index query optimizes performance by omitting heavy content column on list view', function () {
+    $note = Note::factory()->create([
+        'title' => 'Heavy Lore Scroll',
+        'content' => str_repeat('<p>Massive ancient data payload.</p>', 40),
+    ]);
+    app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    $response = $this->getJson(route('notes.index'));
+    $response->assertOk();
+
+    $data = $response->json('data');
+    expect($data)->not->toBeEmpty();
+
+    $first = $data[0];
+    expect(array_key_exists('content', $first))->toBeFalse()
+        ->and(array_key_exists('title', $first))->toBeTrue()
+        ->and(array_key_exists('chunks_count', $first))->toBeTrue();
+});
+
+test('white-box: backend automatically chunks text and assigns unique chunk_uid on store', function () {
+    $response = $this->postJson(route('notes.store'), [
+        'title' => 'Auto Chunked Note',
+        'content' => '<h2>Chapter 1</h2><p>Auto-partitioned text segment in database.</p>',
+        'category' => 'quest',
+    ]);
+
+    $response->assertStatus(201);
+    $noteId = $response->json('data.id');
+
+    $chunks = NoteChunk::where('note_id', $noteId)->get();
+    expect($chunks->count())->toBeGreaterThan(0);
+
+    foreach ($chunks as $chunk) {
+        expect($chunk->chunk_uid)->toStartWith('chk_')
+            ->and($chunk->byte_size)->toBeGreaterThan(0)
+            ->and($chunk->checksum)->not->toBeNull();
+    }
 });
