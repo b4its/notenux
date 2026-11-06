@@ -3,6 +3,9 @@
 use App\Models\Note;
 use App\Models\NoteChunk;
 use App\Services\NoteChunkService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 test('it chunks large content into multiple identifiable segments', function () {
     $service = new NoteChunkService;
