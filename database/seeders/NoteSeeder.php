@@ -17,7 +17,7 @@ class NoteSeeder extends Seeder
 
         $initialNotes = [
             [
-                'title' => '⚔️ Main Quest: Awakening the Retro Matrix',
+                'title' => 'Main Quest: Awakening the Retro Matrix',
                 'category' => 'quest',
                 'font_family' => 'pixel',
                 'font_size' => '16px',
@@ -25,21 +25,22 @@ class NoteSeeder extends Seeder
                 'is_pinned' => true,
                 'is_favorite' => true,
                 'content' => <<<'HTML'
-<h2>⚔️ Mission Briefing: Act I</h2>
+<h2>Mission Briefing: Act I</h2>
 <p>Greetings, Hero! You have entered the sacred <strong>Notenux Terminal</strong>. Your quest is to document the knowledge of ancient realms and level up your chronicler stats.</p>
 <blockquote>"The pen is mightier than the pixel sword, but together they forge legend." — Grand Scribe Maelor</blockquote>
 <h3>Objective Checklist:</h3>
 <ul>
-<li>Explore the interactive collapsible sidebar</li>
+<li>Explore the interactive dual sidebar architecture</li>
 <li>Toggle between Retro Dark Theme and Arcade Light Theme</li>
-<li>Customize your typography, font families, and sizing</li>
+<li>Paste markdown (.md), tables, and structured text directly</li>
+<li>Use Zoom In and Zoom Out controls to adjust reading scale</li>
 <li>Inspect database chunks with distinct identity keys</li>
 </ul>
 <p>Each word you scribe awards <strong>+3 XP</strong>. Reach Level 5 to unlock the Legendary Master Scribe title!</p>
 HTML,
             ],
             [
-                'title' => '📜 Spellbook: Arcane CSS Grid & 8-Bit Flexbox',
+                'title' => 'Spellbook: Arcane CSS Grid & 8-Bit Flexbox',
                 'category' => 'spellbook',
                 'font_family' => 'mono',
                 'font_size' => '15px',
@@ -47,7 +48,7 @@ HTML,
                 'is_pinned' => true,
                 'is_favorite' => false,
                 'content' => <<<'HTML'
-<h2>🔮 Chapter IV: The Grid Summoning</h2>
+<h2>Chapter IV: The Grid Summoning</h2>
 <p>When battling distorted layout anomalies, invoke the ancient grid containment spell:</p>
 <pre><code>.retro-arcade-grid {
     display: grid;
@@ -59,7 +60,7 @@ HTML,
 HTML,
             ],
             [
-                'title' => '👾 Boss Raid Strategy: Memory Leak Goblin',
+                'title' => 'Boss Raid Strategy: Memory Leak Goblin',
                 'category' => 'strategy',
                 'font_family' => 'sans',
                 'font_size' => '16px',
@@ -67,18 +68,39 @@ HTML,
                 'is_pinned' => false,
                 'is_favorite' => true,
                 'content' => <<<'HTML'
-<h2>🛡️ Tactical Raid Plan: Level 42 Dungeon</h2>
+<h2>Tactical Raid Plan: Level 42 Dungeon</h2>
 <p>The Memory Leak Goblin lurks in unclosed event listeners and orphaned WebSocket subscriptions. Here is how our vanguard party defeats it:</p>
-<ol>
-<li><strong>Phase 1:</strong> Always register <code>abortController</code> signals on network probes.</li>
-<li><strong>Phase 2:</strong> Store long document bodies in chunked identity databases to prevent massive memory re-allocations.</li>
-<li><strong>Phase 3:</strong> Clean up intervals and timers on component unmount.</li>
-</ol>
+<table class="retro-table">
+    <thead>
+        <tr>
+            <th>Raid Phase</th>
+            <th>Vanguard Tactic</th>
+            <th>Expected Loot</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Phase 1</td>
+            <td>Register AbortController on network probes</td>
+            <td>50 XP</td>
+        </tr>
+        <tr>
+            <td>Phase 2</td>
+            <td>Store document bodies in chunked identity DB</td>
+            <td>200 XP</td>
+        </tr>
+        <tr>
+            <td>Phase 3</td>
+            <td>Clear timer intervals on component unmount</td>
+            <td>Mythic Low-Latency Ring</td>
+        </tr>
+    </tbody>
+</table>
 <p>Loot reward: <strong>+450 XP</strong>, Mythic Ring of Low Latency.</p>
 HTML,
             ],
             [
-                'title' => '🌌 Adventurer Lore: Sanctuary of Blue Neon',
+                'title' => 'Adventurer Lore: Sanctuary of Blue Neon',
                 'category' => 'lore',
                 'font_family' => 'serif',
                 'font_size' => '17px',
@@ -86,7 +108,7 @@ HTML,
                 'is_pinned' => false,
                 'is_favorite' => false,
                 'content' => <<<'HTML'
-<h2>💠 Chronicles of the Cobalt Citadel</h2>
+<h2>Chronicles of the Cobalt Citadel</h2>
 <p>Deep within the digital biosphere stands the <strong>Sanctuary of Blue Neon</strong>. Lit by sapphire phosphor tubes, it preserves timeless ideas across infinite revisions.</p>
 <p>Scholars believe the database chunking algorithm was discovered here—allowing boundless manuscripts to be fragmented into distinct crystalline shards, each tagged with its own immortal identity.</p>
 HTML,

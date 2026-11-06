@@ -32,6 +32,8 @@ test('it detects semantic block types correctly', function () {
         ->and($service->detectChunkType('```js console.log() ```'))->toBe('code')
         ->and($service->detectChunkType('<blockquote>Arcane wisdom</blockquote>'))->toBe('quote')
         ->and($service->detectChunkType('<ul><li>item 1</li></ul>'))->toBe('list')
+        ->and($service->detectChunkType('<table class="retro-table"><tr><td>Data</td></tr></table>'))->toBe('table')
+        ->and($service->detectChunkType('| col 1 | col 2 |'))->toBe('table')
         ->and($service->detectChunkType('<p>Plain narrative story text</p>'))->toBe('paragraph');
 });
 

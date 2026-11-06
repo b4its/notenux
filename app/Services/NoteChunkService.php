@@ -159,6 +159,10 @@ class NoteChunkService
             return 'quote';
         }
 
+        if (preg_match('/^<table/i', $trimmed) || preg_match('/^\|.*\|/', $trimmed)) {
+            return 'table';
+        }
+
         if (preg_match('/^<(?:ul|ol|li)/i', $trimmed) || preg_match('/^[-*+]\s/', $trimmed) || preg_match('/^\d+\.\s/', $trimmed)) {
             return 'list';
         }

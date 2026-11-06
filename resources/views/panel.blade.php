@@ -7,6 +7,9 @@
 
     <title>{{ config('app.name', 'Notenux') }} - Retro Gamified Notes Panel</title>
 
+    <!-- Font Awesome 6 Free CDN for all icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
     <!-- Google Fonts for Retro Gamification & Multi-Font Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,151 +18,242 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
-        /* Sidebar collapse behavior for desktop */
-        #notenux-sidebar.collapsed {
-            width: 76px;
+        /* Primary Nav Sidebar Collapse */
+        #primary-nav-sidebar.collapsed {
+            width: 72px;
         }
-        #notenux-sidebar.collapsed .sidebar-full-content {
-            display: none;
+        #primary-nav-sidebar.collapsed .nav-text-label,
+        #primary-nav-sidebar.collapsed .nav-hide-on-collapse {
+            display: none !important;
         }
-        #notenux-sidebar.collapsed .sidebar-collapsed-content {
-            display: flex;
-        }
-        .sidebar-collapsed-content {
-            display: none;
+
+        /* Notes Explorer Sidebar Collapse */
+        #notes-explorer-sidebar.collapsed {
+            width: 0px !important;
+            min-width: 0px !important;
+            padding: 0px !important;
+            margin: 0px !important;
+            border-right: none !important;
+            overflow: hidden !important;
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
-<body class="retro-crt-screen bg-[var(--bg-main)] text-[var(--text-main)] min-h-screen font-sans flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+<body class="retro-crt-screen bg-[var(--bg-main)] text-[var(--text-main)] min-h-screen font-sans flex flex-col antialiased selection:bg-blue-600 selection:text-white overflow-hidden">
+
+    <!-- Top-Right Retro Notification Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
     <!-- Top Navigation Bar (Retro Console Header) -->
-    <header class="sticky top-0 z-30 bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-3 py-2.5 sm:px-6">
+    <header class="shrink-0 bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-3 py-2.5 sm:px-6 z-30">
         <div class="flex items-center justify-between gap-2 max-w-7xl mx-auto">
-            <!-- Left Branding & Mobile Drawer Toggle -->
+            <!-- Left Branding & Dual-Sidebar Mobile Triggers -->
             <div class="flex items-center gap-2 sm:gap-3">
-                <!-- Mobile Menu Button -->
-                <button id="mobile-toggle-btn"
+                <!-- Mobile Primary Nav Toggle -->
+                <button id="mobile-nav-toggle-btn"
                         class="lg:hidden arcade-btn bg-blue-600 text-white p-2 rounded text-xs"
-                        aria-label="Toggle Navigation Drawer">
-                    ☰
+                        aria-label="Toggle Primary Navigation Drawer">
+                    <i class="fa-solid fa-bars"></i>
                 </button>
 
-                <!-- Desktop Sidebar Toggle Button -->
-                <button id="sidebar-toggle-btn"
+                <!-- Mobile Scroll Explorer Toggle -->
+                <button id="mobile-explorer-toggle-btn"
+                        class="lg:hidden arcade-btn bg-cyan-600 text-white p-2 rounded text-xs"
+                        aria-label="Toggle Scroll Explorer Drawer">
+                    <i class="fa-solid fa-folder-open"></i>
+                </button>
+
+                <!-- Desktop Primary Sidebar Toggle -->
+                <button id="primary-sidebar-toggle-btn"
                         class="hidden lg:inline-flex arcade-btn bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-xs"
-                        title="Toggle Collapsible Sidebar">
-                    ⏪
+                        title="Toggle Primary Navigation Sidebar">
+                    <i class="fa-solid fa-arrows-left-right-to-line"></i>
+                </button>
+
+                <!-- Desktop Notes Explorer Toggle -->
+                <button id="explorer-toggle-btn"
+                        class="hidden lg:inline-flex arcade-btn bg-cyan-700 hover:bg-cyan-600 text-white p-2 rounded text-xs"
+                        title="Toggle Scroll Explorer Sidebar">
+                    <i class="fa-solid fa-table-columns"></i>
                 </button>
 
                 <!-- Logo & Brand Badge -->
                 <div class="flex items-center gap-2">
-                    <span class="text-xl sm:text-2xl filter drop-shadow-[2px_2px_0px_#000]">👾</span>
+                    <i class="fa-solid fa-gamepad text-xl sm:text-2xl text-blue-600 dark:text-cyan-400"></i>
                     <div>
                         <div class="flex items-center gap-1.5">
                             <span class="font-pixel text-xs sm:text-sm text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
-                            <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase">v2.0 CHUNK-DB</span>
+                            <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase">v2.5 DUAL-BAR</span>
                         </div>
                         <p class="text-[10px] font-mono opacity-60 hidden sm:block">Retro Gamified Markdown & Memory Shard Matrix</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Controls: Audio SFX, Theme Switcher, Quick Stats -->
+            <!-- Right Controls: Audio SFX, Theme Switcher, DB Chunks -->
             <div class="flex items-center gap-2 sm:gap-3">
                 <!-- Sound Synthesizer SFX Button -->
                 <button id="sound-toggle-btn"
                         class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle 8-bit Audio Synthesizer">
-                    🔊 <span class="hidden sm:inline">SFX: ON</span>
+                    <i class="fa-solid fa-volume-high text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
                 </button>
 
                 <!-- Light / Dark Theme Switcher -->
                 <button id="theme-toggle-btn"
                         class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle Light / Dark Mode">
-                    🌙 <span class="hidden sm:inline">NIGHT</span>
+                    <i class="fa-solid fa-moon text-cyan-300 mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>
                 </button>
 
                 <!-- Database Chunk Inspector Trigger -->
                 <button id="inspect-chunks-btn"
                         class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Inspect Live Database Chunks & Shard Keys">
-                    📦 <span class="hidden md:inline">DB CHUNKS</span>
+                    <i class="fa-solid fa-cubes mr-1.5"></i> <span class="hidden md:inline">DB CHUNKS</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Workspace Container -->
+    <!-- Main Multi-Sidebar Workspace Container -->
     <div class="flex-1 flex overflow-hidden relative">
 
-        <!-- Mobile Sidebar Backdrop Overlay -->
+        <!-- Mobile Backdrop Overlay -->
         <div id="sidebar-overlay"
              class="fixed inset-0 bg-black/60 backdrop-blur-xs z-35 hidden lg:hidden transition-opacity"></div>
 
         <!-- ============================================================================== -->
-        <!-- INTERACTIVE COLLAPSIBLE SIDEBAR -->
+        <!-- SIDEBAR 1: PRIMARY NAVIGATION & PLAYER PROFILE SIDEBAR -->
         <!-- ============================================================================== -->
-        <aside id="notenux-sidebar"
-               class="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-80 shrink-0 bg-[var(--bg-surface)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0">
+        <aside id="primary-nav-sidebar"
+               class="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-64 shrink-0 bg-[var(--bg-surface)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0">
 
-            <!-- Full Sidebar Mode Content -->
-            <div class="sidebar-full-content flex-1 flex flex-col overflow-hidden p-3.5">
+            <div class="p-3 border-b-2 border-black/10 dark:border-white/10 flex items-center justify-between lg:hidden">
+                <span class="font-pixel text-[11px] text-blue-500">
+                    <i class="fa-solid fa-compass mr-1"></i> NAVIGATION
+                </span>
+                <button id="close-mobile-nav-btn" class="arcade-btn bg-red-600 text-white text-xs px-2 py-1 rounded">
+                    <i class="fa-solid fa-xmark mr-1"></i> CLOSE
+                </button>
+            </div>
 
-                <!-- Header in Sidebar (Mobile Close Button) -->
-                <div class="flex items-center justify-between pb-3 mb-3 border-b-2 border-dashed border-blue-500/30 lg:hidden">
-                    <span class="font-pixel text-[11px] text-blue-500">QUEST DIRECTORY</span>
-                    <button id="close-sidebar-btn" class="arcade-btn bg-red-600 text-white text-xs px-2 py-1 rounded">
-                        ✖ CLOSE
-                    </button>
-                </div>
-
-                <!-- Player Gamification Status Card -->
-                <div class="arcade-card p-3 rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/40 mb-3 shadow-[2px_2px_0px_#000]">
-                    <div class="flex items-center gap-3 mb-2">
-                        <!-- Pixel Character Avatar -->
-                        <div class="w-10 h-10 rounded border-2 border-black bg-blue-600 flex items-center justify-center text-lg shrink-0 shadow-[2px_2px_0px_#000]">
-                            🧙‍♂️
+            <!-- Player Gamification Status Card -->
+            <div class="p-3 border-b-2 border-black/10 dark:border-white/10">
+                <div class="arcade-card p-2.5 rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/40 shadow-[2px_2px_0px_#000]">
+                    <div class="flex items-center gap-2.5 mb-2">
+                        <!-- Pixel Wizard Avatar with FA icon -->
+                        <div class="w-9 h-9 rounded border-2 border-black bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#000]">
+                            <i class="fa-solid fa-hat-wizard text-sm"></i>
                         </div>
-                        <div class="min-w-0 flex-1">
+                        <div class="min-w-0 flex-1 nav-text-label">
                             <div class="flex items-center justify-between gap-1">
                                 <h3 id="player-rank-title" class="font-bold text-xs truncate text-blue-900 dark:text-cyan-300">
-                                    {{ $stats['rank_badge'] ?? '🥉' }} {{ $stats['rank_title'] ?? 'Novice Scribe' }}
+                                    <i class="fa-solid fa-award text-yellow-400 mr-1"></i> {{ $stats['rank_title'] ?? 'Novice Scribe' }}
                                 </h3>
                                 <span id="player-level-badge" class="font-pixel text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded border border-black shrink-0">
                                     LV.{{ $stats['level'] ?? 1 }}
                                 </span>
                             </div>
-                            <div class="text-[10px] font-mono text-gray-500 dark:text-gray-400 flex items-center justify-between">
-                                <span id="player-mana-text">{{ $stats['mana'] ?? '50/100 MP' }}</span>
+                            <div class="text-[10px] font-mono text-gray-500 dark:text-gray-400 flex items-center justify-between mt-0.5">
+                                <span id="player-mana-text"><i class="fa-solid fa-wand-magic mr-1 text-cyan-400"></i>{{ $stats['mana'] ?? '50/100 MP' }}</span>
                                 <span id="player-xp-text" class="text-amber-500 font-bold">{{ $stats['total_xp'] ?? 10 }} XP</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- XP Progress Bar -->
-                    <div class="w-full bg-black/20 dark:bg-black/60 h-2.5 rounded border border-black/40 overflow-hidden p-[1px]">
+                    <div class="w-full bg-black/20 dark:bg-black/60 h-2 rounded border border-black/40 overflow-hidden p-[1px] nav-hide-on-collapse">
                         <div id="player-xp-bar"
-                             class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded transition-all duration-300 shadow-[0_0_8px_rgba(6,182,212,0.6)]"
+                             class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded transition-all duration-300"
                              style="width: {{ $stats['progress_percent'] ?? 15 }}%;"></div>
                     </div>
                 </div>
+            </div>
 
-                <!-- New Note / Scroll Spawn Action Button -->
-                <button id="new-note-btn"
-                        class="arcade-btn w-full bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 rounded text-xs font-mono mb-3 tracking-wider">
-                    ⚡ + NEW SCROLL / NOTE
-                </button>
-
-                <!-- Search Input with Retro Arcade Filter Styling -->
-                <div class="relative mb-3">
-                    <input type="text"
-                           id="search-notes-input"
-                           placeholder="🔍 Search scrolls or lore..."
-                           class="w-full bg-white dark:bg-black/40 border-2 border-black dark:border-blue-700 rounded px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-cyan-400 shadow-[2px_2px_0px_#000]">
+            <!-- Primary Nav Links -->
+            <nav class="flex-1 overflow-y-auto p-3 space-y-1.5 font-mono text-xs">
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 px-2 nav-text-label">
+                    Grimoire Categories
                 </div>
 
-                <!-- Category Pills Filter Bar -->
+                <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors bg-blue-600 text-white"
+                   data-category="all">
+                    <i class="fa-solid fa-book-journal-whills text-sm w-4 text-center"></i>
+                    <span class="nav-text-label font-bold">All Scrolls</span>
+                </a>
+
+                <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                   data-category="quest">
+                    <i class="fa-solid fa-khanda text-amber-500 text-sm w-4 text-center"></i>
+                    <span class="nav-text-label font-bold">Quests</span>
+                </a>
+
+                <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                   data-category="spellbook">
+                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-sm w-4 text-center"></i>
+                    <span class="nav-text-label font-bold">Spellbooks</span>
+                </a>
+
+                <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                   data-category="strategy">
+                    <i class="fa-solid fa-shield-halved text-rose-500 text-sm w-4 text-center"></i>
+                    <span class="nav-text-label font-bold">Boss Raids</span>
+                </a>
+
+                <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                   data-category="lore">
+                    <i class="fa-solid fa-scroll text-cyan-400 text-sm w-4 text-center"></i>
+                    <span class="nav-text-label font-bold">Ancient Lore</span>
+                </a>
+            </nav>
+
+            <!-- Bottom Primary Nav Meta -->
+            <div class="p-3 border-t-2 border-black/10 dark:border-white/10 text-[10px] font-mono opacity-70 flex items-center justify-between nav-text-label">
+                <span><i class="fa-solid fa-server mr-1"></i> MySQL Engine</span>
+                <span><i class="fa-solid fa-circle-nodes mr-1"></i> Chunk Matrix</span>
+            </div>
+        </aside>
+
+        <!-- ============================================================================== -->
+        <!-- SIDEBAR 2: SCROLL / NOTES EXPLORER SIDEBAR (Dedicated Inner Sidebar) -->
+        <!-- ============================================================================== -->
+        <aside id="notes-explorer-sidebar"
+               class="fixed inset-y-0 left-0 lg:left-auto z-40 lg:static lg:z-auto w-80 shrink-0 bg-[var(--bg-surface-alt)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0">
+
+            <div class="p-3.5 flex-1 flex flex-col overflow-hidden">
+                <!-- Explorer Header -->
+                <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b-2 border-dashed border-blue-500/30">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-folder-open text-blue-600 dark:text-cyan-400"></i>
+                        <span class="font-pixel text-[11px] text-blue-900 dark:text-cyan-300">SCROLL DIRECTORY</span>
+                    </div>
+
+                    <!-- Mobile Close -->
+                    <button id="close-mobile-explorer-btn" class="lg:hidden arcade-btn bg-red-600 text-white text-xs px-2 py-1 rounded">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- New Note Action Button -->
+                <button id="new-note-btn"
+                        class="arcade-btn w-full bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 rounded text-xs font-mono mb-3 tracking-wider">
+                    <i class="fa-solid fa-plus mr-1.5"></i> NEW SCROLL / NOTE
+                </button>
+
+                <!-- Search Input with Font Awesome Icon -->
+                <div class="relative mb-3">
+                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400 text-xs">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text"
+                           id="search-notes-input"
+                           placeholder="Search scrolls, tags, lore..."
+                           class="w-full bg-white dark:bg-black/40 border-2 border-black dark:border-blue-700 rounded pl-8 pr-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-cyan-400 shadow-[2px_2px_0px_#000]">
+                </div>
+
+                <!-- Category Filter Pills -->
                 <div class="flex items-center gap-1 overflow-x-auto pb-2 mb-2 text-[11px] font-mono scrollbar-none">
                     <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-blue-600 text-white active-category whitespace-nowrap shadow-[1px_1px_0px_#000]"
                             data-category="all">
@@ -167,69 +261,40 @@
                     </button>
                     <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
                             data-category="quest">
-                        ⚔️ QUESTS
+                        <i class="fa-solid fa-khanda text-amber-500 mr-1"></i>QUESTS
                     </button>
                     <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
                             data-category="spellbook">
-                        🔮 SPELLS
+                        <i class="fa-solid fa-wand-magic-sparkles text-purple-400 mr-1"></i>SPELLS
                     </button>
                     <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
                             data-category="strategy">
-                        🛡️ RAIDS
+                        <i class="fa-solid fa-shield-halved text-rose-500 mr-1"></i>RAIDS
                     </button>
                     <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
                             data-category="lore">
-                        📜 LORE
+                        <i class="fa-solid fa-scroll text-cyan-400 mr-1"></i>LORE
                     </button>
                 </div>
 
-                <!-- Dynamic Note List Container -->
+                <!-- Dynamic Notes List Container -->
                 <div class="flex-1 overflow-y-auto pr-1 space-y-1" id="notes-list">
-                    <!-- Note items dynamically populated via app.js -->
+                    <!-- Populated dynamically via app.js -->
                 </div>
-
-                <!-- Footer Summary of Database Matrix -->
-                <div class="pt-2 mt-2 border-t border-black/10 dark:border-white/10 flex items-center justify-between text-[10px] font-mono opacity-70">
-                    <span>💾 Storage: MySQL Text Chunks</span>
-                    <span>⚡ 100% Dynamic</span>
-                </div>
-            </div>
-
-            <!-- Collapsed Sidebar Mode Content (Icon only bar) -->
-            <div class="sidebar-collapsed-content flex-col items-center py-4 gap-4 h-full">
-                <button onclick="window.notenux.audio.playBlip(); document.getElementById('notenux-sidebar').classList.remove('collapsed');"
-                        class="arcade-btn bg-blue-600 text-white p-2 rounded text-xs"
-                        title="Expand Sidebar">
-                    ⏩
-                </button>
-                <div class="w-8 h-8 rounded border-2 border-black bg-blue-600 flex items-center justify-center text-xs shadow-[1px_1px_0px_#000]"
-                     title="Player Level {{ $stats['level'] ?? 1 }}">
-                    🧙
-                </div>
-                <button onclick="window.notenux.createNewNote(true)"
-                        class="arcade-btn bg-cyan-600 text-white p-2 rounded text-xs"
-                        title="New Note">
-                    +
-                </button>
-                <button onclick="window.notenux.openChunkInspector()"
-                        class="arcade-btn bg-blue-800 text-cyan-300 p-2 rounded text-xs"
-                        title="Inspect Database Chunks">
-                    📦
-                </button>
             </div>
         </aside>
 
         <!-- ============================================================================== -->
-        <!-- MAIN PANEL & EDITABLE WORKSPACE -->
+        <!-- MAIN PANEL & EDITABLE WORKSPACE WITH ZOOM & MARKDOWN SUPPORT -->
         <!-- ============================================================================== -->
-        <main class="flex-1 flex flex-col overflow-y-auto p-3 sm:p-5 lg:p-6">
+        <main class="flex-1 flex flex-col overflow-y-auto p-3 sm:p-5 lg:p-6 bg-[var(--bg-main)]">
             <div class="max-w-5xl w-full mx-auto flex-1 flex flex-col space-y-3">
 
-                <!-- Note Header Bar: Title, Category Badge, Status, Pin, Delete, Save -->
+                <!-- Note Header Bar: Title, Zoom Controls, Pin, Delete, Save -->
                 <div class="arcade-card p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-[3px_3px_0px_#000]">
                     <!-- Title Input -->
                     <div class="flex-1 min-w-0 flex items-center gap-2">
-                        <span class="text-xl sm:text-2xl shrink-0">📜</span>
+                        <i class="fa-solid fa-scroll text-xl text-blue-600 dark:text-cyan-400 shrink-0"></i>
                         <input type="text"
                                id="note-title-input"
                                placeholder="Scroll Title..."
@@ -237,51 +302,75 @@
                                class="w-full text-base sm:text-xl font-bold bg-transparent border-b-2 border-transparent hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors">
                     </div>
 
-                    <!-- Actions (Pin, Delete, Save Indicator, Manual Save) -->
+                    <!-- Zoom Controls & Actions -->
                     <div class="flex items-center gap-2 shrink-0 justify-end flex-wrap">
+
+                        <!-- Zoom Controls Group -->
+                        <div class="flex items-center bg-surface-alt p-1 rounded-lg border border-black/30 dark:border-blue-800 shadow-[1px_1px_0px_#000]">
+                            <button id="zoom-out-btn"
+                                    class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs"
+                                    title="Zoom Out Content">
+                                <i class="fa-solid fa-magnifying-glass-minus"></i>
+                            </button>
+                            <button id="zoom-reset-btn"
+                                    class="px-2 text-xs font-mono font-bold hover:text-cyan-400 cursor-pointer"
+                                    title="Click to Reset Zoom">
+                                <span id="zoom-level-display">100%</span>
+                            </button>
+                            <button id="zoom-in-btn"
+                                    class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs"
+                                    title="Zoom In Content">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i>
+                            </button>
+                        </div>
+
                         <span id="save-status-text" class="text-xs font-mono text-emerald-500 mr-1">
-                            ✓ Synchronized
+                            <i class="fa-solid fa-circle-check mr-1"></i> Synchronized
                         </span>
 
                         <button id="pin-note-btn"
                                 class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded text-xs font-mono"
                                 title="Toggle Pinned Note">
-                            📍 <span class="hidden sm:inline">PIN</span>
+                            <i class="fa-solid fa-thumbtack mr-1"></i> <span class="hidden sm:inline">PIN</span>
                         </button>
 
                         <button id="delete-note-btn"
                                 class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1 rounded text-xs font-mono"
                                 title="Banish Scroll to the Void">
-                            🗑️ <span class="hidden sm:inline">DELETE</span>
+                            <i class="fa-solid fa-trash-can mr-1"></i> <span class="hidden sm:inline">DELETE</span>
                         </button>
 
                         <button id="save-now-btn"
                                 class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-mono font-bold tracking-wider"
                                 title="Instantly inscribe and split into database chunks">
-                            💾 INSCRIBE
+                            <i class="fa-solid fa-floppy-disk mr-1.5"></i> INSCRIBE
                         </button>
                     </div>
                 </div>
 
-                <!-- Flexible Typography & Formatting Toolbar -->
+                <!-- Flexible Typography & Formatting Toolbar with Table & Markdown Tools -->
                 <div class="arcade-card p-2 sm:p-2.5 rounded-xl flex flex-wrap items-center gap-1.5 sm:gap-2 shadow-[2px_2px_0px_#000]">
 
                     <!-- Font Family Switcher -->
                     <div class="flex items-center gap-1 bg-surface-alt p-1 rounded border border-black/30 dark:border-blue-800">
-                        <span class="text-[11px] font-mono font-bold px-1 hidden sm:inline">FONT:</span>
+                        <span class="text-[11px] font-mono font-bold px-1 hidden sm:inline">
+                            <i class="fa-solid fa-font mr-1"></i>FONT:
+                        </span>
                         <select id="font-family-select"
                                 class="bg-white dark:bg-black/50 border border-black/40 rounded px-2 py-0.5 text-xs font-mono focus:outline-none focus:border-cyan-400">
-                            <option value="pixel">👾 Retro Pixel (Press Start 2P)</option>
-                            <option value="arcade">🕹️ 8-Bit Arcade (VT323)</option>
-                            <option value="mono">⚡ Cyber Mono (Fira Code)</option>
-                            <option value="sans">📘 Modern Sans (Instrument Sans)</option>
-                            <option value="serif">📜 Grimoire (Merriweather)</option>
+                            <option value="pixel">Retro Pixel (Press Start 2P)</option>
+                            <option value="arcade">8-Bit Arcade (VT323)</option>
+                            <option value="mono">Cyber Mono (Fira Code)</option>
+                            <option value="sans">Modern Sans (Instrument Sans)</option>
+                            <option value="serif">Grimoire (Merriweather)</option>
                         </select>
                     </div>
 
                     <!-- Font Size Selector -->
                     <div class="flex items-center gap-1 bg-surface-alt p-1 rounded border border-black/30 dark:border-blue-800">
-                        <span class="text-[11px] font-mono font-bold px-1 hidden sm:inline">SIZE:</span>
+                        <span class="text-[11px] font-mono font-bold px-1 hidden sm:inline">
+                            <i class="fa-solid fa-text-height mr-1"></i>SIZE:
+                        </span>
                         <select id="font-size-select"
                                 class="bg-white dark:bg-black/50 border border-black/40 rounded px-1.5 py-0.5 text-xs font-mono focus:outline-none focus:border-cyan-400">
                             <option value="12px">12px</option>
@@ -300,10 +389,18 @@
 
                     <!-- Text Formatting Group -->
                     <div class="flex items-center gap-1">
-                        <button data-command="bold" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs font-bold" title="Bold (Ctrl+B)">B</button>
-                        <button data-command="italic" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs italic" title="Italic (Ctrl+I)">I</button>
-                        <button data-command="underline" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs underline" title="Underline (Ctrl+U)">U</button>
-                        <button data-command="strikeThrough" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs line-through" title="Strikethrough">S</button>
+                        <button data-command="bold" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs font-bold" title="Bold (Ctrl+B)">
+                            <i class="fa-solid fa-bold"></i>
+                        </button>
+                        <button data-command="italic" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs italic" title="Italic (Ctrl+I)">
+                            <i class="fa-solid fa-italic"></i>
+                        </button>
+                        <button data-command="underline" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs underline" title="Underline (Ctrl+U)">
+                            <i class="fa-solid fa-underline"></i>
+                        </button>
+                        <button data-command="strikeThrough" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs line-through" title="Strikethrough">
+                            <i class="fa-solid fa-strikethrough"></i>
+                        </button>
                     </div>
 
                     <!-- Headings -->
@@ -314,25 +411,54 @@
                         <button data-command="formatBlock" data-value="p" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 py-0.5 rounded text-xs font-bold" title="Paragraph">P</button>
                     </div>
 
-                    <!-- Lists & Quotes -->
+                    <!-- Lists, Quotes & Pre -->
                     <div class="flex items-center gap-1">
-                        <button data-command="insertUnorderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs" title="Bullet List">• List</button>
-                        <button data-command="insertOrderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs" title="Numbered List">1. List</button>
-                        <button data-command="formatBlock" data-value="blockquote" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs" title="Quote Block">❝ Quote</button>
-                        <button data-command="formatBlock" data-value="pre" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs font-mono" title="Code Block">&lt;/&gt;</button>
-                        <button data-command="insertHorizontalRule" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs" title="Divider Line">—</button>
+                        <button data-command="insertUnorderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs" title="Bullet List">
+                            <i class="fa-solid fa-list-ul"></i>
+                        </button>
+                        <button data-command="insertOrderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs" title="Numbered List">
+                            <i class="fa-solid fa-list-ol"></i>
+                        </button>
+                        <button data-command="formatBlock" data-value="blockquote" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs" title="Quote Block">
+                            <i class="fa-solid fa-quote-left"></i>
+                        </button>
+                        <button data-command="formatBlock" data-value="pre" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs font-mono" title="Code Block">
+                            <i class="fa-solid fa-code"></i>
+                        </button>
+                        <button data-command="insertHorizontalRule" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 py-0.5 rounded text-xs" title="Divider Line">
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
                     </div>
 
-                    <!-- Text Alignment -->
+                    <!-- Table & Markdown Special Insertion Tools -->
+                    <div class="flex items-center gap-1 bg-surface-alt p-1 rounded border border-black/30 dark:border-blue-800">
+                        <button id="insert-table-btn"
+                                class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-mono"
+                                title="Insert 3x4 Retro Data Table">
+                            <i class="fa-solid fa-table mr-1"></i> TABLE
+                        </button>
+                        <button id="markdown-paste-btn"
+                                class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2 py-0.5 rounded text-xs font-mono"
+                                title="Paste or Convert Raw Markdown (.md)">
+                            <i class="fa-solid fa-file-code mr-1"></i> MD
+                        </button>
+                    </div>
+
+                    <!-- Alignment -->
                     <div class="flex items-center gap-1">
-                        <button data-command="justifyLeft" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 py-0.5 rounded text-xs" title="Align Left">⫷</button>
-                        <button data-command="justifyCenter" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 py-0.5 rounded text-xs" title="Align Center">☵</button>
-                        <button data-command="justifyRight" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 py-0.5 rounded text-xs" title="Align Right">⫸</button>
+                        <button data-command="justifyLeft" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 py-0.5 rounded text-xs" title="Align Left">
+                            <i class="fa-solid fa-align-left"></i>
+                        </button>
+                        <button data-command="justifyCenter" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 py-0.5 rounded text-xs" title="Align Center">
+                            <i class="fa-solid fa-align-center"></i>
+                        </button>
+                        <button data-command="justifyRight" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 py-0.5 rounded text-xs" title="Align Right">
+                            <i class="fa-solid fa-align-right"></i>
+                        </button>
                     </div>
 
                     <!-- Retro Color Palette Quick Swatches -->
                     <div class="flex items-center gap-1 bg-surface-alt p-1 rounded border border-black/30 dark:border-blue-800">
-                        <span class="text-[10px] font-mono hidden xl:inline">COLOR:</span>
                         <button data-color="#38bdf8" data-color-type="foreColor" class="w-4 h-4 rounded-full bg-cyan-400 border border-black" title="Neon Cyan"></button>
                         <button data-color="#3b82f6" data-color-type="foreColor" class="w-4 h-4 rounded-full bg-blue-500 border border-black" title="Arcade Blue"></button>
                         <button data-color="#10b981" data-color-type="foreColor" class="w-4 h-4 rounded-full bg-emerald-500 border border-black" title="Emerald Glow"></button>
@@ -341,9 +467,9 @@
                         <button data-color="#f8fafc" data-color-type="foreColor" class="w-4 h-4 rounded-full bg-slate-100 border border-black" title="White"></button>
                     </div>
 
-                    <!-- Clear formatting button -->
+                    <!-- Clear formatting -->
                     <button data-command="removeFormat" class="arcade-btn bg-surface hover:bg-red-200 dark:hover:bg-red-950 px-2 py-0.5 rounded text-xs font-mono" title="Clear Formatting">
-                        🧹 CLEAR
+                        <i class="fa-solid fa-broom mr-1"></i> CLEAR
                     </button>
                 </div>
 
@@ -351,34 +477,36 @@
                 <div class="flex items-center justify-between gap-2 px-1 text-xs font-mono">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span id="word-count-badge" class="px-2 py-0.5 rounded border border-black/30 bg-blue-100 dark:bg-blue-900/40 font-bold">
-                            0 Words
+                            <i class="fa-solid fa-pen-nib mr-1 text-blue-500"></i> 0 Words
                         </span>
                         <span id="char-count-badge" class="px-2 py-0.5 rounded border border-black/30 bg-blue-100 dark:bg-blue-900/40">
-                            0 Chars
+                            <i class="fa-solid fa-font mr-1 text-blue-500"></i> 0 Chars
                         </span>
                         <span id="reading-time-badge" class="px-2 py-0.5 rounded border border-black/30 bg-blue-100 dark:bg-blue-900/40">
-                            ⏱️ 1m Read
+                            <i class="fa-solid fa-clock mr-1 text-cyan-500"></i> 1m Read
                         </span>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <span id="chunk-count-badge" class="px-2 py-0.5 rounded border border-black/30 bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300 font-bold">
-                            📦 1 Chunks
+                            <i class="fa-solid fa-cubes mr-1 text-cyan-400"></i> 1 Chunks
                         </span>
                         <span class="text-[10px] opacity-75 hidden sm:inline">
-                            ✨ +3 XP / Word
+                            <i class="fa-solid fa-bolt text-yellow-400 mr-1"></i> +3 XP / Word
                         </span>
                     </div>
                 </div>
 
-                <!-- Editable Content Area (The Core Canvas) -->
-                <div class="arcade-card flex-1 p-4 sm:p-6 rounded-xl overflow-y-auto relative shadow-[4px_4px_0px_#000]">
-                    <div id="editor-content"
-                         contenteditable="true"
-                         spellcheck="false"
-                         class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none"
-                         style="font-family: 'Press Start 2P', monospace; font-size: 16px;">
-                        {!! $activeNote->content ?? '<h2>⚔️ Mission Briefing: Act I</h2><p>Begin scribing your thoughts...</p>' !!}
+                <!-- Zoomable Editable Content Area (The Core Canvas) -->
+                <div class="arcade-card flex-1 p-4 sm:p-6 rounded-xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000]">
+                    <div id="editor-zoom-wrapper" class="zoom-canvas-container">
+                        <div id="editor-content"
+                             contenteditable="true"
+                             spellcheck="false"
+                             class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none"
+                             style="font-family: 'Press Start 2P', monospace; font-size: 16px;">
+                            {!! $activeNote->content ?? '<h2>Mission Briefing: Act I</h2><p>Begin scribing your thoughts...</p>' !!}
+                        </div>
                     </div>
                 </div>
 
@@ -386,11 +514,11 @@
                 <div class="arcade-card p-2 rounded-lg flex items-center justify-between text-[11px] font-mono opacity-80 shadow-[2px_2px_0px_#000]">
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>Terminal Status: ONLINE</span>
+                        <span>Terminal: ONLINE</span>
                         <span class="hidden sm:inline">| DB: <code class="text-cyan-500">notenux.note_chunks</code></span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span>Chunk Identity: UUID / ULID</span>
+                        <span><i class="fa-solid fa-file-code text-cyan-400 mr-1"></i> Markdown & Tables Active</span>
                         <span class="hidden sm:inline">| SHA-256 Checksummed</span>
                     </div>
                 </div>
@@ -409,14 +537,14 @@
             <!-- Modal Header -->
             <div class="p-3.5 sm:p-4 border-b-2 border-black dark:border-blue-800 bg-blue-600 text-white flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <span class="text-xl">📦</span>
+                    <i class="fa-solid fa-cubes text-xl"></i>
                     <div>
                         <h3 class="font-pixel text-xs sm:text-sm tracking-wider">DATABASE CHUNK INSPECTOR</h3>
                         <p class="text-[10px] font-mono text-cyan-200">Identity-backed chunked text storage telemetry</p>
                     </div>
                 </div>
                 <button id="chunk-modal-close" class="arcade-btn bg-black text-white hover:bg-gray-800 px-2.5 py-1 rounded text-xs font-mono">
-                    ✖ ESC
+                    <i class="fa-solid fa-xmark mr-1"></i> ESC
                 </button>
             </div>
 

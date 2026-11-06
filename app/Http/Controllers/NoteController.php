@@ -213,11 +213,11 @@ class NoteController extends Controller
         $percent = min(100, (int) round(($progressXP / $neededXP) * 100));
 
         $ranks = [
-            1 => ['title' => 'Novice Scribe', 'badge' => '🥉', 'mana' => '30/100 MP'],
-            2 => ['title' => 'Apprentice Chronicler', 'badge' => '🥈', 'mana' => '55/100 MP'],
-            3 => ['title' => 'Arcane Wordsmith', 'badge' => '🥇', 'mana' => '75/100 MP'],
-            4 => ['title' => 'Guildmaster of Lore', 'badge' => '💎', 'mana' => '90/100 MP'],
-            5 => ['title' => 'Grand Arch-Mage of Scribes', 'badge' => '👑', 'mana' => '100/100 MP'],
+            1 => ['title' => 'Novice Scribe', 'badge' => 'fa-award', 'mana' => '30/100 MP'],
+            2 => ['title' => 'Apprentice Chronicler', 'badge' => 'fa-medal', 'mana' => '55/100 MP'],
+            3 => ['title' => 'Arcane Wordsmith', 'badge' => 'fa-trophy', 'mana' => '75/100 MP'],
+            4 => ['title' => 'Guildmaster of Lore', 'badge' => 'fa-gem', 'mana' => '90/100 MP'],
+            5 => ['title' => 'Grand Arch-Mage of Scribes', 'badge' => 'fa-crown', 'mana' => '100/100 MP'],
         ];
 
         $rankInfo = $ranks[min(5, $level)] ?? $ranks[5];
