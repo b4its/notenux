@@ -254,12 +254,8 @@
                     <i class="fa-solid fa-moon text-cyan-300 mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>
                 </button>
 
-                <!-- Database Chunk Inspector Trigger -->
-                <button id="inspect-chunks-btn"
-                        class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2.5 py-1.5 rounded text-xs font-mono"
-                        title="Inspect Live Database Chunks & Shard Keys">
-                    <i class="fa-solid fa-cubes mr-1.5"></i> <span class="hidden md:inline">DB CHUNKS</span>
-                </button>
+                <!-- Hidden Database Chunk Inspector Trigger (removed from UI for users) -->
+                <button id="inspect-chunks-btn" class="hidden" style="display: none;" aria-hidden="true" tabindex="-1"></button>
 
                 <!-- Back to Landing Page -->
                 <a href="{{ route('landing') }}"
@@ -729,13 +725,8 @@
                                 <i class="fa-solid fa-circle-check"></i> Synchronized
                             </span>
 
-                            <!-- Chunk Badge Button -->
-                            <button id="chunk-count-badge"
-                                    onclick="window.notenux.openChunkInspector()"
-                                    class="arcade-btn px-2 py-0.5 rounded border border-cyan-500/50 bg-cyan-100 dark:bg-cyan-950/60 text-cyan-900 dark:text-cyan-200 font-bold text-xs"
-                                    title="Click to inspect partitioned database memory shards">
-                                <i class="fa-solid fa-cubes mr-1 text-cyan-700 dark:text-cyan-400"></i> 1 Chunks
-                            </button>
+                            <!-- Hidden Chunk Badge for test & JS compatibility (removed from UI for users) -->
+                            <button id="chunk-count-badge" class="hidden" style="display: none;" aria-hidden="true" tabindex="-1"></button>
                         </div>
                     </div>
                 </div>
@@ -969,15 +960,15 @@
 
 
                 <!-- Bottom Telemetry Bar -->
-                <div class="arcade-card p-2 rounded-lg flex items-center justify-between text-[11px] font-mono opacity-80 shadow-[2px_2px_0px_#000]">
+                <div class="arcade-card p-2 rounded-lg flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono opacity-80 shadow-[2px_2px_0px_#000]">
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>Terminal: ONLINE</span>
-                        <span class="hidden sm:inline">| DB: <code class="text-blue-600 dark:text-cyan-400 font-bold">notenux.note_chunks</code></span>
+                        <span>Status: <strong class="text-emerald-700 dark:text-emerald-400 font-bold">Aktif</strong></span>
+                        <span class="hidden sm:inline">| Cloud Storage: <strong class="text-blue-600 dark:text-cyan-400 font-bold">Tersinkronisasi</strong></span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span><i class="fa-solid fa-file-code text-blue-600 dark:text-cyan-400 mr-1"></i> Markdown & Tables Active</span>
-                        <span class="hidden sm:inline">| SHA-256 Checksummed</span>
+                        <span><i class="fa-solid fa-file-code text-blue-600 dark:text-cyan-400 mr-1"></i> Markdown & Rich Editor</span>
+                        <span class="hidden sm:inline">| Auto-Save Aktif</span>
                     </div>
                 </div>
 
@@ -1088,7 +1079,7 @@
             <div class="p-3 border-t-2 border-black/10 bg-surface-alt flex justify-end gap-2">
                 <button id="cancel-import-btn" class="arcade-btn bg-surface px-3 py-1 rounded text-xs font-mono">Cancel</button>
                 <button id="confirm-import-btn" class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-mono">
-                    <i class="fa-solid fa-bolt mr-1"></i> IMPORT & CHUNK
+                    <i class="fa-solid fa-file-import mr-1"></i> IMPORT NASKAH
                 </button>
             </div>
         </div>
@@ -1139,12 +1130,12 @@
                         <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Alt + Z</kbd>
                     </div>
                     <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
-                        <span>Inspect DB Shards</span>
-                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl+Alt+C</kbd>
+                        <span>Tebal (Bold)</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + B</kbd>
                     </div>
                     <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
-                        <span>Verify Shards</span>
-                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl+Alt+V</kbd>
+                        <span>Batal (Undo)</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + Z</kbd>
                     </div>
                     <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
                         <span>Cheat Sheet (This)</span>
@@ -1184,7 +1175,7 @@
                     </div>
                     <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 mb-1">Banish Scroll to Digital Void?</h4>
                     <p class="text-xs opacity-80 max-w-xs mx-auto">
-                        This action cannot be undone. All associated memory shards and database chunks will be permanently disintegrated.
+                        Tindakan ini tidak dapat dibatalkan. Catatan ini beserta seluruh isinya akan dihapus secara permanen dari penyimpanan.
                     </p>
                 </div>
 
@@ -1200,8 +1191,8 @@
 
                 <!-- Database Info Pill -->
                 <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg text-[11px] text-amber-800 dark:text-amber-200 flex items-center gap-2">
-                    <i class="fa-solid fa-bolt text-amber-500 shrink-0"></i>
-                    <span>Database memory shards will be deleted and cascaded cleanly.</span>
+                    <i class="fa-solid fa-shield-halved text-amber-500 shrink-0"></i>
+                    <span>Seluruh data catatan akan dibersihkan secara aman dari database.</span>
                 </div>
             </div>
 

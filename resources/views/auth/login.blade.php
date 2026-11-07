@@ -173,7 +173,7 @@
 
             <!-- Footer note -->
             <p class="mt-6 text-center text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                Notenux Studio &copy; {{ date('Y') }} &bull; Scribe Memory Shard Matrix
+                Notenux Studio &copy; {{ date('Y') }} &bull; Scribe Memory Matrix
             </p>
         </div>
     </main>

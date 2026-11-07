@@ -69,7 +69,7 @@
                     <div>
                         <span class="font-bold text-emerald-900 dark:text-emerald-300">Bergabung Sebagai Scribe Baru</span>
                         <p class="text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
-                            Buat akun untuk memulai petualangan catatan di Studio, membuka XP leveling, spellcasting AI, dan shard cryptographic security.
+                            Buat akun untuk memulai petualangan catatan di Studio, membuka XP leveling, spellcasting AI, dan sistem keamanan dokumen terenkripsi.
                         </p>
                     </div>
                 </div>
@@ -191,7 +191,7 @@
 
             <!-- Footer note -->
             <p class="mt-6 text-center text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                Notenux Studio &copy; {{ date('Y') }} &bull; Scribe Memory Shard Matrix
+                Notenux Studio &copy; {{ date('Y') }} &bull; Scribe Memory Matrix
             </p>
         </div>
     </main>
