@@ -637,3 +637,115 @@ test('white-box: renderNotesList sorts by title_desc, created_desc, and created_
     const aAsc = renderedHtml.indexOf('A Scroll');
     assert.ok(bAsc < cAsc && cAsc < aAsc, 'created_asc orders oldest first');
 });
+
+test('white-box: MarkdownEngine parses markdown image tags with base64 raster data URIs', () => {
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({
+                querySelectorAll: () => [],
+                attributes: [],
+                innerHTML: '',
+                content: { querySelectorAll: () => [] }
+            }),
+            addEventListener() {},
+            querySelector() { return null; },
+        }
+    });
+    vm.runInContext(source + '\nglobalThis.MarkdownEngine = MarkdownEngine;', context);
+    const base64Img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    const html = context.MarkdownEngine.parse(`![Pasted Image](${base64Img})`);
+    assert.ok(html.includes('<img alt="Pasted Image" src="' + base64Img + '">'));
+});
+
+test('white-box: initPasteInterceptor intercepts image file paste and triggers reader', () => {
+    const listeners = new Map();
+    const mockEditorArea = {
+        addEventListener(event, fn) { listeners.set(event, fn); },
+        cloneNode: () => ({
+            innerHTML: '<p><img src="data:image/png;base64,FAKEIMAGE"></p>',
+            querySelectorAll: () => []
+        }),
+        innerText: 'Some text'
+    };
+    const { panel, messages, context } = harness(() => Promise.resolve({ ok: true }));
+    panel.dom.editorArea = mockEditorArea;
+
+    let preventDefaultCalled = false;
+    let readAsDataURLCalled = false;
+
+    // Mock FileReader on global context
+    context.FileReader = class {
+        readAsDataURL() {
+            readAsDataURLCalled = true;
+            this.onload({ target: { result: 'data:image/png;base64,FAKEIMAGE' } });
+        }
+    };
+
+    panel.initPasteInterceptor();
+
+    const pasteHandler = listeners.get('paste');
+    assert.ok(pasteHandler, 'Paste listener registered');
+
+    let execCommandCalled = false;
+    let insertedHtml = '';
+    context.document.execCommand = (cmd, showUi, val) => {
+        execCommandCalled = true;
+        insertedHtml = val;
+    };
+    context.document.createElement = (tag) => {
+        const el = {
+            tagName: tag.toUpperCase(),
+            src: '',
+            alt: '',
+            className: '',
+            innerHTML: '',
+            children: [],
+            appendChild(child) { this.children.push(child); },
+            get outerHTML() {
+                if (this.tagName === 'IMG') {
+                    return `<img src="${this.src}" alt="${this.alt}" class="${this.className}">`;
+                }
+                return `<${this.tagName.toLowerCase()}>${this.innerHTML || this.children.map(c => c.outerHTML).join('')}</${this.tagName.toLowerCase()}>`;
+            }
+        };
+        return el;
+    };
+
+    const fakeImageFile = { type: 'image/png', name: 'screenshot.png' };
+    const fakeEvent = {
+        clipboardData: {
+            items: [{ type: 'image/png', getAsFile: () => fakeImageFile }],
+            getData: () => '',
+        },
+        preventDefault() { preventDefaultCalled = true; }
+    };
+
+    pasteHandler(fakeEvent);
+
+    assert.equal(preventDefaultCalled, true);
+    assert.equal(readAsDataURLCalled, true);
+    assert.equal(execCommandCalled, true);
+    assert.ok(insertedHtml.includes('<img src="data:image/png;base64,FAKEIMAGE"'));
+    assert.ok(messages.some(m => m[0] === 'Image pasted into scroll!'));
+});
+
+test('white-box: saveActiveNote flushes editorArea innerHTML to note content before persisting', async () => {
+    let capturedBody = null;
+    const { panel } = harness(async (url, options) => {
+        capturedBody = JSON.parse(options.body);
+        return { ok: true, json: async () => ({ status: 'success', data: { ...panel.activeNote, ...capturedBody } }) };
+    });
+    panel.dom.editorArea = {
+        cloneNode: () => ({
+            innerHTML: '<p>Pasted image in editor <img src="data:image/png;base64,XYZ"></p>',
+            querySelectorAll: () => []
+        })
+    };
+    panel.activeNote.content = '<p>Old content</p>';
+
+    const saved = await panel.saveActiveNote(true);
+    assert.equal(saved, true);
+    assert.ok(capturedBody.content.includes('<img src="data:image/png;base64,XYZ">'));
+    assert.equal(panel.activeNote.content, capturedBody.content);
+});

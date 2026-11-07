@@ -479,3 +479,37 @@ test('white-box: player stats calculation returns complete progress metrics acro
     expect($data['needed_xp'])->toBe(150)
         ->and($data['next_level_xp'])->toBeGreaterThan($data['total_xp']);
 });
+
+test('white-box: user can save note with pasted base64 image and chunk content is stored without truncation', function () {
+    $note = Note::factory()->create(['title' => 'Scroll with Screenshot']);
+    $pngBase64 = 'data:image/png;base64,'.base64_encode(str_repeat('X', 70000));
+    $content = "<p>Intro text</p><p><img src=\"{$pngBase64}\" alt=\"Pasted Screenshot\"></p><p>Outro text</p>";
+
+    $response = $this->putJson(route('notes.update', $note), [
+        'content' => $content,
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'status' => 'success',
+        ]);
+
+    $freshNote = $note->fresh();
+    expect($freshNote->content)->toContain($pngBase64)
+        ->and($freshNote->chunks()->count())->toBeGreaterThan(0);
+
+    $imageChunk = $freshNote->chunks()->where('content', 'like', '%data:image/png;base64%')->first();
+    expect($imageChunk)->not->toBeNull()
+        ->and($imageChunk->byte_size)->toBeGreaterThan(70000)
+        ->and($imageChunk->content)->toContain($pngBase64);
+});
+
+test('white-box: note controller convertToMarkdown correctly formats embedded base64 images', function () {
+    $controller = app(NoteController::class);
+    $pngBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    $html = "<p>Diagram</p><img src=\"{$pngBase64}\" alt=\"Architecture Diagram\"><p>Details</p>";
+
+    $markdown = $controller->convertToMarkdown($html);
+
+    expect($markdown)->toContain("![Architecture Diagram]({$pngBase64})");
+});

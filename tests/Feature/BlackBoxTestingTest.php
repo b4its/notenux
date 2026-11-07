@@ -648,3 +648,40 @@ test('black-box: note index validates sort and filter query parameters', functio
     $response2->assertStatus(422)
         ->assertJsonValidationErrors(['pinned_only']);
 });
+
+test('black-box: user creates and updates scroll with large pasted base64 raster image without server errors', function () {
+    $largeBase64 = 'data:image/png;base64,'.base64_encode(str_repeat('X', 80000));
+    $htmlContent = "<h3>Map of the Realm</h3><p><img src=\"{$largeBase64}\" alt=\"Realm Map\"></p>";
+
+    // Create note with pasted image
+    $response = $this->postJson('/api/notes', [
+        'title' => 'Cartography Scroll',
+        'category' => 'quest',
+        'content' => $htmlContent,
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJsonPath('status', 'success');
+
+    $noteId = $response->json('data.id');
+    expect($response->json('data.content'))->toContain($largeBase64);
+
+    // Update note with modified pasted image
+    $newBase64 = 'data:image/jpeg;base64,'.base64_encode(str_repeat('Y', 90000));
+    $updatedHtml = "<h3>Updated Realm Map</h3><p><img src=\"{$newBase64}\" alt=\"Updated Map\"></p>";
+
+    $updateResponse = $this->putJson("/api/notes/{$noteId}", [
+        'content' => $updatedHtml,
+    ]);
+
+    $updateResponse->assertOk()
+        ->assertJsonPath('status', 'success');
+
+    expect($updateResponse->json('data.content'))->toContain($newBase64);
+
+    // Verify chunks inspection endpoint returns valid chunks
+    $chunksResponse = $this->getJson("/api/notes/{$noteId}/chunks");
+    $chunksResponse->assertOk();
+    $chunks = $chunksResponse->json('chunks');
+    expect(count($chunks))->toBeGreaterThan(0);
+});

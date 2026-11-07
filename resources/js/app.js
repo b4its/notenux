@@ -236,7 +236,7 @@ class MarkdownEngine {
 
         // Inline code `code`
         html = html.replace(/`([^`]+)`/gim, (_, code) => protectCode(`<code>${MarkdownEngine.escape(code)}</code>`));
-        html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/gi, (_, alt, url) => `<img alt="${MarkdownEngine.escape(alt).replace(/"/g, '&quot;')}" src="${MarkdownEngine.escape(url).replace(/"/g, '&quot;')}">`);
+        html = html.replace(/!\[([^\]]*)\]\(((?:https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+)[^\s)]*)\)/gi, (_, alt, url) => `<img alt="${MarkdownEngine.escape(alt).replace(/"/g, '&quot;')}" src="${MarkdownEngine.escape(url).replace(/"/g, '&quot;')}">`);
         html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+|#[^\s)]+)\)/gi, (_, text, url) => `<a href="${MarkdownEngine.escape(url).replace(/"/g, '&quot;')}">${text}</a>`);
 
         // Markdown Tables
@@ -2035,13 +2035,58 @@ class NotenuxPanel {
         });
     }
 
-    /* ---------------- CLIPBOARD PASTE INTERCEPTOR (.MD & TABLES) ---------------- */
+    /* ---------------- CLIPBOARD PASTE INTERCEPTOR (.MD, IMAGES & TABLES) ---------------- */
     initPasteInterceptor() {
         if (!this.dom.editorArea) return;
+
+        const handleImageFile = (imageFile) => {
+            if (!imageFile) return false;
+            const reader = new FileReader();
+            reader.onload = (loadEvent) => {
+                const dataUrl = loadEvent.target?.result;
+                if (dataUrl) {
+                    const img = document.createElement('img');
+                    img.src = dataUrl;
+                    img.alt = 'Pasted Image';
+                    img.className = 'rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2';
+                    const container = document.createElement('p');
+                    container.appendChild(img);
+                    const breakP = document.createElement('p');
+                    breakP.innerHTML = '<br>';
+                    const htmlToInsert = container.outerHTML + breakP.outerHTML;
+
+                    document.execCommand('insertHTML', false, htmlToInsert);
+                    this.handleEditorInput();
+                    this.toast.show('Image pasted into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
+                }
+            };
+            reader.readAsDataURL(imageFile);
+            return true;
+        };
 
         this.dom.editorArea.addEventListener('paste', (e) => {
             const clipboardData = e.clipboardData || window.clipboardData;
             if (!clipboardData) return;
+
+            // Check if clipboard contains an image file (e.g. screenshot or copied image file)
+            const items = clipboardData.items ? Array.from(clipboardData.items) : [];
+            const imageItem = items.find(item => item.type && item.type.startsWith('image/'));
+            if (imageItem) {
+                const file = imageItem.getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    handleImageFile(file);
+                    return;
+                }
+            }
+
+            const files = clipboardData.files ? Array.from(clipboardData.files) : [];
+            const imageFile = files.find(file => file.type && file.type.startsWith('image/'));
+            if (imageFile) {
+                e.preventDefault();
+                handleImageFile(imageFile);
+                return;
+            }
 
             const textPlain = clipboardData.getData('text/plain') || '';
             const textHtml = clipboardData.getData('text/html') || '';
@@ -2075,11 +2120,67 @@ class NotenuxPanel {
                 doc.querySelectorAll('table').forEach(tbl => {
                     tbl.classList.add('retro-table');
                 });
+                doc.querySelectorAll('img').forEach(img => {
+                    if (!img.className) {
+                        img.className = 'rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2';
+                    }
+                });
                 document.execCommand('insertHTML', false, sanitizeHtml(doc.body.innerHTML));
                 this.handleEditorInput();
-                this.toast.show('Pasted HTML Table formatted cleanly!', 'info', 'Table Injected', 'fa-solid fa-table text-cyan-400');
+                const hasImg = doc.querySelector('img') !== null;
+                const hasTable = doc.querySelector('table') !== null;
+                if (hasImg) {
+                    this.toast.show('Pasted image formatted into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
+                } else if (hasTable) {
+                    this.toast.show('Pasted HTML Table formatted cleanly!', 'info', 'Table Injected', 'fa-solid fa-table text-cyan-400');
+                } else {
+                    this.toast.show('Pasted HTML content formatted cleanly!', 'info');
+                }
             }
         });
+
+        // Support drag and drop images directly into editor
+        this.dom.editorArea.addEventListener('dragover', (e) => {
+            if (e.dataTransfer?.types?.includes('Files')) {
+                e.preventDefault();
+            }
+        });
+        this.dom.editorArea.addEventListener('drop', (e) => {
+            const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+            const imageFile = files.find(f => f.type && f.type.startsWith('image/'));
+            if (imageFile) {
+                e.preventDefault();
+                handleImageFile(imageFile);
+            }
+        });
+
+        // Support pasting image into raw markdown editor if active
+        if (this.dom.markdownRawEditor) {
+            this.dom.markdownRawEditor.addEventListener('paste', (e) => {
+                const clipboardData = e.clipboardData || window.clipboardData;
+                if (!clipboardData) return;
+                const items = clipboardData.items ? Array.from(clipboardData.items) : [];
+                const imageItem = items.find(item => item.type && item.type.startsWith('image/'));
+                const file = imageItem ? imageItem.getAsFile() : (clipboardData.files?.[0]?.type?.startsWith('image/') ? clipboardData.files[0] : null);
+                if (file) {
+                    e.preventDefault();
+                    const reader = new FileReader();
+                    reader.onload = (loadEvent) => {
+                        const dataUrl = loadEvent.target?.result;
+                        if (dataUrl) {
+                            const markdownImage = `\n![Pasted Image](${dataUrl})\n`;
+                            const textarea = this.dom.markdownRawEditor;
+                            const start = textarea.selectionStart || 0;
+                            const end = textarea.selectionEnd || 0;
+                            textarea.setRangeText(markdownImage, start, end, 'end');
+                            textarea.dispatchEvent(new Event('input'));
+                            this.toast.show('Image pasted as Markdown into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
     }
 
     insertRetroTable() {
@@ -2337,6 +2438,13 @@ class NotenuxPanel {
 
     /* ---------------- CRUD & API SYNC ---------------- */
     saveActiveNote(manual = false) {
+        if (this.activeNote && this.dom.editorArea && !this.isRawMarkdownMode) {
+            const content = this.dom.editorArea.cloneNode(true);
+            content.querySelectorAll('mark.search-match').forEach(mark => mark.replaceWith(...mark.childNodes));
+            this.activeNote.content = content.innerHTML;
+        } else if (this.activeNote && this.dom.markdownRawEditor && this.isRawMarkdownMode) {
+            this.activeNote.content = MarkdownEngine.parse(this.dom.markdownRawEditor.value);
+        }
         return this.saveNote(this.activeNote, manual);
     }
 
