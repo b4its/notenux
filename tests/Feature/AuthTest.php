@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Category;
+use App\Models\Note;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -43,6 +45,14 @@ test('new user can register with valid data and be authenticated', function () {
         'name' => 'Archie Chronos',
         'email' => 'archie@notenux.dev',
     ]);
+
+    expect(Note::count())->toBe(1);
+    expect(Note::first()->title)->toBe('Halo! Selamat Datang di Notenux');
+    expect(Note::first()->category)->toBe('catatan');
+
+    $registeredUser = User::where('email', 'archie@notenux.dev')->first();
+    expect(Category::where('user_id', $registeredUser->id)->where('slug', 'catatan')->exists())->toBeTrue();
+    expect(Category::where('user_id', $registeredUser->id)->where('slug', 'tugas')->exists())->toBeTrue();
 
     $response->assertRedirect(route('studio'));
 });

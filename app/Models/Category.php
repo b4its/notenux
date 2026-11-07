@@ -101,6 +101,22 @@ class Category extends Model
     {
         return [
             [
+                'name' => 'Catatan',
+                'slug' => 'catatan',
+                'icon' => 'fa-solid fa-note-sticky',
+                'color' => 'blue',
+                'description' => 'Kategori utama untuk catatan harian dan pemikiran.',
+                'is_system' => true,
+            ],
+            [
+                'name' => 'Tugas',
+                'slug' => 'tugas',
+                'icon' => 'fa-solid fa-list-check',
+                'color' => 'emerald',
+                'description' => 'Daftar tugas, agenda, dan to-do list penting.',
+                'is_system' => true,
+            ],
+            [
                 'name' => 'Quests',
                 'slug' => 'quest',
                 'icon' => 'fa-solid fa-khanda',

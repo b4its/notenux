@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
+use App\Models\Note;
 use App\Models\User;
+use App\Services\NoteChunkService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -57,7 +60,7 @@ class AuthController extends Controller
     /**
      * Handle an incoming registration request.
      */
-    public function register(Request $request): RedirectResponse
+    public function register(Request $request, NoteChunkService $chunkService): RedirectResponse
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -70,6 +73,55 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
+
+        // Default categories for newly registered user: Catatan dan Tugas
+        $defaultCategories = [
+            [
+                'user_id' => $user->id,
+                'name' => 'Catatan',
+                'slug' => 'catatan',
+                'icon' => 'fa-solid fa-note-sticky',
+                'color' => 'blue',
+                'description' => 'Kategori utama untuk catatan harian dan pemikiran.',
+                'is_system' => true,
+            ],
+            [
+                'user_id' => $user->id,
+                'name' => 'Tugas',
+                'slug' => 'tugas',
+                'icon' => 'fa-solid fa-list-check',
+                'color' => 'emerald',
+                'description' => 'Daftar tugas, agenda, dan to-do list penting.',
+                'is_system' => true,
+            ],
+        ];
+
+        foreach ($defaultCategories as $categoryData) {
+            Category::firstOrCreate(
+                ['user_id' => $user->id, 'slug' => $categoryData['slug']],
+                $categoryData
+            );
+        }
+
+        // Berikan salam pembuka saja tanpa data dummy banyak
+        $greetingHtml = '<h2>Selamat Datang di Notenux! 👋</h2><p>Halo <strong>'.e($user->name).'</strong>, selamat datang di studio catatan retro Notenux.</p><p>Catatan ini adalah tempat awalmu. Mulai tulis ide hebatmu, kelompokkan dengan kategori <strong>Catatan</strong> atau <strong>Tugas</strong>, dan nikmati sensasi menulis gamifikasi retro.</p>';
+
+        $greetingNote = Note::create([
+            'title' => 'Halo! Selamat Datang di Notenux',
+            'category' => 'catatan',
+            'content' => $greetingHtml,
+            'font_family' => 'sans',
+            'font_size' => '16px',
+            'theme_color' => 'blue',
+            'word_count' => str_word_count(strip_tags($greetingHtml)),
+            'char_count' => mb_strlen(strip_tags($greetingHtml)),
+            'is_pinned' => true,
+            'is_favorite' => false,
+            'level' => 1,
+            'xp' => 10,
+        ]);
+
+        $chunkService->syncChunks($greetingNote, $greetingHtml);
 
         Auth::login($user);
 
