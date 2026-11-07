@@ -299,3 +299,94 @@ test('white-box: RetroSearchableSelect filters options and toggles no-results el
     instance.moveHighlight(-1);
     assert.equal(instance.highlightIndex, 0);
 });
+
+test('white-box: RetroSearchableSelect positions dropdown with fixed coordinates and closes cleanly', () => {
+    const mockSelect = {
+        className: 'w-full',
+        dataset: {},
+        value: 'opt1',
+        options: [
+            { value: 'opt1', textContent: 'Quest Log' },
+            { value: 'opt2', textContent: 'Ancient Lore' },
+        ],
+        querySelector(selector) {
+            const val = selector.match(/value="([^"]+)"/)?.[1];
+            return this.options.find(o => o.value === val);
+        },
+        classList: { add() {}, remove() {}, contains: () => false },
+        parentNode: { insertBefore() {} },
+        addEventListener() {},
+        dispatchEvent() {}
+    };
+
+    const createdElements = [];
+    const context = vm.createContext({
+        window: {
+            innerWidth: 1024,
+            innerHeight: 768,
+            addEventListener() {},
+            removeEventListener() {}
+        },
+        document: {
+            createElement: (tag) => {
+                const el = {
+                    tagName: tag,
+                    className: '',
+                    innerHTML: '',
+                    children: [],
+                    dataset: {},
+                    style: {},
+                    offsetHeight: 200,
+                    offsetWidth: 220,
+                    classList: {
+                        classes: new Set(),
+                        add(c) { this.classes.add(c); },
+                        remove(c) { this.classes.delete(c); },
+                        contains(c) { return this.classes.has(c); },
+                        toggle(c, s) { if (s) this.classes.add(c); else this.classes.delete(c); }
+                    },
+                    appendChild(child) { this.children.push(child); return child; },
+                    querySelector(sel) {
+                        if (sel === '.retro-select-label') return { textContent: '' };
+                        if (sel === '.fa-chevron-down') return { classList: this.classList };
+                        if (sel === '.retro-select-search-input') return { value: '', focus() {}, addEventListener() {} };
+                        if (sel === '.retro-select-options-list') return { innerHTML: '', appendChild() {} };
+                        if (sel === '.retro-select-no-results') return { classList: this.classList };
+                        return null;
+                    },
+                    addEventListener() {},
+                    focus() {},
+                    scrollIntoView() {},
+                    getBoundingClientRect() {
+                        return { top: 100, bottom: 130, left: 200, right: 350, width: 150, height: 30 };
+                    }
+                };
+                createdElements.push(el);
+                return el;
+            },
+            querySelectorAll: () => [],
+            addEventListener: () => {}
+        },
+        MutationObserver: class { observe() {} disconnect() {} },
+        HTMLSelectElement: class {},
+        Event: class { constructor(type) { this.type = type; } },
+        setTimeout: (fn) => fn(),
+        clearTimeout: () => {}
+    });
+
+    vm.runInContext(source + '\nglobalThis.RetroSearchableSelect = RetroSearchableSelect;', context);
+    const instance = new context.RetroSearchableSelect(mockSelect);
+
+    // Open dropdown and verify fixed layout and z-index positioning
+    instance.open();
+    assert.equal(instance.isOpen, true);
+    assert.equal(instance.dropdown.style.position, 'fixed');
+    assert.equal(instance.dropdown.style.zIndex, '99999');
+    assert.equal(instance.dropdown.style.top, '134px');
+    assert.equal(instance.dropdown.style.left, '200px');
+
+    // Close dropdown and verify state
+    instance.close();
+    assert.equal(instance.isOpen, false);
+    assert.equal(instance.dropdown.classList.contains('hidden'), true);
+});

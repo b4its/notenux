@@ -421,11 +421,11 @@ class RetroSearchableSelect {
         this.container.appendChild(this.trigger);
 
         this.dropdown = document.createElement('div');
-        this.dropdown.className = 'retro-select-dropdown hidden absolute z-50';
+        this.dropdown.className = 'retro-select-dropdown hidden fixed z-[99999]';
         this.dropdown.innerHTML = `
             <div class="retro-select-search-box">
                 <div class="relative flex items-center">
-                    <i class="fa-solid fa-magnifying-glass absolute left-2 text-[10px] text-slate-400"></i>
+                    <i class="fa-solid fa-magnifying-glass absolute left-2 text-[10px] text-slate-500 dark:text-slate-400"></i>
                     <input type="text"
                            placeholder="Search..."
                            autocomplete="off"
@@ -483,7 +483,7 @@ class RetroSearchableSelect {
             item.dataset.value = opt.value;
             item.innerHTML = `
                 <span class="truncate">${this.escapeHtml(text)}</span>
-                ${isSelected ? '<i class="fa-solid fa-check text-[10px] text-cyan-500"></i>' : ''}
+                ${isSelected ? '<i class="fa-solid fa-check text-[10px] text-blue-600 dark:text-cyan-400"></i>' : ''}
             `;
 
             item.addEventListener('click', (e) => {
@@ -531,27 +531,90 @@ class RetroSearchableSelect {
 
         this.isOpen = true;
         this.dropdown.classList.remove('hidden');
-        this.chevronEl.classList.add('rotate-180');
-        this.searchInput.value = '';
+        this.chevronEl?.classList?.add?.('rotate-180');
+        if (this.searchInput) {
+            this.searchInput.value = '';
+        }
         this.renderOptions('');
+        this.updatePosition();
 
-        const rect = this.dropdown.getBoundingClientRect?.() || { right: 0 };
-        if (rect.right > (window.innerWidth || 1024) - 10) {
-            this.dropdown.style.left = 'auto';
-            this.dropdown.style.right = '0';
-        } else {
-            this.dropdown.style.left = '0';
-            this.dropdown.style.right = 'auto';
+        if (!this._boundUpdatePosition) {
+            this._boundUpdatePosition = () => {
+                if (this.isOpen) {
+                    this.updatePosition();
+                }
+            };
+        }
+        if (typeof window !== 'undefined' && window.addEventListener) {
+            window.addEventListener('scroll', this._boundUpdatePosition, true);
+            window.addEventListener('resize', this._boundUpdatePosition);
         }
 
-        setTimeout(() => this.searchInput.focus(), 50);
+        setTimeout(() => this.searchInput?.focus?.(), 50);
     }
 
     close() {
         this.isOpen = false;
         this.dropdown.classList.add('hidden');
-        this.chevronEl.classList.remove('rotate-180');
+        this.chevronEl?.classList?.remove?.('rotate-180');
         this.highlightIndex = -1;
+
+        if (this._boundUpdatePosition && typeof window !== 'undefined' && window.removeEventListener) {
+            window.removeEventListener('scroll', this._boundUpdatePosition, true);
+            window.removeEventListener('resize', this._boundUpdatePosition);
+        }
+    }
+
+    updatePosition() {
+        if (!this.isOpen || !this.trigger || !this.dropdown) return;
+        if (!this.trigger.getBoundingClientRect) return;
+
+        const rect = this.trigger.getBoundingClientRect();
+        if (!rect) return;
+
+        const viewportWidth = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1024;
+        const viewportHeight = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 768;
+
+        const isFullWidth = Boolean(this.select?.className && this.select.className.includes('w-full'));
+        const triggerWidth = rect.width || 120;
+        const minW = isFullWidth ? triggerWidth : Math.max(triggerWidth, 190);
+
+        if (this.dropdown.style) {
+            this.dropdown.style.position = 'fixed';
+            this.dropdown.style.zIndex = '99999';
+
+            if (isFullWidth) {
+                this.dropdown.style.width = `${triggerWidth}px`;
+                this.dropdown.style.minWidth = `${triggerWidth}px`;
+            } else {
+                this.dropdown.style.width = 'auto';
+                this.dropdown.style.minWidth = `${Math.min(minW, viewportWidth - 24)}px`;
+            }
+
+            const dropdownHeight = this.dropdown.offsetHeight || 220;
+            const spaceBelow = viewportHeight - (rect.bottom || 0);
+            const spaceAbove = rect.top || 0;
+
+            if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+                this.dropdown.style.top = 'auto';
+                this.dropdown.style.bottom = `${Math.max(8, viewportHeight - (rect.top || 0) + 4)}px`;
+            } else {
+                this.dropdown.style.top = `${(rect.bottom || 0) + 4}px`;
+                this.dropdown.style.bottom = 'auto';
+            }
+
+            let left = rect.left || 0;
+            const targetWidth = this.dropdown.offsetWidth || minW;
+            if (left + targetWidth > viewportWidth - 12) {
+                left = Math.max(12, (rect.right || left) - targetWidth);
+            }
+            if (left < 12) {
+                left = 12;
+            }
+
+            this.dropdown.style.left = `${left}px`;
+            this.dropdown.style.right = 'auto';
+        }
     }
 
     toggle() {
@@ -2218,7 +2281,7 @@ class NotenuxPanel {
         this.dirtyNotes.add(this.activeNote.id);
         this.saveDraftLocal();
         if (this.dom.saveStatusText) {
-            this.dom.saveStatusText.innerHTML = '<span class="text-amber-500 animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Inscribing...</span>';
+            this.dom.saveStatusText.innerHTML = '<span class="text-amber-600 dark:text-amber-400 animate-pulse font-bold"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Inscribing...</span>';
         }
 
         clearTimeout(this.saveTimeout);
@@ -2269,7 +2332,7 @@ class NotenuxPanel {
                 if (unchanged) localStorage.removeItem(`notenux_draft_${note.id}`);
 
                 if (this.dom.saveStatusText && this.activeNote?.id === note.id && unchanged) {
-                    this.dom.saveStatusText.innerHTML = '<span class="text-emerald-500"><i class="fa-solid fa-check mr-1"></i> Synchronized</span>';
+                    this.dom.saveStatusText.innerHTML = '<span class="text-emerald-700 dark:text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Synchronized</span>';
                 }
 
                 this.renderNotesList();
@@ -2289,7 +2352,7 @@ class NotenuxPanel {
             }
         } catch (e) {
             if (this.dom.saveStatusText) {
-                this.dom.saveStatusText.innerHTML = '<span class="text-red-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Storage error</span>';
+                this.dom.saveStatusText.innerHTML = '<span class="text-rose-600 dark:text-rose-400 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Storage error</span>';
             }
             if (manual) {
                 this.toast.show('Failed to synchronize scroll with server database.', 'danger', 'Storage Error');
@@ -2621,11 +2684,11 @@ class NotenuxPanel {
 
         if (this.dom.chunkCountBadge) {
             const count = note.chunks ? note.chunks.length : (note.chunks_count || 1);
-            this.dom.chunkCountBadge.innerHTML = `<i class="fa-solid fa-cubes mr-1 text-cyan-400"></i> ${count} Chunks`;
+            this.dom.chunkCountBadge.innerHTML = `<i class="fa-solid fa-cubes mr-1 text-cyan-700 dark:text-cyan-400"></i> ${count} Chunks`;
         }
 
         if (this.dom.saveStatusText) {
-            this.dom.saveStatusText.innerHTML = '<span class="text-blue-500"><i class="fa-solid fa-circle-check mr-1"></i> Synchronized</span>';
+            this.dom.saveStatusText.innerHTML = '<span class="text-emerald-700 dark:text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i> Synchronized</span>';
         }
     }
 
@@ -2737,8 +2800,8 @@ class NotenuxPanel {
                             }">
                     <div class="flex items-center justify-between gap-1 mb-1">
                         <div class="flex items-center gap-1.5 overflow-hidden">
-                            ${note.is_pinned ? '<i title="Pinned Scroll" class="fa-solid fa-thumbtack text-amber-400 text-xs shrink-0"></i>' : ''}
-                            ${note.is_favorite ? '<i title="Favorite Scroll" class="fa-solid fa-star text-amber-400 text-xs shrink-0"></i>' : ''}
+                            ${note.is_pinned ? '<i title="Pinned Scroll" class="fa-solid fa-thumbtack text-amber-500 dark:text-amber-400 text-xs shrink-0"></i>' : ''}
+                            ${note.is_favorite ? '<i title="Favorite Scroll" class="fa-solid fa-star text-amber-500 dark:text-yellow-400 text-xs shrink-0"></i>' : ''}
                             <h4 class="font-bold text-sm truncate ${isActive ? 'text-white' : 'text-main'}">
                                 ${this.escapeHtml(note.title)}
                             </h4>
@@ -3427,7 +3490,7 @@ class NotenuxPanel {
                 const collapsedBadge = document.querySelector('.collapsed-level-badge');
                 if (collapsedBadge) collapsedBadge.textContent = `LV.${s.level}`;
                 if (this.dom.playerRankTitle) {
-                    this.dom.playerRankTitle.innerHTML = `<i class="fa-solid ${s.rank_badge} text-yellow-400 mr-1.5"></i> ${s.rank_title}`;
+                    this.dom.playerRankTitle.innerHTML = `<i class="fa-solid ${s.rank_badge} text-amber-600 dark:text-yellow-400 mr-1.5"></i> ${s.rank_title}`;
                 }
                 if (this.dom.playerXpText) this.dom.playerXpText.textContent = `${s.total_xp} XP`;
                 if (this.dom.playerXpBar) this.dom.playerXpBar.style.width = `${s.progress_percent}%`;

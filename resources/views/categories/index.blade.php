@@ -58,13 +58,13 @@
                 <button id="sound-toggle-btn"
                         class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle 8-bit Audio SFX">
-                    <i class="fa-solid fa-volume-high text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
+                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
                 </button>
 
                 <button id="crt-toggle-btn"
-                        class="arcade-btn bg-purple-900/40 hover:bg-purple-800/60 text-purple-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle Retro CRT Scanlines">
-                    <i class="fa-solid fa-tv mr-1.5 text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
+                    <i class="fa-solid fa-tv mr-1.5 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
                 </button>
 
                 <button id="theme-toggle-btn"
@@ -91,17 +91,17 @@
                         <span class="font-pixel text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded border border-black">
                             LV.{{ $stats['level'] ?? 1 }}
                         </span>
-                        <span class="text-xs font-mono text-yellow-400"><i class="fa-solid fa-award mr-1"></i>{{ $stats['rank_title'] ?? 'Novice Scribe' }}</span>
+                        <span class="text-xs font-mono text-amber-600 dark:text-yellow-400"><i class="fa-solid fa-award mr-1"></i>{{ $stats['rank_title'] ?? 'Novice Scribe' }}</span>
                     </div>
                     <div class="text-[11px] font-mono text-gray-500 dark:text-gray-400 mt-0.5">
-                        <span>Active Scribe Matrix</span> • <span class="text-cyan-500">{{ $categories->count() }} Grimoire Categories Registered</span>
+                        <span>Active Scribe Matrix</span> • <span class="text-blue-600 dark:text-cyan-400 font-bold">{{ $categories->count() }} Grimoire Categories Registered</span>
                     </div>
                 </div>
             </div>
 
             <div class="flex items-center gap-2">
                 <a href="{{ route('panel') }}" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900 text-xs font-mono px-3 py-1.5 rounded">
-                    <i class="fa-solid fa-scroll mr-1 text-cyan-400"></i> Open Studio
+                    <i class="fa-solid fa-scroll mr-1 text-blue-600 dark:text-cyan-400"></i> Open Studio
                 </a>
             </div>
         </div>
@@ -142,7 +142,7 @@
                     <!-- Category Identifier (Slug) -->
                     <div>
                         <label for="slug" class="block font-bold mb-1 text-xs">
-                            <i class="fa-solid fa-fingerprint text-cyan-500 mr-1"></i> SLUG / IDENTIFIER <span class="text-[10px] opacity-75 font-normal">(Auto-generated if empty)</span>
+                            <i class="fa-solid fa-fingerprint text-blue-600 dark:text-cyan-400 mr-1"></i> SLUG / IDENTIFIER <span class="text-[10px] opacity-75 font-normal">(Auto-generated if empty)</span>
                         </label>
                         <input type="text"
                                id="slug"
@@ -162,27 +162,27 @@
                         </label>
                         <input type="hidden" name="color" id="selected-color-input" value="{{ old('color', 'cyan') }}">
                         <div class="grid grid-cols-6 gap-2 pt-1" id="color-palette-picker">
-                            <button type="button" data-color="cyan" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-cyan-500/20 text-cyan-400 hover:scale-105 transition-transform ring-2 ring-cyan-400">
+                            <button type="button" data-color="cyan" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 hover:scale-105 transition-transform ring-2 ring-cyan-400">
                                 <span class="w-4 h-4 rounded-full bg-cyan-400 border border-black"></span>
                                 <span class="text-[9px] font-bold">CYAN</span>
                             </button>
-                            <button type="button" data-color="blue" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-blue-500/20 text-blue-400 hover:scale-105 transition-transform">
+                            <button type="button" data-color="blue" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-blue-500/20 text-blue-500 hover:scale-105 transition-transform">
                                 <span class="w-4 h-4 rounded-full bg-blue-500 border border-black"></span>
                                 <span class="text-[9px] font-bold">BLUE</span>
                             </button>
-                            <button type="button" data-color="emerald" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-emerald-500/20 text-emerald-400 hover:scale-105 transition-transform">
+                            <button type="button" data-color="emerald" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-emerald-500/20 text-emerald-500 hover:scale-105 transition-transform">
                                 <span class="w-4 h-4 rounded-full bg-emerald-500 border border-black"></span>
                                 <span class="text-[9px] font-bold">GREEN</span>
                             </button>
-                            <button type="button" data-color="amber" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-amber-500/20 text-amber-400 hover:scale-105 transition-transform">
+                            <button type="button" data-color="amber" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-amber-500/20 text-amber-700 dark:text-amber-400 hover:scale-105 transition-transform">
                                 <span class="w-4 h-4 rounded-full bg-amber-500 border border-black"></span>
                                 <span class="text-[9px] font-bold">GOLD</span>
                             </button>
-                            <button type="button" data-color="rose" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-rose-500/20 text-rose-400 hover:scale-105 transition-transform">
+                            <button type="button" data-color="rose" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-rose-500/20 text-rose-500 hover:scale-105 transition-transform">
                                 <span class="w-4 h-4 rounded-full bg-rose-500 border border-black"></span>
                                 <span class="text-[9px] font-bold">ROSE</span>
                             </button>
-                            <button type="button" data-color="purple" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-purple-500/20 text-purple-400 hover:scale-105 transition-transform">
+                            <button type="button" data-color="purple" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-purple-500/20 text-purple-600 hover:scale-105 transition-transform">
                                 <span class="w-4 h-4 rounded-full bg-purple-500 border border-black"></span>
                                 <span class="text-[9px] font-bold">PURPLE</span>
                             </button>
@@ -193,9 +193,9 @@
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <label class="block font-bold text-xs">
-                                <i class="fa-solid fa-icons text-purple-400 mr-1"></i> CATEGORY ICON
+                                <i class="fa-solid fa-icons text-purple-600 dark:text-purple-400 mr-1"></i> CATEGORY ICON
                             </label>
-                            <div class="flex items-center gap-1 text-[11px] font-bold text-cyan-400">
+                            <div class="flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-cyan-400">
                                 <span>Preview:</span>
                                 <i id="icon-live-preview" class="fa-solid fa-flask text-sm"></i>
                             </div>

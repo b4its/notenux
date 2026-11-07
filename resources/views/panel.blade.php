@@ -230,21 +230,21 @@
                 <button id="sound-toggle-btn"
                         class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle 8-bit Audio Synthesizer">
-                    <i class="fa-solid fa-volume-high text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
+                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
                 </button>
 
                 <!-- CRT Scanlines Mode Switcher -->
                 <button id="crt-toggle-btn"
-                        class="arcade-btn bg-purple-900/40 hover:bg-purple-800/60 text-purple-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle Retro CRT Scanlines Effect">
-                    <i class="fa-solid fa-tv mr-1.5 text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
+                    <i class="fa-solid fa-tv mr-1.5 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
                 </button>
 
                 <!-- Arcade Shortcuts Guide Button -->
                 <button id="shortcuts-modal-btn"
                         class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-900 text-main px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Arcade Controller & Keyboard Shortcuts Guide">
-                    <i class="fa-solid fa-keyboard text-amber-400 mr-1.5"></i> <span class="hidden xl:inline">KEYS</span>
+                    <i class="fa-solid fa-keyboard text-amber-600 dark:text-yellow-400 mr-1.5"></i> <span class="hidden xl:inline">KEYS</span>
                 </button>
 
                 <!-- Light / Dark Theme Switcher -->
@@ -300,16 +300,16 @@
                         </div>
                         <div class="min-w-0 flex-1 nav-text-label">
                             <div class="flex items-center justify-between gap-1">
-                                <h3 id="player-rank-title" class="font-bold text-xs truncate text-blue-900 dark:text-cyan-300">
-                                    <i class="fa-solid fa-award text-yellow-400 mr-1"></i> {{ $stats['rank_title'] ?? 'Novice Scribe' }}
+                                <h3 id="player-rank-title" class="font-bold text-xs truncate text-blue-950 dark:text-cyan-300">
+                                    <i class="fa-solid fa-award text-amber-600 dark:text-yellow-400 mr-1"></i> {{ $stats['rank_title'] ?? 'Novice Scribe' }}
                                 </h3>
                                 <span id="player-level-badge" class="font-pixel text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded border border-black shrink-0">
                                     LV.{{ $stats['level'] ?? 1 }}
                                 </span>
                             </div>
-                            <div class="text-[10px] font-mono text-gray-500 dark:text-gray-400 flex items-center justify-between mt-0.5">
-                                <span id="player-mana-text"><i class="fa-solid fa-wand-magic mr-1 text-cyan-400"></i>{{ $stats['mana'] ?? '50/100 MP' }}</span>
-                                <span id="player-xp-text" class="text-amber-500 font-bold">{{ $stats['total_xp'] ?? 10 }} XP</span>
+                            <div class="text-[10px] font-mono text-slate-700 dark:text-gray-300 flex items-center justify-between mt-0.5">
+                                <span id="player-mana-text" class="font-bold"><i class="fa-solid fa-wand-magic mr-1 text-blue-600 dark:text-cyan-400"></i>{{ $stats['mana'] ?? '50/100 MP' }}</span>
+                                <span id="player-xp-text" class="text-amber-600 dark:text-amber-400 font-bold">{{ $stats['total_xp'] ?? 10 }} XP</span>
                             </div>
                         </div>
                     </div>
@@ -326,7 +326,7 @@
             <!-- Primary Nav Links -->
             <nav class="primary-nav-links flex-1 overflow-y-auto p-3 space-y-1.5 font-mono text-xs">
                 <div class="flex items-center justify-between mb-1 px-2 nav-text-label">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Grimoire Categories</span>
+                    <span class="text-[10px] font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider">Grimoire Categories</span>
                     <a href="{{ route('categories.index') }}"
                        class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-blue-900 px-1.5 py-0.5 rounded text-[9px] font-bold text-cyan-600 dark:text-cyan-400"
                        title="Personalize and manage categories">
@@ -391,7 +391,7 @@
                             <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
                                data-category="spellbook"
                                title="Spellbooks">
-                                <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-sm w-4 text-center shrink-0"></i>
+                                <i class="fa-solid fa-wand-magic-sparkles text-purple-600 dark:text-purple-400 text-sm w-4 text-center shrink-0"></i>
                                 <span class="nav-text-label font-bold">Spellbooks</span>
                             </a>
                         </div>
@@ -409,7 +409,7 @@
                             <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
                                data-category="lore"
                                title="Ancient Lore">
-                                <i class="fa-solid fa-scroll text-cyan-400 text-sm w-4 text-center shrink-0"></i>
+                                <i class="fa-solid fa-scroll text-blue-600 dark:text-cyan-400 text-sm w-4 text-center shrink-0"></i>
                                 <span class="nav-text-label font-bold">Ancient Lore</span>
                             </a>
                         </div>
@@ -459,7 +459,7 @@
 
                 <!-- Search Input with Font Awesome Icon -->
                 <div class="relative mb-2">
-                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400 text-xs">
+                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-500 dark:text-gray-400 text-xs">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
                     <input type="text"
@@ -500,7 +500,7 @@
                         </button>
                         <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
                                 data-category="spellbook">
-                            <i class="fa-solid fa-wand-magic-sparkles text-purple-400 mr-1"></i>SPELLS
+                            <i class="fa-solid fa-wand-magic-sparkles text-purple-600 dark:text-purple-400 mr-1"></i>SPELLS
                         </button>
                         <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
                                 data-category="strategy">
@@ -508,7 +508,7 @@
                         </button>
                         <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
                                 data-category="lore">
-                            <i class="fa-solid fa-scroll text-cyan-400 mr-1"></i>LORE
+                            <i class="fa-solid fa-scroll text-blue-600 dark:text-cyan-400 mr-1"></i>LORE
                         </button>
                     @endif
                 </div>
@@ -580,7 +580,7 @@
                                 <button id="favorite-note-btn"
                                         class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs"
                                         title="Toggle Favorite Bookmark">
-                                    <i class="fa-regular fa-star text-amber-400"></i>
+                                    <i class="fa-regular fa-star text-amber-600 dark:text-yellow-400"></i>
                                 </button>
 
                                 <!-- Pin Button -->
@@ -594,7 +594,7 @@
                                 <button id="duplicate-note-btn"
                                         class="arcade-btn bg-surface hover:bg-cyan-100 dark:hover:bg-cyan-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono"
                                         title="Duplicate Scroll">
-                                    <i class="fa-solid fa-clone text-cyan-400"></i>
+                                    <i class="fa-solid fa-clone text-blue-600 dark:text-cyan-400"></i>
                                 </button>
 
                                 <!-- Export Dropdown -->
@@ -602,24 +602,24 @@
                                     <button id="export-note-btn"
                                             class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono"
                                             title="Export Scroll">
-                                        <i class="fa-solid fa-file-arrow-down text-blue-400"></i>
+                                        <i class="fa-solid fa-file-arrow-down text-blue-600 dark:text-blue-400"></i>
                                     </button>
                                     <div id="export-menu" class="hidden absolute right-0 mt-1 w-44 bg-[var(--bg-surface)] border-2 border-black rounded-lg shadow-[3px_3px_0px_#000] z-50 p-1 font-mono text-xs">
                                         <button data-export-format="md" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-brands fa-markdown text-blue-400"></i> Markdown (.md)
+                                            <i class="fa-brands fa-markdown text-blue-600 dark:text-blue-400"></i> Markdown (.md)
                                         </button>
                                         <button data-export-format="html" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-code text-cyan-400"></i> HTML (.html)
+                                            <i class="fa-solid fa-code text-blue-600 dark:text-cyan-400"></i> HTML (.html)
                                         </button>
                                         <button data-export-format="txt" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-file-lines text-amber-400"></i> Text (.txt)
+                                            <i class="fa-solid fa-file-lines text-amber-600 dark:text-amber-400"></i> Text (.txt)
                                         </button>
                                         <div class="border-t border-black/20 my-1"></div>
                                         <button id="copy-markdown-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-copy text-cyan-400"></i> Copy Markdown
+                                            <i class="fa-solid fa-copy text-blue-600 dark:text-cyan-400"></i> Copy Markdown
                                         </button>
                                         <button id="copy-html-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-code text-emerald-400"></i> Copy HTML
+                                            <i class="fa-solid fa-code text-emerald-600 dark:text-emerald-400"></i> Copy HTML
                                         </button>
                                     </div>
                                 </div>
@@ -628,14 +628,14 @@
                                 <button id="zen-mode-btn"
                                         class="arcade-btn bg-surface hover:bg-purple-100 dark:hover:bg-purple-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono"
                                         title="Toggle Distraction-Free Zen Writing Mode">
-                                    <i class="fa-solid fa-expand text-purple-400"></i>
+                                    <i class="fa-solid fa-expand text-purple-600 dark:text-purple-400"></i>
                                 </button>
 
                                 <!-- Archive Button -->
                                 <button id="archive-note-btn"
                                         class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono"
                                         title="Archive Scroll to Library Vault">
-                                    <i class="fa-solid fa-box-archive text-amber-500"></i>
+                                    <i class="fa-solid fa-box-archive text-amber-600 dark:text-amber-400"></i>
                                 </button>
                             </div>
 
@@ -672,14 +672,14 @@
                     <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-black/10 dark:border-white/10 text-xs font-mono">
                         <!-- Word & Character Badges -->
                         <div class="flex items-center gap-2 flex-wrap">
-                            <span id="word-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 font-bold flex items-center">
-                                <i class="fa-solid fa-pen-nib mr-1 text-blue-500"></i> 0 Words
+                            <span id="word-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 font-bold flex items-center">
+                                <i class="fa-solid fa-pen-nib mr-1 text-blue-600 dark:text-blue-400"></i> 0 Words
                             </span>
-                            <span id="char-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 hidden sm:inline-flex items-center">
-                                <i class="fa-solid fa-font mr-1 text-blue-500"></i> 0 Chars
+                            <span id="char-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 font-bold hidden sm:inline-flex items-center">
+                                <i class="fa-solid fa-font mr-1 text-blue-600 dark:text-blue-400"></i> 0 Chars
                             </span>
-                            <span id="reading-time-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 flex items-center">
-                                <i class="fa-solid fa-clock mr-1 text-cyan-500"></i> 1m Read
+                            <span id="reading-time-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 font-bold flex items-center">
+                                <i class="fa-solid fa-clock mr-1 text-blue-600 dark:text-cyan-400"></i> 1m Read
                             </span>
                         </div>
 
@@ -687,9 +687,9 @@
                         <div class="flex items-center gap-2 flex-wrap">
                             <!-- Quest Goal Tracker Pill -->
                             <div class="flex items-center gap-1 bg-surface-alt px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 text-xs font-mono shadow-[1px_1px_0px_#000]">
-                                <i class="fa-solid fa-bullseye text-amber-500"></i>
-                                <span id="quest-goal-text" class="font-bold">Goal: 0/250w</span>
-                                <select id="quest-goal-select" class="bg-transparent border-0 text-[10px] focus:outline-none ml-0.5 cursor-pointer font-bold opacity-80 hover:opacity-100">
+                                <i class="fa-solid fa-bullseye text-amber-600 dark:text-amber-400"></i>
+                                <span id="quest-goal-text" class="font-bold text-slate-900 dark:text-slate-100">Goal: 0/250w</span>
+                                <select id="quest-goal-select" class="bg-transparent border-0 text-[10px] focus:outline-none ml-0.5 cursor-pointer font-bold text-slate-900 dark:text-slate-100 opacity-90 hover:opacity-100">
                                     <option value="100">100w</option>
                                     <option value="250" selected>250w</option>
                                     <option value="500">500w</option>
@@ -698,16 +698,16 @@
                             </div>
 
                             <!-- Synchronized indicator -->
-                            <span id="save-status-text" class="text-xs font-mono text-emerald-500 flex items-center gap-1 font-bold">
+                            <span id="save-status-text" class="text-xs font-mono text-emerald-700 dark:text-emerald-400 flex items-center gap-1 font-bold">
                                 <i class="fa-solid fa-circle-check"></i> Synchronized
                             </span>
 
                             <!-- Chunk Badge Button -->
                             <button id="chunk-count-badge"
                                     onclick="window.notenux.openChunkInspector()"
-                                    class="arcade-btn px-2 py-0.5 rounded border border-cyan-500/50 bg-cyan-100 dark:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 font-bold text-xs"
+                                    class="arcade-btn px-2 py-0.5 rounded border border-cyan-500/50 bg-cyan-100 dark:bg-cyan-950/60 text-cyan-900 dark:text-cyan-200 font-bold text-xs"
                                     title="Click to inspect partitioned database memory shards">
-                                <i class="fa-solid fa-cubes mr-1 text-cyan-500"></i> 1 Chunks
+                                <i class="fa-solid fa-cubes mr-1 text-cyan-700 dark:text-cyan-400"></i> 1 Chunks
                             </button>
                         </div>
                     </div>
@@ -840,7 +840,7 @@
                                 <button id="insert-media-btn"
                                         class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2.5 h-7 rounded text-xs font-mono"
                                         title="Insert Image / Pixel Artifact">
-                                    <i class="fa-solid fa-image mr-1 text-cyan-400"></i> IMG
+                                    <i class="fa-solid fa-image mr-1 text-blue-600 dark:text-cyan-400"></i> IMG
                                 </button>
                             </div>
                         </div>
@@ -867,29 +867,29 @@
                                 <button id="markdown-view-toggle-btn"
                                         class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/40 px-2.5 h-7 rounded text-xs font-mono"
                                         title="Toggle Raw Markdown Textarea View">
-                                    <i class="fa-brands fa-markdown mr-1 text-cyan-400"></i> RAW
+                                    <i class="fa-brands fa-markdown mr-1 text-blue-600 dark:text-cyan-400"></i> RAW
                                 </button>
                                 <button id="find-replace-toggle-btn"
                                         class="arcade-btn bg-surface hover:bg-amber-200 dark:hover:bg-amber-900/40 px-2.5 h-7 rounded text-xs font-mono"
                                         title="Find & Replace in Scroll (Ctrl+F)">
-                                    <i class="fa-solid fa-magnifying-glass mr-1 text-amber-400"></i> FIND
+                                    <i class="fa-solid fa-magnifying-glass mr-1 text-amber-600 dark:text-yellow-400"></i> FIND
                                 </button>
                             </div>
 
                             <!-- Canvas Zoom Widget -->
                             <div class="flex items-center bg-surface rounded border border-black/20 dark:border-blue-800 px-1.5 h-7 shadow-[1px_1px_0px_#000]">
                                 <button id="zoom-out-btn"
-                                        class="text-xs hover:text-cyan-400 px-1 cursor-pointer"
+                                        class="text-xs hover:text-blue-600 dark:hover:text-cyan-400 px-1 cursor-pointer"
                                         title="Zoom Out Canvas">
                                     <i class="fa-solid fa-minus text-[10px]"></i>
                                 </button>
                                 <button id="zoom-reset-btn"
-                                        class="px-1.5 text-[11px] font-mono font-bold hover:text-cyan-400 cursor-pointer"
+                                        class="px-1.5 text-[11px] font-mono font-bold hover:text-blue-600 dark:hover:text-cyan-400 cursor-pointer"
                                         title="Click to Reset Zoom (100%)">
                                     <span id="zoom-level-display">100%</span>
                                 </button>
                                 <button id="zoom-in-btn"
-                                        class="text-xs hover:text-cyan-400 px-1 cursor-pointer"
+                                        class="text-xs hover:text-blue-600 dark:hover:text-cyan-400 px-1 cursor-pointer"
                                         title="Zoom In Canvas">
                                     <i class="fa-solid fa-plus text-[10px]"></i>
                                 </button>
@@ -902,14 +902,14 @@
                 <div id="find-replace-bar" class="shrink-0 hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono">
                     <div class="flex items-center gap-2 flex-wrap">
                         <div class="flex items-center gap-1 bg-surface px-2 py-1 rounded border border-black/30">
-                            <i class="fa-solid fa-magnifying-glass text-cyan-400"></i>
+                            <i class="fa-solid fa-magnifying-glass text-blue-600 dark:text-cyan-400"></i>
                             <input id="find-input" type="text" placeholder="Find in scroll..." class="bg-transparent border-0 focus:outline-none w-32 sm:w-44 text-xs">
                         </div>
                         <div class="flex items-center gap-1 bg-surface px-2 py-1 rounded border border-black/30">
-                            <i class="fa-solid fa-repeat text-amber-400"></i>
+                            <i class="fa-solid fa-repeat text-amber-600 dark:text-amber-400"></i>
                             <input id="replace-input" type="text" placeholder="Replace with..." class="bg-transparent border-0 focus:outline-none w-32 sm:w-44 text-xs">
                         </div>
-                        <span id="find-match-badge" class="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-[10px] font-bold">0 matches</span>
+                        <span id="find-match-badge" class="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[10px] font-bold">0 matches</span>
                         <button id="find-prev-btn" class="arcade-btn bg-surface px-2 py-0.5 rounded text-[10px]" title="Previous match"><i class="fa-solid fa-arrow-up"></i></button>
                         <button id="find-next-btn" class="arcade-btn bg-surface px-2 py-0.5 rounded text-[10px]" title="Next match"><i class="fa-solid fa-arrow-down"></i></button>
                         <button id="replace-one-btn" class="arcade-btn bg-amber-600 hover:bg-amber-500 text-white px-2 py-0.5 rounded text-[10px]">Replace</button>
@@ -971,10 +971,10 @@
                     <div class="flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span>Terminal: ONLINE</span>
-                        <span class="hidden sm:inline">| DB: <code class="text-cyan-500">notenux.note_chunks</code></span>
+                        <span class="hidden sm:inline">| DB: <code class="text-blue-600 dark:text-cyan-400 font-bold">notenux.note_chunks</code></span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span><i class="fa-solid fa-file-code text-cyan-400 mr-1"></i> Markdown & Tables Active</span>
+                        <span><i class="fa-solid fa-file-code text-blue-600 dark:text-cyan-400 mr-1"></i> Markdown & Tables Active</span>
                         <span class="hidden sm:inline">| SHA-256 Checksummed</span>
                     </div>
                 </div>
