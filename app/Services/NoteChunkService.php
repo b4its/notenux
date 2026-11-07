@@ -79,10 +79,11 @@ class NoteChunkService
         if (preg_match('/<[a-z][\s\S]*>/i', $content)) {
             preg_match_all('/<!--[\s\S]*?-->|<\/?[a-zA-Z](?:[^>"\']|"[^"]*"|\'[^\']*\')*>|[^<]+|</', $content, $matches);
             $currentAccumulator = '';
+            $currentBlock = '';
             $openTags = [];
             $voidTags = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
             foreach ($matches[0] as $part) {
-                $currentAccumulator .= $part;
+                $currentBlock .= $part;
                 if (preg_match('/^<\/(\w+)/', $part, $tag)) {
                     if (end($openTags) === strtolower($tag[1])) {
                         array_pop($openTags);
@@ -90,11 +91,17 @@ class NoteChunkService
                 } elseif (preg_match('/^<(\w+)/', $part, $tag) && ! in_array(strtolower($tag[1]), $voidTags, true) && ! str_ends_with($part, '/>')) {
                     $openTags[] = strtolower($tag[1]);
                 }
-                if ($openTags === [] && strlen($currentAccumulator) >= self::MAX_CHUNK_SIZE) {
-                    $rawBlocks[] = $currentAccumulator;
-                    $currentAccumulator = '';
+                if ($openTags === []) {
+                    if ($currentAccumulator !== '' && strlen($currentAccumulator) + strlen($currentBlock) > self::MAX_CHUNK_SIZE) {
+                        $rawBlocks[] = $currentAccumulator;
+                        $currentAccumulator = '';
+                    }
+                    $currentAccumulator .= $currentBlock;
+                    $currentBlock = '';
                 }
             }
+
+            $currentAccumulator .= $currentBlock;
 
             if ($currentAccumulator !== '') {
                 $rawBlocks[] = $currentAccumulator;
