@@ -385,6 +385,27 @@ test('black-box: studio view features clean command deck, semantic toolbar clust
         ->assertSee('BANISH SCROLL CONFIRMATION');
 });
 
+test('black-box: studio view provides plain text notepad mode and one-click copy button', function () {
+    $user = User::factory()->create();
+    Note::factory()->create([
+        'title' => 'Plain Text Manuscript',
+        'category' => 'quest',
+        'content' => '<p>Unformatted thoughts ready to be scribed.</p>',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('studio'));
+    $response->assertOk()
+        ->assertSee('plain-text-toggle-btn')
+        ->assertSee('plain-text-container')
+        ->assertSee('plain-text-editor')
+        ->assertSee('plain-text-copy-btn')
+        ->assertSee('plain-text-exit-btn')
+        ->assertSee('copy-plain-btn')
+        ->assertSee('notepad-mode-banner')
+        ->assertSee('MODE NOTEPAD')
+        ->assertSee('Copy Semua Teks');
+});
+
 test('black-box: user filters notes by pinned_only and favorites_only', function () {
     Note::factory()->create(['title' => 'Pinned Only Note', 'is_pinned' => true, 'is_favorite' => false]);
     Note::factory()->create(['title' => 'Favorite Only Note', 'is_pinned' => false, 'is_favorite' => true]);

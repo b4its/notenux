@@ -661,3 +661,17 @@
 #primary-nav-sidebar.collapsed .sidebar-delete-category-btn {
     display: none !important;
 }
+
+/* ============================================================================== */
+/* NOTEPAD / PLAIN TEXT MODE */
+/* ============================================================================== */
+#editor-toolbar-decks.notepad-mode #editor-deck-1,
+#editor-toolbar-decks.notepad-mode #editor-deck-2-inserts,
+#editor-toolbar-decks.notepad-mode #editor-deck-2-palette {
+    display: none !important;
+}
+
+#editor-toolbar-decks.notepad-mode #notepad-mode-banner {
+    display: flex !important;
+}
+

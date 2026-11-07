@@ -390,6 +390,80 @@ class MarkdownEngine {
     }
 }
 
+/**
+ * Built-in Plain Text Engine for converting HTML to pure unformatted plain text and vice versa
+ */
+class PlainTextEngine {
+    static toPlainText(html) {
+        if (!html || typeof html !== 'string') return '';
+
+        let text = html;
+
+        // Strip scripts, styles, comments
+        text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+        text = text.replace(/<!--[\s\S]*?-->/g, '');
+
+        // Handle line breaks
+        text = text.replace(/<br\s*[\/]?>/gi, '\n');
+
+        // Handle lists
+        text = text.replace(/<li[^>]*>/gi, '• ');
+        text = text.replace(/<\/li>/gi, '\n');
+
+        // Handle table cells and rows
+        text = text.replace(/<\/(td|th)>\s*<(td|th)[^>]*>/gi, '\t');
+        text = text.replace(/<\/(tr|thead|tbody|tfoot)>/gi, '\n');
+
+        // Handle block elements
+        text = text.replace(/<\/(p|div|h[1-6]|blockquote|pre|table)>/gi, '\n\n');
+
+        // Replace horizontal rules
+        text = text.replace(/<hr\s*[\/]?>/gi, '\n---\n');
+
+        // Strip remaining tags
+        text = text.replace(/<[^>]+>/g, '');
+
+        // Decode HTML entities
+        text = text
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/&amp;/gi, '&')
+            .replace(/&lt;/gi, '<')
+            .replace(/&gt;/gi, '>')
+            .replace(/&quot;/gi, '"')
+            .replace(/&#39;/gi, "'")
+            .replace(/&apos;/gi, "'")
+            .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(dec))
+            .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+
+        // Normalize carriage returns and excessive newlines
+        text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        text = text.replace(/\n{3,}/g, '\n\n');
+
+        return text.trim();
+    }
+
+    static toHtml(text) {
+        if (!text || typeof text !== 'string' || !text.trim()) {
+            return '<p><br></p>';
+        }
+
+        const paragraphs = text.split(/\r?\n\r?\n+/);
+        return paragraphs.map(para => {
+            const trimmed = para.trim();
+            if (!trimmed) return '<p><br></p>';
+            const escaped = trimmed
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+            const withBreaks = escaped.replace(/\r?\n/g, '<br>');
+            return `<p>${withBreaks}</p>`;
+        }).join('');
+    }
+}
+
 class RetroSearchableSelect {
     /**
      * @param {HTMLSelectElement} select
@@ -738,13 +812,24 @@ class NotenuxPanel {
         this.xpGainedSession = 0;
         this.currentZoom = 100;
         this.isRawMarkdownMode = false;
+        this.isPlainTextMode = false;
+        this.plainTextOriginalText = '';
+        this.plainTextOriginalHtml = '';
         this.goalCelebrated = false;
         this.saveQueue = Promise.resolve();
         this.selectionVersion = 0;
         this.dirtyNotes = new Set();
         this.activeTableCell = null;
 
+        this.undoStack = [];
+        this.redoStack = [];
+        this.maxHistory = 80;
+        this.isPerformingHistory = false;
+        this.historyDebounce = null;
+
         this.dom = {
+            undoBtn: document.getElementById('editor-undo-btn'),
+            redoBtn: document.getElementById('editor-redo-btn'),
             primaryNavSidebar: document.getElementById('primary-nav-sidebar'),
             notesExplorerSidebar: document.getElementById('notes-explorer-sidebar'),
             sidebarOverlay: document.getElementById('sidebar-overlay'),
@@ -792,6 +877,7 @@ class NotenuxPanel {
             exportNoteBtn: document.getElementById('export-note-btn'),
             exportMenu: document.getElementById('export-menu'),
             copyMarkdownBtn: document.getElementById('copy-markdown-btn'),
+            copyPlainBtn: document.getElementById('copy-plain-btn'),
             copyHtmlBtn: document.getElementById('copy-html-btn'),
             copyJsonBtn: document.getElementById('copy-json-btn'),
             zenModeBtn: document.getElementById('zen-mode-btn'),
@@ -813,6 +899,15 @@ class NotenuxPanel {
             insertMediaBtn: document.getElementById('insert-media-btn'),
             markdownPasteBtn: document.getElementById('markdown-paste-btn'),
             markdownViewToggleBtn: document.getElementById('markdown-view-toggle-btn'),
+            editorToolbarDecks: document.getElementById('editor-toolbar-decks'),
+            plainTextToggleBtn: document.getElementById('plain-text-toggle-btn'),
+            plainTextContainer: document.getElementById('plain-text-container'),
+            plainTextEditor: document.getElementById('plain-text-editor'),
+            plainTextCopyBtn: document.getElementById('plain-text-copy-btn'),
+            plainTextExitBtn: document.getElementById('plain-text-exit-btn'),
+            plainTextCharCount: document.getElementById('plain-text-char-count'),
+            plainTextWordCount: document.getElementById('plain-text-word-count'),
+            plainTextLineCount: document.getElementById('plain-text-line-count'),
 
             tableToolkitBar: document.getElementById('table-toolkit-bar'),
             tableCellCoord: document.getElementById('table-cell-coord'),
@@ -1456,6 +1551,7 @@ class NotenuxPanel {
 
         if (show) {
             if (this.isRawMarkdownMode) this.toggleMarkdownRawView();
+            if (this.isPlainTextMode) this.togglePlainTextMode(false);
             this.dom.findReplaceBar.classList.remove('hidden');
             this.dom.findInput?.focus();
             this.dom.findInput?.select();
@@ -1778,6 +1874,26 @@ class NotenuxPanel {
     bindKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
             const isInputTarget = ['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable;
+            const isForeignInput = ['INPUT', 'TEXTAREA'].includes(e.target.tagName) && e.target !== this.dom.editorArea;
+
+            // Undo: Ctrl + Z (without Shift)
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+                if (!isForeignInput) {
+                    e.preventDefault();
+                    this.undo();
+                    return;
+                }
+            }
+
+            // Redo: Ctrl + Y or Ctrl + Shift + Z
+            if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') ||
+                ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z')) {
+                if (!isForeignInput) {
+                    e.preventDefault();
+                    this.redo();
+                    return;
+                }
+            }
 
             // Save: Ctrl + S
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
@@ -1825,6 +1941,13 @@ class NotenuxPanel {
             if (e.altKey && e.key.toLowerCase() === 'z') {
                 e.preventDefault();
                 this.toggleZenMode();
+                return;
+            }
+
+            // Toggle Plain Text / Notepad Mode: Alt + N
+            if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'n') {
+                e.preventDefault();
+                this.togglePlainTextMode();
                 return;
             }
 
@@ -2057,6 +2180,17 @@ class NotenuxPanel {
             this.handleEditorInput();
         });
 
+        this.dom.plainTextEditor?.addEventListener('input', () => {
+            if (!this.activeNote) return;
+            const plain = this.dom.plainTextEditor.value;
+            const html = this.plainTextToHtml(plain);
+            if (this.dom.editorArea) {
+                this.dom.editorArea.innerHTML = html;
+            }
+            this.updatePlainTextStats();
+            this.handleEditorInput();
+        });
+
         this.dom.saveNowBtn?.addEventListener('click', () => {
             this.saveActiveNote(true);
         });
@@ -2094,6 +2228,12 @@ class NotenuxPanel {
                 this.exportActiveNote(format);
                 this.dom.exportMenu?.classList.add('hidden');
             });
+        });
+
+        this.dom.copyPlainBtn?.addEventListener('click', () => {
+            if (!this.activeNote) return;
+            this.dom.exportMenu?.classList.add('hidden');
+            this.copyEntirePlainText();
         });
 
         this.dom.copyMarkdownBtn?.addEventListener('click', () => {
@@ -2172,6 +2312,16 @@ class NotenuxPanel {
             }
         });
 
+        this.dom.undoBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.undo();
+        });
+
+        this.dom.redoBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.redo();
+        });
+
         this.dom.insertTableBtn?.addEventListener('click', (e) => {
             e.preventDefault();
             this.insertRetroTable();
@@ -2194,6 +2344,18 @@ class NotenuxPanel {
 
         this.dom.markdownViewToggleBtn?.addEventListener('click', () => {
             this.toggleMarkdownRawView();
+        });
+
+        this.dom.plainTextToggleBtn?.addEventListener('click', () => {
+            this.togglePlainTextMode();
+        });
+
+        this.dom.plainTextExitBtn?.addEventListener('click', () => {
+            this.togglePlainTextMode(false);
+        });
+
+        this.dom.plainTextCopyBtn?.addEventListener('click', () => {
+            this.copyEntirePlainText();
         });
 
         this.dom.inspectChunksBtn?.addEventListener('click', () => {
@@ -2267,6 +2429,17 @@ class NotenuxPanel {
                 const command = btn.dataset.command;
                 const value = btn.dataset.value || null;
 
+                if (command === 'undo') {
+                    this.undo();
+                    return;
+                }
+                if (command === 'redo') {
+                    this.redo();
+                    return;
+                }
+
+                this.pushUndoSnapshot();
+
                 if (command === 'createLink') {
                     const url = prompt('Enter link URL (https://...):');
                     if (url && /^(https?:\/\/|mailto:|#)/i.test(url)) {
@@ -2281,6 +2454,7 @@ class NotenuxPanel {
 
                 this.dom.editorArea.focus();
                 this.handleEditorInput();
+                this.pushUndoSnapshot();
             });
         });
 
@@ -2288,11 +2462,13 @@ class NotenuxPanel {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.audio.playClick();
+                this.pushUndoSnapshot();
                 const color = btn.dataset.color;
                 const type = btn.dataset.colorType || 'foreColor';
                 document.execCommand(type, false, color);
                 this.dom.editorArea.focus();
                 this.handleEditorInput();
+                this.pushUndoSnapshot();
             });
         });
     }
@@ -2476,6 +2652,7 @@ class NotenuxPanel {
 
     insertRetroTable() {
         this.audio.playCoin();
+        this.pushUndoSnapshot();
         const tableHtml = `
             <table class="retro-table">
                 <thead>
@@ -2680,6 +2857,8 @@ class NotenuxPanel {
         const table = tr?.closest ? tr.closest('table') : null;
         if (!tr || !table) return;
 
+        this.pushUndoSnapshot();
+
         const colCount = tr.cells ? tr.cells.length : 1;
         const newTr = document.createElement('tr');
         const isHeader = position === 'above' && (tr.closest ? tr.closest('thead') !== null : false);
@@ -2715,6 +2894,8 @@ class NotenuxPanel {
         const table = tr?.closest ? tr.closest('table') : null;
         if (!tr || !table) return;
 
+        this.pushUndoSnapshot();
+
         const allRows = table.querySelectorAll ? table.querySelectorAll('tr') : [];
         if (allRows.length <= 1) {
             table.remove();
@@ -2748,6 +2929,8 @@ class NotenuxPanel {
         }
         const table = cell.closest ? cell.closest('table') : null;
         if (!table) return;
+
+        this.pushUndoSnapshot();
 
         const colIdx = cell.cellIndex !== undefined ? cell.cellIndex : 0;
         const rows = table.querySelectorAll ? table.querySelectorAll('tr') : [];
@@ -2785,6 +2968,8 @@ class NotenuxPanel {
         const table = cell.closest ? cell.closest('table') : null;
         if (!table) return;
 
+        this.pushUndoSnapshot();
+
         const colIdx = cell.cellIndex !== undefined ? cell.cellIndex : 0;
         const rows = table.querySelectorAll ? table.querySelectorAll('tr') : [];
         const firstRow = rows[0];
@@ -2821,6 +3006,8 @@ class NotenuxPanel {
         const tr = cell.closest ? cell.closest('tr') : null;
         if (!tr || !tr.cells) return;
 
+        this.pushUndoSnapshot();
+
         const cells = Array.from(tr.cells);
         const isHeader = cells.every(c => c.tagName.toLowerCase() === 'th');
         const targetTag = isHeader ? 'td' : 'th';
@@ -2846,6 +3033,7 @@ class NotenuxPanel {
 
     tableSetAlign(align) {
         if (!this.activeTableCell) return;
+        this.pushUndoSnapshot();
         this.activeTableCell.style.textAlign = align;
         this.handleEditorInput();
         this.toast.show(`Perataan teks: ${align}`, 'info');
@@ -2853,18 +3041,21 @@ class NotenuxPanel {
 
     tableSetCellBg(color) {
         if (!this.activeTableCell) return;
+        this.pushUndoSnapshot();
         this.activeTableCell.style.backgroundColor = color;
         this.handleEditorInput();
     }
 
     tableSetCellColor(color) {
         if (!this.activeTableCell) return;
+        this.pushUndoSnapshot();
         this.activeTableCell.style.color = color;
         this.handleEditorInput();
     }
 
     tableResetColors() {
         if (!this.activeTableCell) return;
+        this.pushUndoSnapshot();
         this.activeTableCell.style.removeProperty('background-color');
         this.activeTableCell.style.removeProperty('color');
         this.handleEditorInput();
@@ -2876,6 +3067,7 @@ class NotenuxPanel {
             this.toast.show('Pilih sel tabel terlebih dahulu!', 'warning');
             return;
         }
+        this.pushUndoSnapshot();
         const img = document.createElement('img');
         img.src = dataUrl;
         img.alt = 'Table Image';
@@ -2889,6 +3081,7 @@ class NotenuxPanel {
     tableDeleteTable() {
         const table = this.activeTableCell?.closest ? this.activeTableCell.closest('table') : null;
         if (table) {
+            this.pushUndoSnapshot();
             table.remove();
             this.setActiveTableCell(null);
             this.handleEditorInput();
@@ -2899,6 +3092,7 @@ class NotenuxPanel {
 
     insertInteractiveTask() {
         this.audio.playClick();
+        this.pushUndoSnapshot();
         const taskHtml = `
             <ul class="task-list my-2">
                 <li class="flex items-center gap-2">
@@ -2918,6 +3112,8 @@ class NotenuxPanel {
         this.audio.playClick();
         const choice = prompt('Enter Image URL (or type "sword", "crystal", "shield" for retro presets):', 'crystal');
         if (!choice) return;
+
+        this.pushUndoSnapshot();
 
         let src = choice;
         let alt = 'Media Item';
@@ -2950,7 +3146,12 @@ class NotenuxPanel {
 
     toggleMarkdownRawView() {
         this.toggleFindBar(false);
-        this.audio.playBlip();
+        this.audio?.playBlip?.();
+
+        if (this.isPlainTextMode) {
+            this.togglePlainTextMode(false);
+        }
+
         this.isRawMarkdownMode = !this.isRawMarkdownMode;
 
         if (this.isRawMarkdownMode) {
@@ -2972,6 +3173,145 @@ class NotenuxPanel {
             this.toast.show('WYSIWYG Rich Editor restored', 'info');
             this.handleEditorInput();
         }
+    }
+
+    togglePlainTextMode(forceState = null) {
+        this.toggleFindBar(false);
+        this.audio?.playBlip?.();
+
+        const targetState = forceState !== null ? forceState : !this.isPlainTextMode;
+        if (targetState === this.isPlainTextMode) return;
+
+        if (targetState && this.isRawMarkdownMode) {
+            this.toggleMarkdownRawView();
+        }
+
+        this.isPlainTextMode = targetState;
+
+        if (this.isPlainTextMode) {
+            const html = this.dom.editorArea ? this.dom.editorArea.innerHTML : '';
+            const plain = this.htmlToPlainText(html);
+            this.plainTextOriginalHtml = html;
+            this.plainTextOriginalText = plain;
+
+            if (this.dom.plainTextEditor) {
+                this.dom.plainTextEditor.value = plain;
+            }
+            this.updatePlainTextStats();
+
+            this.dom.editorArea?.classList.add('hidden');
+            this.dom.markdownRawEditor?.classList.add('hidden');
+            this.dom.plainTextContainer?.classList.remove('hidden');
+
+            if (this.dom.plainTextToggleBtn) {
+                this.dom.plainTextToggleBtn.classList.add('bg-emerald-600', 'text-white');
+                this.dom.plainTextToggleBtn.classList.remove('bg-surface');
+                this.dom.plainTextToggleBtn.innerHTML = '<i class="fa-solid fa-eye mr-1 text-white"></i> WYSIWYG';
+                this.dom.plainTextToggleBtn.title = 'Kembali ke Mode Rich Editor (WYSIWYG)';
+            }
+
+            if (this.dom.editorToolbarDecks) {
+                this.dom.editorToolbarDecks.classList.add('notepad-mode');
+            }
+
+            this.toast.show('Mode Teks Biasa (Notepad) aktif. Teks siap disalin keseluruhan.', 'info', 'Notepad Mode', 'fa-solid fa-file-lines text-emerald-400');
+            this.dom.plainTextEditor?.focus();
+        } else {
+            const currentPlain = this.dom.plainTextEditor ? this.dom.plainTextEditor.value : '';
+            const html = currentPlain === this.plainTextOriginalText
+                ? this.plainTextOriginalHtml
+                : this.plainTextToHtml(currentPlain);
+
+            if (this.dom.editorArea) {
+                this.dom.editorArea.innerHTML = html;
+            }
+
+            this.dom.plainTextContainer?.classList.add('hidden');
+            this.dom.editorArea?.classList.remove('hidden');
+
+            if (this.dom.plainTextToggleBtn) {
+                this.dom.plainTextToggleBtn.classList.remove('bg-emerald-600', 'text-white');
+                this.dom.plainTextToggleBtn.classList.add('bg-surface');
+                this.dom.plainTextToggleBtn.innerHTML = '<i class="fa-solid fa-file-lines mr-1 text-emerald-600 dark:text-emerald-400"></i> TXT';
+                this.dom.plainTextToggleBtn.title = 'Mode Teks Biasa / Notepad (Alt+N)';
+            }
+
+            if (this.dom.editorToolbarDecks) {
+                this.dom.editorToolbarDecks.classList.remove('notepad-mode');
+            }
+
+            this.toast.show('Kembali ke Mode Rich Editor (WYSIWYG).', 'info', 'Rich Editor', 'fa-solid fa-pen-nib text-blue-400');
+            this.handleEditorInput();
+        }
+    }
+
+    async copyEntirePlainText() {
+        let text = '';
+        if (this.isPlainTextMode && this.dom.plainTextEditor) {
+            text = this.dom.plainTextEditor.value;
+        } else if (this.dom.editorArea) {
+            text = this.htmlToPlainText(this.dom.editorArea.innerHTML);
+        } else if (this.activeNote) {
+            text = this.htmlToPlainText(this.activeNote.content || '');
+        }
+
+        let success = false;
+        try {
+            if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+                success = true;
+            } else if (typeof document !== 'undefined') {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                ta.style.top = '-9999px';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                success = document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+        } catch {
+            success = false;
+        }
+
+        if (success) {
+            this.audio?.playCoin?.();
+            this.toast.show('Seluruh teks berhasil disalin ke clipboard!', 'success', 'Teks Disalin', 'fa-solid fa-copy text-emerald-400');
+        } else {
+            this.toast.show('Gagal menyalin teks ke clipboard.', 'danger', 'Gagal Salin');
+        }
+
+        return success;
+    }
+
+    updatePlainTextStats() {
+        if (!this.dom.plainTextEditor) return;
+        const text = this.dom.plainTextEditor.value || '';
+        const charCount = text.length;
+        const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean) : [];
+        const wordCount = words.length;
+        const lines = text ? text.split(/\r?\n/).length : 0;
+
+        if (this.dom.plainTextCharCount) {
+            this.dom.plainTextCharCount.textContent = `${charCount} karakter`;
+        }
+        if (this.dom.plainTextWordCount) {
+            this.dom.plainTextWordCount.textContent = `${wordCount} kata`;
+        }
+        if (this.dom.plainTextLineCount) {
+            this.dom.plainTextLineCount.textContent = `${lines} baris`;
+        }
+    }
+
+    htmlToPlainText(html) {
+        return PlainTextEngine.toPlainText(html);
+    }
+
+    plainTextToHtml(text) {
+        return PlainTextEngine.toHtml(text);
     }
 
     promptMarkdownInput() {
@@ -3019,13 +3359,94 @@ class NotenuxPanel {
     handleEditorInput() {
         if (!this.activeNote) return;
 
-        const content = this.dom.editorArea.cloneNode(true);
-        content.querySelectorAll('mark.search-match').forEach(mark => mark.replaceWith(...mark.childNodes));
+        const content = this.dom.editorArea?.cloneNode ? this.dom.editorArea.cloneNode(true) : { querySelectorAll: () => [], innerHTML: this.dom.editorArea?.innerHTML || '' };
+        content.querySelectorAll?.('mark.search-match')?.forEach(mark => mark.replaceWith(...mark.childNodes));
         this.activeNote.content = content.innerHTML;
         this.updateWordAndCharMetrics();
         this.triggerXpBurst();
         this.saveDraftLocal();
         this.scheduleAutoSave();
+
+        if (!this.isPerformingHistory) {
+            clearTimeout(this.historyDebounce);
+            this.historyDebounce = setTimeout(() => {
+                this.pushUndoSnapshot();
+            }, 300);
+        }
+    }
+
+    /* ---------------- UNDO / REDO HISTORY ENGINE ---------------- */
+    initHistory(initialContent = '') {
+        this.undoStack = [initialContent];
+        this.redoStack = [];
+        this.isPerformingHistory = false;
+    }
+
+    pushUndoSnapshot() {
+        if (this.isPerformingHistory || !this.dom.editorArea) return;
+        const current = this.dom.editorArea.innerHTML;
+        if (!this.undoStack || this.undoStack.length === 0) {
+            this.undoStack = [current];
+            this.redoStack = [];
+            return;
+        }
+        if (this.undoStack[this.undoStack.length - 1] !== current) {
+            this.undoStack.push(current);
+            if (this.undoStack.length > (this.maxHistory || 80)) {
+                this.undoStack.shift();
+            }
+            this.redoStack = [];
+        }
+    }
+
+    undo() {
+        if (this.isPerformingHistory || !this.dom.editorArea) return;
+        if (!this.undoStack) this.undoStack = [];
+        if (!this.redoStack) this.redoStack = [];
+
+        const current = this.dom.editorArea.innerHTML;
+        if (this.undoStack.length > 0 && this.undoStack[this.undoStack.length - 1] !== current) {
+            this.undoStack.push(current);
+        }
+
+        if (this.undoStack.length > 1) {
+            this.isPerformingHistory = true;
+            const currentState = this.undoStack.pop();
+            this.redoStack.push(currentState);
+            const targetState = this.undoStack[this.undoStack.length - 1];
+            this.dom.editorArea.innerHTML = targetState;
+            this.handleEditorInput();
+            this.audio?.playClick?.();
+            this.toast?.show?.('Perubahan dibatalkan (Undo)', 'info', 'Undo', 'fa-solid fa-rotate-left text-cyan-400');
+            this.isPerformingHistory = false;
+        } else {
+            try {
+                document.execCommand('undo', false, null);
+            } catch (_) {}
+        }
+        this.dom.editorArea.focus?.();
+    }
+
+    redo() {
+        if (this.isPerformingHistory || !this.dom.editorArea) return;
+        if (!this.undoStack) this.undoStack = [];
+        if (!this.redoStack) this.redoStack = [];
+
+        if (this.redoStack.length > 0) {
+            this.isPerformingHistory = true;
+            const nextState = this.redoStack.pop();
+            this.undoStack.push(nextState);
+            this.dom.editorArea.innerHTML = nextState;
+            this.handleEditorInput();
+            this.audio?.playClick?.();
+            this.toast?.show?.('Perubahan diulang (Redo)', 'info', 'Redo', 'fa-solid fa-rotate-right text-cyan-400');
+            this.isPerformingHistory = false;
+        } else {
+            try {
+                document.execCommand('redo', false, null);
+            } catch (_) {}
+        }
+        this.dom.editorArea.focus?.();
     }
 
     updateWordAndCharMetrics() {
@@ -3111,12 +3532,16 @@ class NotenuxPanel {
 
     /* ---------------- CRUD & API SYNC ---------------- */
     saveActiveNote(manual = false) {
-        if (this.activeNote && this.dom.editorArea && !this.isRawMarkdownMode) {
+        if (this.activeNote && this.dom.editorArea && !this.isRawMarkdownMode && !this.isPlainTextMode) {
             const content = this.dom.editorArea.cloneNode(true);
             content.querySelectorAll('mark.search-match').forEach(mark => mark.replaceWith(...mark.childNodes));
             this.activeNote.content = content.innerHTML;
         } else if (this.activeNote && this.dom.markdownRawEditor && this.isRawMarkdownMode) {
             this.activeNote.content = MarkdownEngine.parse(this.dom.markdownRawEditor.value);
+        } else if (this.activeNote && this.dom.plainTextEditor && this.isPlainTextMode) {
+            this.activeNote.content = this.dom.plainTextEditor.value === this.plainTextOriginalText
+                ? this.plainTextOriginalHtml
+                : this.plainTextToHtml(this.dom.plainTextEditor.value);
         }
         return this.saveNote(this.activeNote, manual);
     }
@@ -3523,12 +3948,21 @@ class NotenuxPanel {
 
         if (this.dom.editorArea) {
             this.dom.editorArea.innerHTML = sanitizeHtml(note.content || '');
+            this.initHistory(this.dom.editorArea.innerHTML);
         }
 
         if (this.dom.markdownRawEditor) {
             this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(note.content || '');
             this.rawViewOriginalMarkdown = this.dom.markdownRawEditor.value;
             this.rawViewOriginalHtml = this.dom.editorArea.innerHTML;
+        }
+
+        if (this.dom.plainTextEditor) {
+            const plain = this.htmlToPlainText(note.content || '');
+            this.dom.plainTextEditor.value = plain;
+            this.plainTextOriginalText = plain;
+            this.plainTextOriginalHtml = this.dom.editorArea ? this.dom.editorArea.innerHTML : (note.content || '');
+            this.updatePlainTextStats();
         }
 
         const font = note.font_family || 'pixel';
@@ -4453,3 +4887,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.RetroSearchableSelect = RetroSearchableSelect;
+window.PlainTextEngine = PlainTextEngine;
+if (typeof globalThis !== 'undefined') {
+    globalThis.PlainTextEngine = PlainTextEngine;
+}

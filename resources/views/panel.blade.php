@@ -746,9 +746,9 @@
                 <!-- ============================================================================== -->
                 <!-- ARSENAL TOOLBAR: DEDICATED 2-ROW STUDIO CONSOLE -->
                 <!-- ============================================================================== -->
-                <div class="arcade-card p-2 sm:p-2.5 rounded-xl flex flex-col gap-2 shadow-[3px_3px_0px_#000]">
+                <div id="editor-toolbar-decks" class="arcade-card p-2 sm:p-2.5 rounded-xl flex flex-col gap-2 shadow-[3px_3px_0px_#000]">
                     <!-- Toolbar Deck 1: Typography & Inline Formatting -->
-                    <div class="flex items-center justify-between gap-1.5 pb-2 border-b border-black/10 dark:border-white/10 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap">
+                    <div id="editor-deck-1" class="flex items-center justify-between gap-1.5 pb-2 border-b border-black/10 dark:border-white/10 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap">
                         <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
                             <!-- Font Family & Size Combined Pill -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
@@ -777,10 +777,10 @@
 
                             <!-- Undo & Redo -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
-                                <button data-command="undo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Undo (Ctrl+Z)">
+                                <button id="editor-undo-btn" data-command="undo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Undo (Ctrl+Z)">
                                     <i class="fa-solid fa-rotate-left"></i>
                                 </button>
-                                <button data-command="redo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Redo (Ctrl+Y)">
+                                <button id="editor-redo-btn" data-command="redo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Redo (Ctrl+Y / Ctrl+Shift+Z)">
                                     <i class="fa-solid fa-rotate-right"></i>
                                 </button>
                             </div>
@@ -834,7 +834,14 @@
 
                     <!-- Toolbar Deck 2: Structural Blocks, Inserts, Studio Tools, Palette & Canvas Zoom -->
                     <div class="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap">
-                        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        <!-- Notepad Mode Active Banner (Visible only in Notepad mode) -->
+                        <div id="notepad-mode-banner" class="hidden items-center gap-2 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-500/60 rounded-lg px-2.5 py-1 text-xs font-mono text-emerald-900 dark:text-emerald-300 shadow-[1px_1px_0px_#000]">
+                            <i class="fa-solid fa-file-lines text-emerald-600 dark:text-emerald-400"></i>
+                            <span class="font-bold">MODE NOTEPAD</span>
+                            <span class="hidden md:inline text-black/60 dark:text-emerald-400/80">— Teks biasa murni tanpa format, siap disalin kapan saja.</span>
+                        </div>
+
+                        <div id="editor-deck-2-inserts" class="flex items-center gap-1 sm:gap-1.5 shrink-0">
                             <!-- Lists & Structure -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
                                 <button data-command="insertUnorderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Bullet List">
@@ -877,7 +884,7 @@
                         <!-- Right: Color Palette, Studio Tools & Canvas Zoom -->
                         <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
                             <!-- Color Palette Swatches -->
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] px-1.5 h-7">
+                            <div id="editor-deck-2-palette" class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] px-1.5 h-7">
                                 <button data-color="#38bdf8" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-cyan-400 border border-black cursor-pointer hover:scale-110 transition-transform" title="Neon Cyan"></button>
                                 <button data-color="#3b82f6" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-blue-500 border border-black cursor-pointer hover:scale-110 transition-transform" title="Arcade Blue"></button>
                                 <button data-color="#10b981" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-black cursor-pointer hover:scale-110 transition-transform" title="Emerald Glow"></button>
@@ -886,7 +893,7 @@
                                 <button data-color="#f8fafc" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-slate-100 border border-black cursor-pointer hover:scale-110 transition-transform" title="White"></button>
                             </div>
 
-                            <!-- Studio Markdown Tools -->
+                            <!-- Studio Markdown & Plain Text Tools -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
                                 <button id="markdown-paste-btn"
                                         class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2.5 h-7 rounded text-xs font-mono"
@@ -897,6 +904,11 @@
                                         class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/40 px-2.5 h-7 rounded text-xs font-mono"
                                         title="Toggle Raw Markdown Textarea View">
                                     <i class="fa-brands fa-markdown mr-1 text-blue-600 dark:text-cyan-400"></i> RAW
+                                </button>
+                                <button id="plain-text-toggle-btn"
+                                        class="arcade-btn bg-surface hover:bg-emerald-200 dark:hover:bg-emerald-900/40 px-2.5 h-7 rounded text-xs font-mono"
+                                        title="Mode Teks Biasa / Notepad (Alt+N)">
+                                    <i class="fa-solid fa-file-lines mr-1 text-emerald-600 dark:text-emerald-400"></i> TXT
                                 </button>
                                 <button id="find-replace-toggle-btn"
                                         class="arcade-btn bg-surface hover:bg-amber-200 dark:hover:bg-amber-900/40 px-2.5 h-7 rounded text-xs font-mono"
@@ -1054,6 +1066,54 @@
                         <textarea id="markdown-raw-editor"
                                   spellcheck="false"
                                   class="hidden w-full h-[500px] p-4 font-mono text-sm bg-black/80 text-cyan-300 border-2 border-cyan-500 rounded-lg focus:outline-none leading-relaxed resize-y"></textarea>
+
+                        <!-- Plain Text / Notepad Mode Container (Hidden by default, toggleable via TXT button or Alt+N) -->
+                        <div id="plain-text-container" class="hidden flex flex-col flex-1 min-h-[420px]">
+                            <!-- Notepad Top Bar: Mode Badge, Real-time Stats & Dedicated Copy All Button -->
+                            <div class="bg-surface-alt border-2 border-black dark:border-emerald-700 rounded-t-lg p-2.5 flex items-center justify-between gap-2 flex-wrap shadow-[2px_2px_0px_#000]">
+                                <div class="flex items-center gap-2.5 flex-wrap">
+                                    <div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-600 text-white font-mono text-xs font-bold shadow-[1px_1px_0px_#000]">
+                                        <i class="fa-solid fa-file-lines"></i>
+                                        <span>NOTEPAD</span>
+                                    </div>
+                                    <span class="text-xs font-mono text-black/70 dark:text-emerald-300 font-semibold hidden sm:inline">Mode Teks Biasa (Tanpa Format)</span>
+                                    <div class="text-[11px] font-mono text-black/60 dark:text-emerald-400/90 flex items-center gap-1.5 bg-surface px-2 py-0.5 rounded border border-black/10 dark:border-emerald-900/50">
+                                        <span id="plain-text-char-count">0 karakter</span>
+                                        <span>•</span>
+                                        <span id="plain-text-word-count">0 kata</span>
+                                        <span>•</span>
+                                        <span id="plain-text-line-count">1 baris</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-1.5">
+                                    <!-- Copy Entire Text Button -->
+                                    <button id="plain-text-copy-btn"
+                                            type="button"
+                                            class="arcade-btn bg-emerald-600 hover:bg-emerald-500 active:translate-y-0.5 text-white px-3 py-1 rounded text-xs font-mono font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#000]"
+                                            title="Salin seluruh teks ke clipboard">
+                                        <i class="fa-solid fa-copy"></i>
+                                        <span>Copy Semua Teks</span>
+                                    </button>
+
+                                    <!-- Switch Back to Rich Editor -->
+                                    <button id="plain-text-exit-btn"
+                                            type="button"
+                                            class="arcade-btn bg-surface hover:bg-gray-200 dark:hover:bg-slate-800 text-black dark:text-white px-2.5 py-1 rounded text-xs font-mono flex items-center gap-1 shadow-[1px_1px_0px_#000]"
+                                            title="Kembali ke Mode Rich Editor">
+                                        <i class="fa-solid fa-arrow-left"></i>
+                                        <span class="hidden sm:inline">Rich Editor</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Notepad Pure Plain Textarea -->
+                            <textarea id="plain-text-editor"
+                                      spellcheck="false"
+                                      class="w-full flex-1 min-h-[400px] p-4 font-mono text-sm bg-white dark:bg-[#0c1319] text-gray-900 dark:text-emerald-300 border-2 border-t-0 border-black dark:border-emerald-700 rounded-b-lg focus:outline-none focus:ring-0 leading-relaxed resize-y selection:bg-emerald-400 selection:text-black font-mono"
+                                      style="font-family: 'Fira Code', 'Courier New', Courier, monospace; font-size: 14px;"
+                                      placeholder="Mulai menulis teks biasa di sini seperti di Notepad... Tidak ada format teks apa pun di dalam mode ini dan siap di-copy keseluruhan."></textarea>
+                        </div>
                     </div>
                 </div>
 
@@ -1222,6 +1282,10 @@
                         <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + M</kbd>
                     </div>
                     <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Mode Notepad (Teks Biasa)</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-emerald-400 border border-emerald-500 text-[10px]">Alt + N</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
                         <span>Export Scroll</span>
                         <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + E</kbd>
                     </div>
@@ -1236,6 +1300,10 @@
                     <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
                         <span>Batal (Undo)</span>
                         <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + Z</kbd>
+                    </div>
+                    <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
+                        <span>Ulangi (Redo)</span>
+                        <kbd class="px-1.5 py-0.5 rounded bg-black text-cyan-300 border border-cyan-500 text-[10px]">Ctrl + Y / Ctrl + Shift + Z</kbd>
                     </div>
                     <div class="p-2 rounded bg-surface-alt border border-black/20 flex items-center justify-between">
                         <span>Cheat Sheet (This)</span>

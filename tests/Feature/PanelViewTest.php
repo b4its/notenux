@@ -99,3 +99,19 @@ test('it renders symmetrical collapsed sidebar structure with centered avatars, 
         ->assertSee('collapsed-cat-header')
         ->assertSee('title="All Scrolls"', false);
 });
+
+test('it renders undo and redo toolbar buttons and cheat sheet keyboard shortcuts', function () {
+    $response = $this->get(route('studio'));
+
+    $response->assertOk()
+        ->assertSee('editor-undo-btn')
+        ->assertSee('editor-redo-btn')
+        ->assertSee('data-command="undo"', false)
+        ->assertSee('data-command="redo"', false)
+        ->assertSee('Undo (Ctrl+Z)')
+        ->assertSee('Redo (Ctrl+Y')
+        ->assertSee('Batal (Undo)')
+        ->assertSee('Ulangi (Redo)')
+        ->assertSee('Ctrl + Z')
+        ->assertSee('Ctrl + Y / Ctrl + Shift + Z');
+});

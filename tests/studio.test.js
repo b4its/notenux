@@ -1147,3 +1147,316 @@ test('white-box: sanitizeHtml in app.js strips svg base64 data URIs while allowi
     const sanitizeHtml = context.sanitizeHtml;
     assert.equal(typeof sanitizeHtml, 'function');
 });
+
+test('white-box: PlainTextEngine converts rich html to clean unformatted plain text and vice versa', () => {
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({ querySelectorAll: () => [], attributes: [], content: { querySelectorAll: () => [] } }),
+            addEventListener() {},
+        }
+    });
+    vm.runInContext(source + '\nglobalThis.PlainTextEngine = PlainTextEngine;', context);
+    const PlainTextEngine = context.PlainTextEngine;
+
+    // Test rich HTML with headings, paragraphs, bold, lists, and linebreaks
+    const richHtml = '<h1>Mission Briefing</h1><p>Welcome to <strong>Notenux</strong>.<br>Prepare your gear.</p><ul><li>Sword</li><li>Shield</li></ul>';
+    const plain = PlainTextEngine.toPlainText(richHtml);
+
+    assert.ok(plain.includes('Mission Briefing'));
+    assert.ok(plain.includes('Welcome to Notenux.'));
+    assert.ok(plain.includes('Prepare your gear.'));
+    assert.ok(plain.includes('• Sword'));
+    assert.ok(plain.includes('• Shield'));
+    assert.equal(plain.includes('<h1>'), false);
+    assert.equal(plain.includes('<strong>'), false);
+    assert.equal(plain.includes('<p>'), false);
+
+    // Test scripts and styles are stripped
+    const unsafeHtml = '<script>alert("hack")</script><style>body{color:red}</style><p>Clean content</p>';
+    const safePlain = PlainTextEngine.toPlainText(unsafeHtml);
+    assert.equal(safePlain, 'Clean content');
+
+    // Test plain text converted back to clean unformatted paragraphs
+    const plainInput = "First paragraph\nLine two\n\nSecond paragraph";
+    const htmlOutput = PlainTextEngine.toHtml(plainInput);
+    assert.equal(htmlOutput, '<p>First paragraph<br>Line two</p><p>Second paragraph</p>');
+    assert.equal(htmlOutput.includes('<strong>'), false);
+    assert.equal(htmlOutput.includes('<h1>'), false);
+
+    // Test XSS escaping during plain text to html conversion
+    const xssInput = '<img src=x onerror=alert(1)>';
+    const escapedHtml = PlainTextEngine.toHtml(xssInput);
+    assert.ok(escapedHtml.includes('&lt;img src=x onerror=alert(1)&gt;'));
+});
+
+test('white-box: togglePlainTextMode toggles editor view, syncs plain text, and toggles notepad toolbar classes', () => {
+    const { panel } = harness();
+    let handledInput = false;
+    panel.handleEditorInput = () => { handledInput = true; };
+
+    const classSet = (initial = []) => {
+        const set = new Set(initial);
+        return {
+            classes: set,
+            add(c) { set.add(c); },
+            remove(c) { set.delete(c); },
+            contains(c) { return set.has(c); },
+            toggle(c) { set.has(c) ? set.delete(c) : set.add(c); }
+        };
+    };
+
+    const editorArea = {
+        innerHTML: '<h2>Quest Title</h2><p>Begin adventure.</p>',
+        classList: classSet(),
+        focus() {}
+    };
+    const plainTextEditor = {
+        value: '',
+        classList: classSet(['hidden']),
+        focus() {}
+    };
+    const plainTextContainer = {
+        classList: classSet(['hidden'])
+    };
+    const plainTextToggleBtn = {
+        classList: classSet(['bg-surface']),
+        innerHTML: 'TXT',
+        title: ''
+    };
+    const editorToolbarDecks = {
+        classList: classSet()
+    };
+    const markdownRawEditor = {
+        classList: classSet(['hidden']),
+        value: ''
+    };
+
+    panel.dom = {
+        ...panel.dom,
+        editorArea,
+        plainTextEditor,
+        plainTextContainer,
+        plainTextToggleBtn,
+        editorToolbarDecks,
+        markdownRawEditor,
+        plainTextCharCount: { textContent: '' },
+        plainTextWordCount: { textContent: '' },
+        plainTextLineCount: { textContent: '' },
+    };
+
+    // Toggle on (enter plain text mode)
+    panel.togglePlainTextMode();
+    assert.equal(panel.isPlainTextMode, true);
+    assert.equal(editorArea.classList.contains('hidden'), true);
+    assert.equal(plainTextContainer.classList.contains('hidden'), false);
+    assert.equal(editorToolbarDecks.classList.contains('notepad-mode'), true);
+    assert.ok(plainTextEditor.value.includes('Quest Title'));
+    assert.ok(plainTextEditor.value.includes('Begin adventure.'));
+    assert.equal(plainTextEditor.value.includes('<h2>'), false);
+    assert.ok(plainTextToggleBtn.innerHTML.includes('WYSIWYG'));
+
+    // Toggle off (return to rich editor)
+    panel.togglePlainTextMode();
+    assert.equal(panel.isPlainTextMode, false);
+    assert.equal(editorArea.classList.contains('hidden'), false);
+    assert.equal(plainTextContainer.classList.contains('hidden'), true);
+    assert.equal(editorToolbarDecks.classList.contains('notepad-mode'), false);
+    assert.ok(plainTextToggleBtn.innerHTML.includes('TXT'));
+    assert.equal(handledInput, true);
+});
+
+test('white-box: copyEntirePlainText copies all plain text to clipboard and reports success', async () => {
+    let copiedText = '';
+    const { panel, messages, context } = harness();
+    context.navigator = {
+        clipboard: {
+            writeText: async (text) => { copiedText = text; }
+        }
+    };
+
+    panel.isPlainTextMode = true;
+    panel.dom.plainTextEditor = { value: 'Line 1: Note content\nLine 2: Second line' };
+
+    const success = await panel.copyEntirePlainText();
+    assert.equal(success, true);
+    assert.equal(copiedText, 'Line 1: Note content\nLine 2: Second line');
+    assert.ok(messages.some(m => m[0].includes('berhasil disalin')));
+
+    // Test copying when not in plain text mode (converts rich HTML to plain text)
+    panel.isPlainTextMode = false;
+    panel.dom.editorArea = { innerHTML: '<h1>Legendary Scroll</h1><p>Secret artifact details.</p>' };
+    const successRich = await panel.copyEntirePlainText();
+    assert.equal(successRich, true);
+    assert.ok(copiedText.includes('Legendary Scroll'));
+    assert.ok(copiedText.includes('Secret artifact details.'));
+    assert.equal(copiedText.includes('<h1>'), false);
+});
+
+test('white-box: saveActiveNote in plain text mode persists plain text converted to clean unformatted HTML', async () => {
+    let capturedBody = null;
+    const { panel } = harness(async (url, options) => {
+        capturedBody = JSON.parse(options.body);
+        return { ok: true, json: async () => ({ status: 'success', data: { ...panel.activeNote, ...capturedBody } }) };
+    });
+
+    panel.isPlainTextMode = true;
+    panel.plainTextOriginalText = 'Old unedited plain text';
+    panel.plainTextOriginalHtml = '<p>Old content</p>';
+    panel.dom.plainTextEditor = {
+        value: 'New plain text line 1\n\nNew paragraph without format'
+    };
+
+    const saved = await panel.saveActiveNote(true);
+    assert.equal(saved, true);
+    assert.ok(capturedBody.content.includes('<p>New plain text line 1</p>'));
+    assert.ok(capturedBody.content.includes('<p>New paragraph without format</p>'));
+    assert.equal(capturedBody.content.includes('<h1>'), false);
+    assert.equal(panel.activeNote.content, capturedBody.content);
+});
+
+test('white-box: updatePlainTextStats accurately computes char, word, and line metrics', () => {
+    const { panel } = harness();
+    panel.dom.plainTextEditor = {
+        value: 'Baris satu kata satu dua\nBaris dua kata tiga empat\nBaris tiga'
+    };
+    panel.dom.plainTextCharCount = { textContent: '' };
+    panel.dom.plainTextWordCount = { textContent: '' };
+    panel.dom.plainTextLineCount = { textContent: '' };
+
+    panel.updatePlainTextStats();
+
+    assert.equal(panel.dom.plainTextCharCount.textContent, '61 karakter');
+    assert.equal(panel.dom.plainTextWordCount.textContent, '12 kata');
+    assert.equal(panel.dom.plainTextLineCount.textContent, '3 baris');
+});
+
+test('white-box: undo and redo history stack accurately reverts and reapplies editor content', () => {
+    const { panel, messages } = harness();
+    panel.dom.editorArea = {
+        innerHTML: '<p>Initial state</p>',
+        focus() {},
+        cloneNode: () => ({ innerHTML: '<p>Initial state</p>', querySelectorAll: () => [] }),
+    };
+
+    panel.initHistory('<p>Initial state</p>');
+    assert.equal(panel.undoStack.length, 1);
+    assert.equal(panel.redoStack.length, 0);
+
+    // Edit 1
+    panel.dom.editorArea.innerHTML = '<p>Second state</p>';
+    panel.pushUndoSnapshot();
+    assert.equal(panel.undoStack.length, 2);
+    assert.equal(panel.undoStack[1], '<p>Second state</p>');
+
+    // Edit 2
+    panel.dom.editorArea.innerHTML = '<p>Third state</p>';
+    panel.pushUndoSnapshot();
+    assert.equal(panel.undoStack.length, 3);
+
+    // Undo 1: Reverts to Second state
+    panel.undo();
+    assert.equal(panel.dom.editorArea.innerHTML, '<p>Second state</p>');
+    assert.equal(panel.redoStack.length, 1);
+    assert.equal(panel.redoStack[0], '<p>Third state</p>');
+    assert.ok(messages.some(m => m[0].includes('Undo') || m[0].includes('dibatalkan')));
+
+    // Undo 2: Reverts to Initial state
+    panel.undo();
+    assert.equal(panel.dom.editorArea.innerHTML, '<p>Initial state</p>');
+    assert.equal(panel.redoStack.length, 2);
+
+    // Redo 1: Re-applies Second state
+    panel.redo();
+    assert.equal(panel.dom.editorArea.innerHTML, '<p>Second state</p>');
+    assert.equal(panel.redoStack.length, 1);
+
+    // Redo 2: Re-applies Third state
+    panel.redo();
+    assert.equal(panel.dom.editorArea.innerHTML, '<p>Third state</p>');
+    assert.equal(panel.redoStack.length, 0);
+});
+
+test('white-box: new edit after undo invalidates redo stack', () => {
+    const { panel } = harness();
+    panel.dom.editorArea = {
+        innerHTML: '<p>Base state</p>',
+        focus() {},
+        cloneNode: () => ({ innerHTML: '<p>Base state</p>', querySelectorAll: () => [] }),
+    };
+
+    panel.initHistory('<p>Base state</p>');
+    panel.dom.editorArea.innerHTML = '<p>Branch A</p>';
+    panel.pushUndoSnapshot();
+
+    panel.undo();
+    assert.equal(panel.dom.editorArea.innerHTML, '<p>Base state</p>');
+    assert.equal(panel.redoStack.length, 1);
+
+    // New edit on Base state branches off
+    panel.dom.editorArea.innerHTML = '<p>Branch B</p>';
+    panel.pushUndoSnapshot();
+
+    // Redo stack must be cleared
+    assert.equal(panel.redoStack.length, 0);
+    assert.equal(panel.undoStack.length, 2);
+    assert.equal(panel.undoStack[1], '<p>Branch B</p>');
+
+    // Undo should go to Base state
+    panel.undo();
+    assert.equal(panel.dom.editorArea.innerHTML, '<p>Base state</p>');
+});
+
+test('white-box: keyboard shortcuts invoke undo on Ctrl+Z and redo on Ctrl+Y and Ctrl+Shift+Z', () => {
+    let keyHandler = null;
+    const context = vm.createContext({
+        window: { fetch: () => {}, innerWidth: 1440 },
+        document: {
+            addEventListener: (event, handler) => {
+                if (event === 'keydown') keyHandler = handler;
+            },
+            querySelector: () => ({ content: 'csrf' }),
+            querySelectorAll: () => []
+        },
+        localStorage: { removeItem() {}, setItem() {}, getItem() {} },
+        clearTimeout,
+        setTimeout,
+    });
+    vm.runInContext(source + '\nglobalThis.Panel = NotenuxPanel;', context);
+    const panel = Object.create(context.Panel.prototype);
+
+    let undoCalled = false;
+    let redoCalled = false;
+    panel.undo = () => { undoCalled = true; };
+    panel.redo = () => { redoCalled = true; };
+    panel.dom = { editorArea: { tagName: 'DIV' } };
+
+    panel.bindKeyboardShortcuts();
+    assert.equal(typeof keyHandler, 'function');
+
+    // Ctrl+Z (Undo)
+    let prevented = false;
+    keyHandler({ ctrlKey: true, key: 'z', shiftKey: false, preventDefault() { prevented = true; }, target: panel.dom.editorArea });
+    assert.equal(undoCalled, true);
+    assert.equal(prevented, true);
+
+    // Ctrl+Y (Redo)
+    prevented = false;
+    keyHandler({ ctrlKey: true, key: 'y', shiftKey: false, preventDefault() { prevented = true; }, target: panel.dom.editorArea });
+    assert.equal(redoCalled, true);
+    assert.equal(prevented, true);
+
+    // Ctrl+Shift+Z (Redo alternative)
+    redoCalled = false;
+    prevented = false;
+    keyHandler({ ctrlKey: true, key: 'z', shiftKey: true, preventDefault() { prevented = true; }, target: panel.dom.editorArea });
+    assert.equal(redoCalled, true);
+    assert.equal(prevented, true);
+
+    // Target inside foreign input should NOT preventDefault or trigger panel undo
+    undoCalled = false;
+    prevented = false;
+    keyHandler({ ctrlKey: true, key: 'z', shiftKey: false, preventDefault() { prevented = true; }, target: { tagName: 'INPUT' } });
+    assert.equal(undoCalled, false);
+    assert.equal(prevented, false);
+});
