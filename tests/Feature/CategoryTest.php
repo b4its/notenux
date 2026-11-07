@@ -236,7 +236,7 @@ test('studio panel view renders quick edit, delete, and forge controls for categ
     $this->seed(CategorySeeder::class);
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->get(route('panel'));
+    $response = $this->actingAs($user)->get(route('studio'));
 
     $response->assertOk()
         ->assertSee('quick-edit-category-btn')

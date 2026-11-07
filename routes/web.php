@@ -1,17 +1,58 @@
 <?php
 
 use App\Http\Controllers\AiAssistantController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\NoteController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [NoteController::class, 'index'])->name('panel');
+/*
+|--------------------------------------------------------------------------
+| Public & Landing Routes
+|--------------------------------------------------------------------------
+*/
+Route::get('/', [LandingController::class, 'index'])->name('landing');
 
-Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
-Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
-Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
-Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+/*
+|--------------------------------------------------------------------------
+| Guest Authentication Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
 
+/*
+|--------------------------------------------------------------------------
+| Authenticated User Session Routes
+|--------------------------------------------------------------------------
+*/
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
+/*
+|--------------------------------------------------------------------------
+| Studio Panel Routes (Authentication Required)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+    Route::get('/studio', [NoteController::class, 'index'])->name('studio');
+    Route::get('/panel', fn () => redirect()->route('studio'))->name('panel');
+
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+});
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
 Route::prefix('api/categories')->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::post('/', [CategoryController::class, 'store'])->name('api.categories.store');

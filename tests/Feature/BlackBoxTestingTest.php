@@ -15,9 +15,10 @@ uses(RefreshDatabase::class);
 */
 
 test('black-box: user loads studio dashboard and receives complete responsive interface', function () {
+    $user = User::factory()->create();
     $note = Note::factory()->create(['title' => 'Ancient Grimoire Entry']);
 
-    $response = $this->get('/');
+    $response = $this->actingAs($user)->get(route('studio'));
 
     $response->assertStatus(200)
         ->assertSee('NOTENUX')
@@ -357,12 +358,13 @@ test('black-box: system avoids excessive data load on list while seamlessly deli
 });
 
 test('black-box: studio view features clean command deck, semantic toolbar clusters, and visual delete modal', function () {
+    $user = User::factory()->create();
     $note = Note::factory()->create([
         'title' => 'Ancient Quest Scroll of Legend',
         'category' => 'quest',
     ]);
 
-    $response = $this->get('/');
+    $response = $this->actingAs($user)->get(route('studio'));
     $response->assertOk()
         ->assertSee('note-title-input')
         ->assertSee('note-category-select')

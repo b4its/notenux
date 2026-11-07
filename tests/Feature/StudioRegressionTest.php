@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Note;
+use App\Models\User;
 use App\Services\NoteChunkService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -94,9 +95,10 @@ test('white-box: rich chunks never split inside nested elements or table rows', 
 });
 
 test('black-box: legacy content and export titles cannot execute scripts', function () {
+    $user = User::factory()->create();
     $note = Note::factory()->create(['title' => '</script><script>alert(99)</script>', 'content' => '<p>Safe</p><img src=x onerror="alert(99)">']);
 
-    $this->get('/')->assertOk()->assertDontSee('<script>alert(99)</script>', false)->assertDontSee('onerror=', false);
+    $this->actingAs($user)->get(route('studio'))->assertOk()->assertDontSee('<script>alert(99)</script>', false)->assertDontSee('onerror=', false);
     $this->get(route('notes.export', [$note, 'html']))->assertOk()
         ->assertDontSee('<script>alert(99)</script>', false)->assertDontSee('onerror=', false);
 });

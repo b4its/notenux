@@ -34,7 +34,7 @@
         <div class="flex items-center justify-between gap-2 max-w-7xl mx-auto flex-wrap sm:flex-nowrap">
             <!-- Left Branding & Back Link -->
             <div class="flex items-center gap-3">
-                <a href="{{ route('panel') }}"
+                <a href="{{ route('studio') }}"
                    class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-mono tracking-wider flex items-center gap-2"
                    title="Return to Studio Grimoire">
                     <i class="fa-solid fa-arrow-left"></i>
@@ -72,6 +72,24 @@
                         title="Toggle Light / Dark Mode">
                     <i class="fa-solid fa-moon text-cyan-300 mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>
                 </button>
+
+                <!-- Back to Landing Page -->
+                <a href="{{ route('landing') }}"
+                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main px-2.5 py-1.5 rounded text-xs font-mono"
+                   title="Beranda Notenux">
+                    <i class="fa-solid fa-house"></i>
+                </a>
+
+                <!-- Logout Button -->
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit"
+                            id="logout-btn"
+                            class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2.5 py-1.5 rounded text-xs font-mono"
+                            title="Keluar">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i> <span class="hidden sm:inline">LOGOUT</span>
+                    </button>
+                </form>
             </div>
         </div>
     </header>
@@ -100,7 +118,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <a href="{{ route('panel') }}" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900 text-xs font-mono px-3 py-1.5 rounded">
+                <a href="{{ route('studio') }}" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900 text-xs font-mono px-3 py-1.5 rounded">
                     <i class="fa-solid fa-scroll mr-1 text-blue-600 dark:text-cyan-400"></i> Open Studio
                 </a>
             </div>

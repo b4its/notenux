@@ -1,9 +1,15 @@
 <?php
 
 use App\Models\Note;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->user = User::factory()->create();
+    $this->actingAs($this->user);
+});
 
 test('it renders the main gamified panel view with initial notes and dual sidebars', function () {
     $note = Note::factory()->create([
@@ -11,7 +17,7 @@ test('it renders the main gamified panel view with initial notes and dual sideba
         'content' => '<h2>Quest Description</h2><p>Venture into the neon dungeon.</p>',
     ]);
 
-    $response = $this->get(route('panel'));
+    $response = $this->get(route('studio'));
 
     $response->assertOk()
         ->assertViewIs('panel')
@@ -44,7 +50,7 @@ test('it renders the main gamified panel view with initial notes and dual sideba
 });
 
 test('it renders interactive visual delete confirmation modal instead of default browser alert', function () {
-    $response = $this->get(route('panel'));
+    $response = $this->get(route('studio'));
 
     $response->assertOk()
         ->assertSee('delete-confirm-modal')
@@ -57,7 +63,7 @@ test('it renders interactive visual delete confirmation modal instead of default
 });
 
 test('it supports responsive mobile dual-sidebar drawers and theme attributes', function () {
-    $response = $this->get(route('panel'));
+    $response = $this->get(route('studio'));
 
     $response->assertOk()
         ->assertSee('data-theme="dark"', false)
@@ -67,7 +73,7 @@ test('it supports responsive mobile dual-sidebar drawers and theme attributes', 
 });
 
 test('it renders symmetrical collapsed sidebar structure with centered avatars, level badges, and category tooltips', function () {
-    $response = $this->get(route('panel'));
+    $response = $this->get(route('studio'));
 
     $response->assertOk()
         ->assertSee('player-profile-section')

@@ -212,8 +212,8 @@
                 </button>
 
                 <!-- Logo & Brand Badge -->
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-gamepad text-xl sm:text-2xl text-blue-600 dark:text-cyan-400"></i>
+                <a href="{{ route('landing') }}" class="flex items-center gap-2 group transition-transform active:translate-y-0.5" title="Kembali ke Landing Page">
+                    <i class="fa-solid fa-gamepad text-xl sm:text-2xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform"></i>
                     <div>
                         <div class="flex items-center gap-1.5">
                             <span class="font-pixel text-xs sm:text-sm text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
@@ -221,7 +221,7 @@
                         </div>
                         <p class="text-[10px] font-mono opacity-60 hidden sm:block">Retro Gamified Markdown & Memory Shard Matrix</p>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Right Controls: Audio SFX, Theme Switcher, DB Chunks -->
@@ -260,6 +260,24 @@
                         title="Inspect Live Database Chunks & Shard Keys">
                     <i class="fa-solid fa-cubes mr-1.5"></i> <span class="hidden md:inline">DB CHUNKS</span>
                 </button>
+
+                <!-- Back to Landing Page -->
+                <a href="{{ route('landing') }}"
+                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main px-2.5 py-1.5 rounded text-xs font-mono"
+                   title="Beranda Notenux">
+                    <i class="fa-solid fa-house"></i>
+                </a>
+
+                <!-- Logout Button -->
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit"
+                            id="logout-btn"
+                            class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2.5 py-1.5 rounded text-xs font-mono"
+                            title="Keluar dari Studio">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i> <span class="hidden sm:inline">LOGOUT</span>
+                    </button>
+                </form>
             </div>
         </div>
     </header>
