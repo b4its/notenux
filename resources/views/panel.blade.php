@@ -1010,6 +1010,9 @@
                     <span id="chunk-modal-count" class="font-bold text-blue-600 dark:text-cyan-400">Loading chunks...</span>
                     <span id="chunk-modal-bytes" class="opacity-75">0 Bytes</span>
                 </div>
+                <button id="verify-chunks-btn" type="button" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded text-xs font-mono font-bold flex items-center gap-1.5 shadow-[1px_1px_0px_#000]">
+                    <i class="fa-solid fa-shield-halved text-cyan-300"></i> Verify Integrity
+                </button>
                 <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
                     <i class="fa-solid fa-bolt mr-1"></i> Auto-Chunked Backend Performance
                 </span>

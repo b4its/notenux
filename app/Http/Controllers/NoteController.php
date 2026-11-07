@@ -383,7 +383,7 @@ class NoteController extends Controller
             'message' => "Shard {$chunk->chunk_uid} updated & checksum recomputed!",
             'data' => [
                 'chunk' => $updatedChunk,
-                'note' => $note->fresh(),
+                'note' => $note->fresh()->load('chunks'),
             ],
         ]);
     }
@@ -421,7 +421,7 @@ class NoteController extends Controller
             'status' => 'success',
             'message' => 'Shard deleted and parent scroll reassembled successfully.',
             'data' => [
-                'note' => $updatedNote,
+                'note' => $updatedNote->load('chunks'),
                 'remaining_chunks' => $updatedNote->chunks()->count(),
             ],
         ]);
@@ -444,7 +444,7 @@ class NoteController extends Controller
             'message' => 'Shards reordered and scroll reassembled successfully.',
             'data' => [
                 'chunks' => $reordered,
-                'note' => $note->fresh(),
+                'note' => $note->fresh()->load('chunks'),
             ],
         ]);
     }

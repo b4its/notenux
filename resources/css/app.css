@@ -261,7 +261,7 @@
 }
 
 .arcade-toast {
-    pointer-events: auto;
+    pointer-events: none;
     display: flex;
     align-items: flex-start;
     gap: 0.65rem;
@@ -278,6 +278,10 @@
     transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
     overflow: hidden;
+}
+
+.arcade-toast .toast-close-btn {
+    pointer-events: auto;
 }
 
 .arcade-toast.show {

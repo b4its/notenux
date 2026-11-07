@@ -6,9 +6,14 @@ use App\Models\Category;
 use App\Models\Note;
 use App\Models\NoteChunk;
 use App\Models\User;
+use Closure;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -52,39 +57,20 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:64'],
             'slug' => ['nullable', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_-]+$/'],
-            'icon' => ['nullable', 'string', 'max:64'],
-            'color' => ['nullable', 'string', 'max:32'],
+            'icon' => ['nullable', 'string', 'max:64', 'regex:/\Afa-(?:solid|regular|brands) fa-[a-z0-9-]+\z/'],
+            'color' => ['nullable', 'string', 'in:cyan,blue,emerald,amber,rose,purple,gray'],
             'description' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $slug = ! empty($validated['slug'])
-            ? Str::slug($validated['slug'])
-            : Str::slug($validated['name']);
-
-        if (empty($slug)) {
-            $slug = 'cat_'.Str::random(6);
-        }
-
-        // Check if slug already exists for this user or system
-        $exists = Category::where('slug', $slug)
-            ->where(function ($q) use ($user): void {
-                $q->where('is_system', true)->orWhere('user_id', $user->id);
-            })
-            ->exists();
-
-        if ($exists) {
-            $slug = $slug.'-'.strtolower(Str::random(4));
-        }
-
-        $category = Category::create([
+        $category = $this->mutateCategories(fn (): Category => Category::create([
             'user_id' => $user->id,
             'name' => trim($validated['name']),
-            'slug' => $slug,
+            'slug' => $this->allocateSlug($validated['slug'] ?? $validated['name']),
             'icon' => $validated['icon'] ?? 'fa-solid fa-folder',
             'color' => $validated['color'] ?? 'cyan',
             'description' => $validated['description'] ?? null,
             'is_system' => false,
-        ]);
+        ]));
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -113,36 +99,29 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:64'],
             'slug' => ['nullable', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_-]+$/'],
-            'icon' => ['nullable', 'string', 'max:64'],
-            'color' => ['nullable', 'string', 'max:32'],
+            'icon' => ['nullable', 'string', 'max:64', 'regex:/\Afa-(?:solid|regular|brands) fa-[a-z0-9-]+\z/'],
+            'color' => ['nullable', 'string', 'in:cyan,blue,emerald,amber,rose,purple,gray'],
             'description' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $oldSlug = $category->slug;
-        $newSlug = ! empty($validated['slug'])
-            ? Str::slug($validated['slug'])
-            : $category->slug;
+        $this->mutateCategories(function () use ($category, $validated): void {
+            $category->refresh();
+            $oldSlug = $category->slug;
+            $newSlug = isset($validated['slug']) ? $this->allocateSlug($validated['slug'], $category->id) : $oldSlug;
 
-        if ($newSlug !== $oldSlug) {
-            $conflict = Category::where('slug', $newSlug)
-                ->where('id', '!=', $category->id)
-                ->exists();
-
-            if ($conflict) {
-                $newSlug = $newSlug.'-'.strtolower(Str::random(4));
+            if ($newSlug !== $oldSlug) {
+                // Safely cascade slug change to all existing notes
+                Note::where('category', $oldSlug)->update(['category' => $newSlug]);
             }
 
-            // Safely cascade slug change to all existing notes
-            Note::where('category', $oldSlug)->update(['category' => $newSlug]);
-        }
-
-        $category->update([
-            'name' => trim($validated['name']),
-            'slug' => $newSlug,
-            'icon' => $validated['icon'] ?? $category->icon,
-            'color' => $validated['color'] ?? $category->color,
-            'description' => $validated['description'] ?? $category->description,
-        ]);
+            $category->update([
+                'name' => trim($validated['name']),
+                'slug' => $newSlug,
+                'icon' => $validated['icon'] ?? $category->icon,
+                'color' => $validated['color'] ?? $category->color,
+                'description' => array_key_exists('description', $validated) ? $validated['description'] : $category->description,
+            ]);
+        });
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -168,23 +147,39 @@ class CategoryController extends Controller
             abort(403, 'Unauthorized access to category.');
         }
 
-        $name = $category->name;
-        $slug = $category->slug;
+        [$name, $slug, $fallback] = $this->mutateCategories(function () use ($category, $user): array {
+            $category->refresh();
+            $name = $category->name;
+            $slug = $category->slug;
 
-        // Determine safe fallback category for existing notes
-        // Prefer 'general' if it's not the category being deleted, or another available category
-        $fallback = Category::where('id', '!=', $category->id)
-            ->where('slug', '!=', $slug)
-            ->orderByRaw("slug = 'general' DESC")
-            ->first();
+            // Determine safe fallback category for existing notes
+            // Prefer 'general' if it's not the category being deleted, or another available category
+            $fallback = Category::forUser($user)->where('id', '!=', $category->id)
+                ->where('slug', '!=', $slug)
+                ->orderByRaw("slug = 'general' DESC")
+                ->orderBy('id')
+                ->first();
 
-        $fallbackSlug = $fallback?->slug ?? 'general';
-        $fallbackName = $fallback?->name ?? 'General Notes';
+            $fallback ??= Category::create([
+                'user_id' => $user->id,
+                'name' => 'General Notes',
+                'slug' => $this->allocateSlug($slug === 'general' ? 'quest' : 'general'),
+                'icon' => 'fa-solid fa-book-journal-whills',
+                'color' => 'gray',
+                'is_system' => false,
+            ]);
 
-        // Safely migrate existing scrolls in this category to fallback
-        Note::where('category', $slug)->update(['category' => $fallbackSlug]);
+            $fallbackSlug = $fallback->slug;
 
-        $category->delete();
+            // Safely migrate existing scrolls in this category to fallback
+            Note::where('category', $slug)->update(['category' => $fallbackSlug]);
+
+            $category->delete();
+
+            return [$name, $slug, $fallback];
+        });
+        $fallbackSlug = $fallback->slug;
+        $fallbackName = $fallback->name;
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -195,6 +190,7 @@ class CategoryController extends Controller
                     'deleted_slug' => $slug,
                     'fallback_slug' => $fallbackSlug,
                     'fallback_name' => $fallbackName,
+                    'fallback_category' => $fallback,
                 ],
             ]);
         }
@@ -202,6 +198,29 @@ class CategoryController extends Controller
         return redirect()->route('categories.index')
             ->with('status', 'success')
             ->with('message', "Category '{$name}' banished. Associated scrolls were preserved in {$fallbackName}.");
+    }
+
+    protected function allocateSlug(string $value, ?int $exceptId = null): string
+    {
+        $base = substr(Str::slug($value) ?: 'cat_'.Str::lower(Str::random(6)), 0, 64);
+        $candidate = $base;
+        $suffix = 1;
+
+        while ($candidate === 'all' || Category::where('slug', $candidate)->when($exceptId !== null, fn (Builder $query): Builder => $query->where('id', '!=', $exceptId))->exists()) {
+            $ending = '-'.++$suffix;
+            $candidate = substr($base, 0, 64 - strlen($ending)).$ending;
+        }
+
+        return $candidate;
+    }
+
+    protected function mutateCategories(Closure $callback): mixed
+    {
+        try {
+            return Cache::lock('notenux:category-mutations', 30)->block(5, fn (): mixed => DB::transaction($callback));
+        } catch (LockTimeoutException) {
+            abort(409, 'Categories are being updated. Please retry.');
+        }
     }
 
     /**

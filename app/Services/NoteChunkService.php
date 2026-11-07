@@ -243,6 +243,7 @@ class NoteChunkService
         return [
             'status' => $allVerified ? 'verified' : ($total === 0 ? 'empty' : 'corrupted'),
             'verified' => $allVerified,
+            'is_valid' => $allVerified,
             'total_chunks' => $total,
             'valid_chunks' => $valid,
             'corrupted_chunks' => $corrupted,

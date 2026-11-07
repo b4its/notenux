@@ -489,3 +489,42 @@ test('black-box: user exports scroll in markdown, html, and plain text formats w
         ->assertSee('TITLE: Legendary Expedition Log')
         ->assertSee('The gates swung wide open as dawn broke.');
 });
+
+test('black-box: user audits note cryptographic integrity and discovers tampered shard in real time', function () {
+    $note = Note::factory()->create([
+        'title' => 'Vault Security Protocol',
+        'content' => '<h2>Alpha Shard</h2><p>Untampered crystal data.</p><h2>Beta Shard</h2><p>Second crystal sector.</p>',
+    ]);
+    app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    // Initial audit: should be 100% valid
+    $initialVerify = $this->getJson("/api/notes/{$note->id}/chunks/verify");
+    $initialVerify->assertOk()
+        ->assertJsonPath('data.is_valid', true)
+        ->assertJsonPath('data.corrupted_chunks', 0);
+
+    // Simulate tampering: update chunk content directly in the database without updating checksum
+    $chunk = $note->chunks()->first();
+    DB::table('note_chunks')->where('id', $chunk->id)->update([
+        'content' => '<p>Corrupted malicious payload injected into shard.</p>',
+    ]);
+
+    // Re-verify: auditor detects mismatch
+    $corruptedVerify = $this->getJson("/api/notes/{$note->id}/chunks/verify");
+    $corruptedVerify->assertOk()
+        ->assertJsonPath('data.is_valid', false)
+        ->assertJsonPath('data.corrupted_chunks', 1);
+
+    // Repair shard via official API: recalculates checksum and reassembles note
+    $repairRes = $this->putJson("/api/notes/{$note->id}/chunks/{$chunk->id}", [
+        'content' => '<h2>Alpha Shard</h2><p>Repaired crystal data.</p>',
+    ]);
+    $repairRes->assertOk()
+        ->assertJsonPath('status', 'success');
+
+    // Final audit: all valid again
+    $finalVerify = $this->getJson("/api/notes/{$note->id}/chunks/verify");
+    $finalVerify->assertOk()
+        ->assertJsonPath('data.is_valid', true)
+        ->assertJsonPath('data.corrupted_chunks', 0);
+});

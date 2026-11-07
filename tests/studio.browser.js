@@ -5,17 +5,28 @@ async (page) => {
         localStorage.setItem('notenux_primary_collapsed', 'false');
         localStorage.setItem('notenux_explorer_collapsed', 'false');
         localStorage.setItem('notenux_sound', 'muted');
+        localStorage.setItem('notenux_crt', 'false');
         localStorage.removeItem('notenux_draft_1');
         localStorage.removeItem('notenux_draft_2');
     });
     const assert = (condition, message) => { if (!condition) throw new Error(message); };
     const errors = [];
+    const chooseSelect = async (id, value) => {
+        const container = page.locator(`#${id}`).locator('..');
+        await container.locator('.retro-select-trigger').click();
+        await container.locator(`.retro-select-option-item[data-value="${value}"]`).click();
+    };
     page.on('pageerror', error => errors.push(error.message));
     let sequence = 100;
     const notes = new Map([
         [1, { id: 1, title: 'Studio Alpha', content: '<p>Alpha manuscript</p>', category: 'quest', font_family: 'mono', font_size: '16px', updated_at: '2026-01-01T00:00:00Z' }],
         [2, { id: 2, title: 'Studio Beta', content: '<p>Beta manuscript</p>', category: 'lore', font_family: 'mono', font_size: '16px', updated_at: '2026-01-01T00:00:00Z' }],
     ]);
+    const categories = [
+        { id: 1, name: 'Quests', slug: 'quest', icon: 'fa-solid fa-khanda', color: 'amber' },
+        { id: 2, name: 'Lore', slug: 'lore', icon: 'fa-solid fa-scroll', color: 'cyan' },
+        { id: 3, name: 'Archive', slug: 'archive', icon: 'fa-solid fa-box-archive', color: 'gray' },
+    ];
     await page.route('**/api/**', async route => {
         const request = route.request();
         const path = new URL(request.url()).pathname;
@@ -52,6 +63,7 @@ async (page) => {
         const response = await route.fetch();
         let html = await response.text();
         html = html.replace(/(<script id="initial-notes-data"[^>]*>)[\s\S]*?(<\/script>)/, (_, start, end) => start + JSON.stringify([...notes.values()]) + end);
+        html = html.replace(/(<script id="initial-categories-data"[^>]*>)[\s\S]*?(<\/script>)/, (_, start, end) => start + JSON.stringify(categories) + end);
         html = html.replace(/(id="initial-active-note-id" value=")[^"]*/, '$11');
         await route.fulfill({ response, body: html });
     });
@@ -67,7 +79,7 @@ async (page) => {
     await page.waitForFunction(() => window.notenux.searchResultIds !== null);
     assert(await page.locator('.note-list-card').count() === 1, 'Search includes manuscript content');
     await page.locator('#search-notes-input').fill('');
-    await page.locator('#sort-notes-select').selectOption('title_asc');
+    await chooseSelect('sort-notes-select', 'title_asc');
     assert(await page.locator('.note-list-card').first().getAttribute('data-note-id') === '1', 'Title sorting');
 
     const themeBefore = await page.locator('html').getAttribute('data-theme');
@@ -81,8 +93,8 @@ async (page) => {
     await page.keyboard.press('Escape');
     assert(!await page.locator('body').evaluate(element => element.classList.contains('zen-mode')), 'Escape exits Zen');
 
-    await page.locator('#font-family-select').selectOption('serif');
-    await page.locator('#font-size-select').selectOption('24px');
+    await chooseSelect('font-family-select', 'serif');
+    await chooseSelect('font-size-select', '24px');
     await page.locator('#save-now-btn').click();
     await page.waitForFunction(() => !window.notenux.dirtyNotes.has(2));
     assert(notes.get(2).font_family === 'serif' && notes.get(2).font_size === '24px', 'Typography persists');

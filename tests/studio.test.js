@@ -7,6 +7,7 @@ const source = readFileSync(new URL('../resources/js/app.js', import.meta.url), 
 
 function harness(fetchHandler) {
     const storage = new Map();
+    const messages = [];
     const context = vm.createContext({
         window: { fetch: fetchHandler, innerWidth: 1440 },
         document: { addEventListener() {}, querySelector: () => ({ content: 'csrf-test' }) },
@@ -20,11 +21,12 @@ function harness(fetchHandler) {
         activeNote: { id: 1, title: 'Alpha', content: 'First draft' },
         notes: [], saveQueue: Promise.resolve(), dirtyNotes: new Set([1]), selectionVersion: 0,
         dom: { saveStatusText: { innerHTML: '' } },
-        toast: { show() {} }, audio: { playBlip() {} },
+        toast: { show(...args) { messages.push(args); } },
+        audio: { playBlip() {}, playCoin() {}, playDelete() {}, playLevelUp() {} },
         renderNotesList() {}, refreshPlayerStats() {}, loadNoteIntoEditor(note) { this.loaded = note; },
     });
     panel.notes.push(panel.activeNote);
-    return { panel, storage };
+    return { panel, storage, messages, context };
 }
 
 const response = data => ({ ok: true, json: async () => ({ status: 'success', data }) });
@@ -121,6 +123,166 @@ test('white-box: stale save metadata does not undo pin or favorite toggles', asy
     assert.equal(panel.activeNote.is_favorite, true);
 });
 
+test('white-box: navigation flushes typing that arrives while the first save is in flight', async () => {
+    const pending = deferred();
+    const calls = [];
+    const { panel } = harness((url, options) => {
+        const payload = JSON.parse(options.body);
+        calls.push(payload);
+        return calls.length === 1 ? pending.promise : Promise.resolve(response({ id: 1, ...payload }));
+    });
+    const switching = panel.selectNote({ id: 2, content: 'Beta' });
+    await Promise.resolve();
+    panel.activeNote.content = 'Final typing before switch';
+    pending.resolve(response({ id: 1, title: 'Alpha', content: 'First draft' }));
+    await switching;
+    assert.equal(calls.at(-1).content, 'Final typing before switch');
+    assert.equal(panel.dirtyNotes.has(1), false);
+    assert.equal(panel.activeNote.id, 2);
+});
+
+test('white-box: duplicate remains bound to its originating note while a save is pending', async () => {
+    const pending = deferred();
+    const calls = [];
+    const { panel } = harness((url, options) => {
+        calls.push(url);
+        if (options.method === 'PUT') return pending.promise;
+        return Promise.resolve(response({ id: 3, title: 'Alpha Copy', content: 'Alpha copy' }));
+    });
+    const duplicating = panel.duplicateActiveNote();
+    await Promise.resolve();
+    panel.activeNote = { id: 2, title: 'Beta', content: 'Beta' };
+    pending.resolve(response({ id: 1, title: 'Alpha', content: 'First draft' }));
+    await duplicating;
+    assert.ok(calls.includes('/api/notes/1/duplicate'));
+    assert.ok(!calls.includes('/api/notes/2/duplicate'));
+});
+
+test('white-box: late delete response preserves the newer selected manuscript and its dirty text', async () => {
+    const pending = deferred();
+    const { panel } = harness(() => pending.promise);
+    const deleting = panel.executeDeleteActiveNote();
+    await Promise.resolve();
+    panel.activeNote = { id: 2, title: 'Beta', content: 'Unsaved Beta' };
+    panel.notes.push(panel.activeNote);
+    panel.dirtyNotes.add(2);
+    pending.resolve({ ok: true });
+    await deleting;
+    assert.equal(panel.activeNote.id, 2);
+    assert.equal(panel.activeNote.content, 'Unsaved Beta');
+    assert.equal(panel.dirtyNotes.has(2), true);
+    assert.ok(!panel.notes.some(note => note.id === 1));
+});
+
+test('white-box: delete confirmation stays bound to the manuscript named in the dialog', async () => {
+    const calls = [];
+    const { panel } = harness(async url => { calls.push(url); return { ok: true }; });
+    panel.dom.deleteConfirmModal = { classList: { remove() {}, add() {} } };
+    panel.openDeleteConfirmModal();
+    panel.activeNote = { id: 2, title: 'Beta', content: 'Keep Beta' };
+    panel.notes.push(panel.activeNote);
+    await panel.executeDeleteActiveNote();
+    assert.deepEqual(calls, ['/api/notes/1']);
+    assert.equal(panel.activeNote.id, 2);
+});
+
+test('white-box: failed chunk reorder preserves the cached order and reports the error', async () => {
+    const { panel, messages } = harness(async () => ({ ok: false, json: async () => ({ message: 'Invalid order' }) }));
+    panel.cachedChunks = [{ id: 11 }, { id: 12 }];
+    panel.dirtyNotes.clear();
+    panel.audio.playClick = () => {};
+    await panel.moveChunk(0, 1);
+    assert.deepEqual(panel.cachedChunks.map(chunk => chunk.id), [11, 12]);
+    assert.ok(messages.some(message => message[1] === 'danger'));
+});
+
+test('white-box: late chunk response updates the original cache without loading it into another editor', async () => {
+    const pending = deferred();
+    const { panel } = harness(() => pending.promise);
+    const alpha = panel.activeNote;
+    panel.cachedChunks = [{ id: 11 }, { id: 12 }];
+    panel.dirtyNotes.clear();
+    panel.audio.playClick = () => {};
+    panel.renderChunkCards = () => {};
+    const moving = panel.moveChunk(0, 1);
+    panel.activeNote = { id: 2, title: 'Beta', content: 'Unsaved Beta' };
+    pending.resolve(response({ chunks: [{ id: 12 }, { id: 11 }], note: { id: 1, content: 'Reordered Alpha' } }));
+    await moving;
+    assert.equal(panel.activeNote.id, 2);
+    assert.equal(panel.loaded, undefined);
+    assert.equal(alpha.content, 'Reordered Alpha');
+});
+
+test('white-box: category text escapes both HTML and attribute delimiters', () => {
+    const { panel } = harness(() => {});
+    assert.equal(panel.escapeHtml('<img title="x" onerror=\'y\'>&'), '&lt;img title=&quot;x&quot; onerror=&#39;y&#39;&gt;&amp;');
+});
+
+test('white-box: rejected note creation reports failure instead of silently doing nothing', async () => {
+    const { panel, messages } = harness(async () => ({ ok: false, json: async () => ({ message: 'Storage unavailable' }) }));
+    await panel.createNewNote();
+    assert.equal(panel.notes.length, 1);
+    assert.ok(messages.some(message => message[1] === 'danger'));
+});
+
+test('white-box: category mutations drain older saves and resume new drafts using the renamed slug', async () => {
+    const entered = deferred();
+    const release = deferred();
+    const payloads = [];
+    const { panel } = harness(async (url, options) => {
+        const payload = JSON.parse(options.body);
+        payloads.push(payload);
+        return response({ id: 1, ...payload });
+    });
+    panel.activeNote.category = 'original';
+    const mutation = panel.runCategoryMutation(async () => {
+        entered.resolve();
+        await release.promise;
+        panel.activeNote.category = 'renamed';
+    });
+    await entered.promise;
+    panel.activeNote.content = 'New writing during category change';
+    panel.dirtyNotes.add(1);
+    assert.equal(await panel.saveActiveNote(), false);
+    assert.equal(payloads.length, 1);
+    release.resolve();
+    await mutation;
+    await panel.saveQueue;
+    assert.deepEqual(payloads.map(payload => payload.category), ['original', 'renamed']);
+    assert.equal(payloads.at(-1).content, 'New writing during category change');
+});
+
+test('white-box: double category submission performs only one mutation', async () => {
+    const entered = deferred();
+    const release = deferred();
+    const { panel } = harness(() => {});
+    panel.dirtyNotes.clear();
+    let calls = 0;
+    const first = panel.runCategoryMutation(async () => { calls++; entered.resolve(); await release.promise; });
+    await entered.promise;
+    await panel.runCategoryMutation(async () => { calls++; });
+    release.resolve();
+    await first;
+    assert.equal(calls, 1);
+    assert.equal(panel.categoryMutationPending, false);
+});
+
+test('white-box: quick forge reports success and saves the original selected note', async () => {
+    const { panel, context, messages } = harness(async (url, options) => {
+        if (url === '/api/categories') return response({ id: 9, name: 'Research', slug: 'research' });
+        return response({ id: 1, ...JSON.parse(options.body) });
+    });
+    panel.categories = [];
+    panel.dirtyNotes.clear();
+    context.document.getElementById = id => ({ value: id === 'quick-forge-cat-name' ? 'Research' : '' });
+    panel.syncCategoriesDOM = () => {};
+    await panel.submitQuickForgeCategory();
+    await panel.saveQueue;
+    assert.equal(panel.activeNote.category, 'research');
+    assert.ok(messages.some(message => message[2] === 'Category Created'));
+    assert.ok(!messages.some(message => message[1] === 'danger'));
+});
+
 test('white-box: RetroSearchableSelect wraps native select, provides search filtering and dispatches change', () => {
     let changeFired = false;
     const listeners = new Map();
@@ -199,6 +361,11 @@ test('white-box: RetroSearchableSelect wraps native select, provides search filt
     instance.selectValue('opt2');
     assert.equal(mockSelect.value, 'opt2');
     assert.equal(changeFired, true);
+    mockSelect.disabled = true;
+    instance.open();
+    instance.selectValue('opt3');
+    assert.equal(instance.isOpen, false);
+    assert.equal(mockSelect.value, 'opt2');
 });
 
 test('white-box: RetroSearchableSelect filters options and toggles no-results element', () => {
@@ -298,6 +465,9 @@ test('white-box: RetroSearchableSelect filters options and toggles no-results el
     assert.equal(instance.highlightIndex, 1);
     instance.moveHighlight(-1);
     assert.equal(instance.highlightIndex, 0);
+    mockSelect.options[1].disabled = true;
+    instance.renderOptions('');
+    assert.deepEqual(Array.from(instance.filteredOptions, option => option.value), ['opt1', 'opt3']);
 });
 
 test('white-box: RetroSearchableSelect positions dropdown with fixed coordinates and closes cleanly', () => {
@@ -389,4 +559,14 @@ test('white-box: RetroSearchableSelect positions dropdown with fixed coordinates
     instance.close();
     assert.equal(instance.isOpen, false);
     assert.equal(instance.dropdown.classList.contains('hidden'), true);
+
+    const secondSelect = { ...mockSelect, dataset: {} };
+    const second = new context.RetroSearchableSelect(secondSelect);
+    instance.open();
+    second.open();
+    assert.equal(instance.isOpen, false);
+    assert.equal(second.isOpen, true);
+    instance.toggle();
+    assert.equal(instance.isOpen, true);
+    assert.equal(second.isOpen, false);
 });

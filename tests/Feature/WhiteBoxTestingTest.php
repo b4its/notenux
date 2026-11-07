@@ -360,3 +360,30 @@ test('white-box: category controller generates random slug on empty or non-ascii
     $slug = $response->json('data.slug');
     expect($slug)->toStartWith('cat_');
 });
+
+test('white-box: note reading time accessor handles boundary values and large manuscripts', function () {
+    $emptyNote = new Note(['word_count' => 0]);
+    expect($emptyNote->reading_time)->toBe('1 min read');
+
+    $smallNote = new Note(['word_count' => 150]);
+    expect($smallNote->reading_time)->toBe('1 min read');
+
+    $mediumNote = new Note(['word_count' => 450]);
+    expect($mediumNote->reading_time)->toBe('3 min read');
+
+    $hugeNote = new Note(['word_count' => 2000]);
+    expect($hugeNote->reading_time)->toBe('12 min read');
+});
+
+test('white-box: chunk service reassembles empty and single chunk notes seamlessly', function () {
+    $service = new NoteChunkService;
+
+    $emptyNote = Note::factory()->create(['content' => '']);
+    $service->syncChunks($emptyNote, '');
+    expect($service->reassemble($emptyNote))->toBe('');
+
+    $singleNote = Note::factory()->create(['content' => '<p>Lone shard text.</p>']);
+    $service->syncChunks($singleNote, $singleNote->content);
+    expect($singleNote->chunks()->count())->toBe(1)
+        ->and($service->reassemble($singleNote))->toBe('<p>Lone shard text.</p>');
+});

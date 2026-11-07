@@ -206,9 +206,7 @@ class RetroToast {
         };
 
         toast.querySelector('.toast-close-btn').addEventListener('click', dismiss);
-        const timer = setTimeout(dismiss, duration);
-
-        toast.addEventListener('mouseenter', () => clearTimeout(timer));
+        setTimeout(dismiss, duration);
     }
 }
 
@@ -444,7 +442,7 @@ class RetroSearchableSelect {
         this.bindEvents();
 
         this.observer = new MutationObserver(() => this.refreshOptions());
-        this.observer.observe(this.select, { childList: true, subtree: true });
+        this.observer.observe(this.select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'label', 'selected'] });
 
         const instance = this;
         const originalDescriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
@@ -473,6 +471,7 @@ class RetroSearchableSelect {
         this.filteredOptions = [];
 
         Array.from(this.select.options).forEach((opt) => {
+            if (opt.disabled) return;
             const text = opt.textContent;
             const matches = !query || text.toLowerCase().includes(query);
             if (!matches) return;
@@ -505,6 +504,7 @@ class RetroSearchableSelect {
     }
 
     selectValue(value) {
+        if (this.select.disabled || !Array.from(this.select.options).some(option => option.value === value && !option.disabled)) return;
         if (this.select.value !== value) {
             this.select.value = value;
             this.select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -515,7 +515,10 @@ class RetroSearchableSelect {
     }
 
     syncFromNative() {
-        const selectedOption = this.select.querySelector(`option[value="${this.select.value}"]`) || this.select.options[this.select.selectedIndex];
+        const selectedOption = Array.from(this.select.options).find(option => option.value === this.select.value) || this.select.options[this.select.selectedIndex];
+        this.trigger.disabled = Boolean(this.select.disabled);
+        this.trigger.setAttribute?.('aria-expanded', String(this.isOpen));
+        this.trigger.setAttribute?.('aria-haspopup', 'listbox');
         if (this.labelEl && selectedOption) {
             this.labelEl.textContent = selectedOption.textContent;
         }
@@ -525,11 +528,17 @@ class RetroSearchableSelect {
     }
 
     open() {
+        if (this.select.disabled) return;
+        if (RetroSearchableSelect.activeInstance && RetroSearchableSelect.activeInstance !== this) {
+            RetroSearchableSelect.activeInstance.close();
+        }
+        RetroSearchableSelect.activeInstance = this;
         document.querySelectorAll('.retro-select-dropdown:not(.hidden)').forEach(d => {
             if (d !== this.dropdown) d.classList.add('hidden');
         });
 
         this.isOpen = true;
+        this.trigger.setAttribute?.('aria-expanded', 'true');
         this.dropdown.classList.remove('hidden');
         this.chevronEl?.classList?.add?.('rotate-180');
         if (this.searchInput) {
@@ -550,11 +559,13 @@ class RetroSearchableSelect {
             window.addEventListener('resize', this._boundUpdatePosition);
         }
 
-        setTimeout(() => this.searchInput?.focus?.(), 50);
+        setTimeout(() => { if (this.isOpen) this.searchInput?.focus?.(); }, 50);
     }
 
     close() {
         this.isOpen = false;
+        if (RetroSearchableSelect.activeInstance === this) RetroSearchableSelect.activeInstance = null;
+        this.trigger.setAttribute?.('aria-expanded', 'false');
         this.dropdown.classList.add('hidden');
         this.chevronEl?.classList?.remove?.('rotate-180');
         this.highlightIndex = -1;
@@ -647,6 +658,8 @@ class RetroSearchableSelect {
                     this.selectValue(this.filteredOptions[0].value);
                 }
             } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
                 this.close();
                 this.trigger?.focus?.();
             }
@@ -1462,8 +1475,8 @@ class NotenuxPanel {
         const updateSoundLabel = () => {
             if (this.dom.soundToggleBtn) {
                 this.dom.soundToggleBtn.innerHTML = this.audio.enabled
-                    ? '<i class="fa-solid fa-volume-high text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>'
-                    : '<i class="fa-solid fa-volume-xmark text-gray-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: OFF</span>';
+                    ? '<i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>'
+                    : '<i class="fa-solid fa-volume-xmark text-gray-500 dark:text-gray-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: OFF</span>';
             }
         };
 
@@ -1893,6 +1906,7 @@ class NotenuxPanel {
         this.dom.inspectChunksBtn?.addEventListener('click', () => {
             this.openChunkInspector();
         });
+        this.dom.chunkCountBadge?.addEventListener('click', () => this.openChunkInspector());
 
         this.dom.chunkModalClose?.addEventListener('click', () => {
             this.audio.playBlip();
@@ -2135,7 +2149,7 @@ class NotenuxPanel {
             this.dom.markdownRawEditor.value = md;
             this.dom.editorArea.classList.add('hidden');
             this.dom.markdownRawEditor.classList.remove('hidden');
-            this.dom.markdownViewToggleBtn.innerHTML = '<i class="fa-solid fa-eye mr-1 text-cyan-400"></i> WYSIWYG';
+            this.dom.markdownViewToggleBtn.innerHTML = '<i class="fa-solid fa-eye mr-1 text-blue-600 dark:text-cyan-400"></i> WYSIWYG';
             this.toast.show('Raw Markdown View activated', 'info');
         } else {
             const html = this.dom.markdownRawEditor.value === this.rawViewOriginalMarkdown
@@ -2143,7 +2157,7 @@ class NotenuxPanel {
             this.dom.editorArea.innerHTML = html;
             this.dom.markdownRawEditor.classList.add('hidden');
             this.dom.editorArea.classList.remove('hidden');
-            this.dom.markdownViewToggleBtn.innerHTML = '<i class="fa-brands fa-markdown mr-1 text-cyan-400"></i> RAW MD';
+            this.dom.markdownViewToggleBtn.innerHTML = '<i class="fa-brands fa-markdown mr-1 text-blue-600 dark:text-cyan-400"></i> RAW MD';
             this.toast.show('WYSIWYG Rich Editor restored', 'info');
             this.handleEditorInput();
         }
@@ -2292,13 +2306,23 @@ class NotenuxPanel {
 
     /* ---------------- CRUD & API SYNC ---------------- */
     saveActiveNote(manual = false) {
-        if (!this.activeNote) return Promise.resolve(false);
-        clearTimeout(this.saveTimeout);
-        const note = this.activeNote;
+        return this.saveNote(this.activeNote, manual);
+    }
+
+    saveNote(note, manual = false) {
+        if (!note || this.categoryMutationPending || this.deletingNoteIds?.has(note.id)) return Promise.resolve(false);
+        if (this.activeNote?.id === note.id) clearTimeout(this.saveTimeout);
         const snapshot = { ...note };
         const task = this.saveQueue.then(() => this.persistNote(note, snapshot, manual));
         this.saveQueue = task.catch(() => false);
         return task;
+    }
+
+    async flushNote(note = this.activeNote) {
+        while (note && this.dirtyNotes.has(note.id)) {
+            if (!await this.saveNote(note)) return false;
+        }
+        return true;
     }
 
     async persistNote(note, snapshot, manual) {
@@ -2351,7 +2375,7 @@ class NotenuxPanel {
                 throw new Error(data.message || 'Failed to save');
             }
         } catch (e) {
-            if (this.dom.saveStatusText) {
+            if (this.dom.saveStatusText && this.activeNote?.id === note.id) {
                 this.dom.saveStatusText.innerHTML = '<span class="text-rose-600 dark:text-rose-400 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Storage error</span>';
             }
             if (manual) {
@@ -2367,7 +2391,7 @@ class NotenuxPanel {
             const count = this.notes.length + 1;
             const payload = {
                 title: `Quest Scroll #${count}: Arcane Expedition`,
-                category: this.activeCategory !== 'all' ? this.activeCategory : 'quest',
+                category: this.activeCategory !== 'all' ? this.activeCategory : (this.categories?.find(category => category.slug === 'quest')?.slug || this.categories?.[0]?.slug || 'quest'),
                 content: `<h2>Chapter ${count}</h2><p>Inscribe your thoughts, strategic lore, or arcane spells here...</p>`,
                 font_family: 'pixel',
                 font_size: '16px',
@@ -2400,6 +2424,8 @@ class NotenuxPanel {
                     'New Scroll Ready',
                     'fa-solid fa-scroll text-yellow-400'
                 );
+            } else {
+                throw new Error(data.message || 'Could not create scroll');
             }
         } catch (e) {
             this.toast.show('Could not spawn new scroll.', 'danger');
@@ -2432,6 +2458,8 @@ class NotenuxPanel {
                     'Pin Status',
                     'fa-solid fa-thumbtack text-amber-400'
                 );
+            } else {
+                throw new Error(data.message || 'Could not update pin');
             }
         } catch (e) {
             this.toast.show('Error updating pin status', 'danger');
@@ -2464,6 +2492,8 @@ class NotenuxPanel {
                     'Favorite',
                     'fa-solid fa-star text-amber-400'
                 );
+            } else {
+                throw new Error(data.message || 'Could not update favorite');
             }
         } catch (e) {
             this.toast.show('Error updating favorite status', 'danger');
@@ -2472,11 +2502,12 @@ class NotenuxPanel {
 
     async duplicateActiveNote() {
         if (!this.activeNote) return;
-        if (!await this.saveActiveNote()) return;
+        const note = this.activeNote;
+        if (!await this.flushNote(note)) return;
         this.audio.playCoin();
 
         try {
-            const response = await fetch(`/api/notes/${this.activeNote.id}/duplicate`, {
+            const response = await fetch(`/api/notes/${note.id}/duplicate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2489,7 +2520,7 @@ class NotenuxPanel {
                 const clone = data.data;
                 this.notes.unshift(clone);
                 this.renderNotesList();
-                this.selectNote(clone);
+                if (this.activeNote?.id === note.id) await this.selectNote(clone);
                 this.refreshPlayerStats();
 
                 this.toast.show(
@@ -2498,6 +2529,8 @@ class NotenuxPanel {
                     'Scroll Cloned',
                     'fa-solid fa-copy text-cyan-400'
                 );
+            } else {
+                throw new Error(data.message || 'Could not duplicate scroll');
             }
         } catch (e) {
             this.toast.show('Failed to duplicate scroll', 'danger');
@@ -2506,22 +2539,30 @@ class NotenuxPanel {
 
     async exportActiveNote(format) {
         if (!this.activeNote) return;
-        if (!await this.saveActiveNote()) return;
+        const note = this.activeNote;
+        if (!await this.flushNote(note)) return;
         this.audio.playCoin();
-        window.location.assign(`/api/notes/${this.activeNote.id}/export/${format}`);
+        window.location.assign(`/api/notes/${note.id}/export/${format}`);
         this.toast.show(`Exporting scroll as .${format.toUpperCase()}`, 'info', 'Export Started', 'fa-solid fa-download text-blue-400');
     }
 
-    archiveActiveNote() {
+    async archiveActiveNote() {
         if (!this.activeNote) return;
+        if (this.categories && !this.categories.some(category => category.slug === 'archive')) {
+            this.toast.show('Kategori arsip tidak tersedia. Buat kategori archive terlebih dahulu.', 'warning');
+            return;
+        }
+        const note = this.activeNote;
         this.activeNote.category = 'archive';
         if (this.dom.noteCategorySelect) {
             this.dom.noteCategorySelect.value = 'archive';
         }
         this.updateActiveNoteInList();
-        this.saveActiveNote(true);
+        this.dirtyNotes.add(note.id);
+        this.saveDraftLocal();
+        if (!await this.flushNote(note)) return;
         this.toast.show(
-            `Scroll "${this.activeNote.title}" moved to Library Vault!`,
+            `Scroll "${note.title}" moved to Library Vault!`,
             'info',
             'Scroll Archived',
             'fa-solid fa-box-archive text-amber-500'
@@ -2538,6 +2579,8 @@ class NotenuxPanel {
             this.dom.deleteModalScrollTitle.textContent = this.activeNote.title || 'Untitled Scroll';
         }
 
+        this.pendingDeleteNoteId = this.activeNote.id;
+
         if (this.dom.deleteConfirmModal) {
             this.dom.deleteConfirmModal.classList.remove('hidden');
             this.audio.playBlip();
@@ -2546,18 +2589,22 @@ class NotenuxPanel {
     }
 
     closeDeleteConfirmModal() {
+        this.pendingDeleteNoteId = null;
         if (this.dom.deleteConfirmModal) {
             this.dom.deleteConfirmModal.classList.add('hidden');
         }
     }
 
     async executeDeleteActiveNote() {
-        if (!this.activeNote) return;
-
-        const noteId = this.activeNote.id;
-        clearTimeout(this.saveTimeout);
+        const noteId = this.pendingDeleteNoteId ?? this.activeNote?.id;
+        const note = this.notes.find(item => item.id === noteId);
+        if (!note) return;
+        this.deletingNoteIds ??= new Set();
+        if (this.deletingNoteIds.has(noteId)) return;
+        this.deletingNoteIds.add(noteId);
+        if (this.activeNote?.id === noteId) clearTimeout(this.saveTimeout);
         await this.saveQueue;
-        const title = this.activeNote.title || 'Untitled Scroll';
+        const title = note.title || 'Untitled Scroll';
         this.closeDeleteConfirmModal();
         this.audio.playDelete();
 
@@ -2571,15 +2618,17 @@ class NotenuxPanel {
 
             if (response.ok) {
                 this.notes = this.notes.filter(n => n.id !== noteId);
-                this.activeNote = null;
                 this.dirtyNotes.delete(noteId);
                 localStorage.removeItem(`notenux_draft_${noteId}`);
 
                 this.renderNotesList();
-                if (this.notes.length > 0) {
-                    await this.selectNote(this.notes[0]);
-                } else {
-                    this.createNewNote(true);
+                if (this.activeNote?.id === noteId) {
+                    this.activeNote = null;
+                    if (this.notes.length > 0) {
+                        await this.selectNote(this.notes[0]);
+                    } else {
+                        await this.createNewNote(true);
+                    }
                 }
                 this.refreshPlayerStats();
 
@@ -2594,6 +2643,8 @@ class NotenuxPanel {
             }
         } catch (e) {
             this.toast.show('Network error while banishing scroll', 'danger');
+        } finally {
+            this.deletingNoteIds.delete(noteId);
         }
     }
 
@@ -2603,9 +2654,7 @@ class NotenuxPanel {
 
     async selectNote(note) {
         const version = ++this.selectionVersion;
-        if (this.activeNote && this.dirtyNotes.has(this.activeNote.id)) {
-            if (!await this.saveActiveNote()) return;
-        }
+        if (!await this.flushNote()) return;
         if (version !== this.selectionVersion) return;
         this.audio.playBlip();
 
@@ -2807,8 +2856,8 @@ class NotenuxPanel {
                             </h4>
                         </div>
                         <span class="text-[10px] font-mono shrink-0 px-1.5 py-0.5 rounded border border-black/30 flex items-center gap-1 ${badgeClasses}">
-                            <i class="${categoryBadge.icon}"></i>
-                            ${categoryBadge.label}
+                            <i class="${this.escapeHtml(categoryBadge.icon)}"></i>
+                            ${this.escapeHtml(categoryBadge.label)}
                         </span>
                     </div>
 
@@ -2876,6 +2925,25 @@ class NotenuxPanel {
     }
 
     /* ---------------- CATEGORY FORGE & MANAGEMENT ---------------- */
+    async runCategoryMutation(callback) {
+        if (this.categoryRequestPending) return;
+        this.categoryRequestPending = true;
+        try {
+            for (const note of this.notes) {
+                if (!await this.flushNote(note)) return;
+            }
+            await this.saveQueue;
+            this.categoryMutationPending = true;
+            return await callback();
+        } finally {
+            this.categoryMutationPending = false;
+            this.categoryRequestPending = false;
+            for (const note of this.notes) {
+                if (this.dirtyNotes.has(note.id)) this.saveNote(note);
+            }
+        }
+    }
+
     closeQuickCategoryModals() {
         this.dom.quickEditCategoryModal?.classList.add('hidden');
         this.dom.quickDeleteCategoryModal?.classList.add('hidden');
@@ -2892,6 +2960,7 @@ class NotenuxPanel {
     }
 
     async submitQuickForgeCategory() {
+        const targetNote = this.activeNote;
         const name = document.getElementById('quick-forge-cat-name')?.value?.trim();
         const slug = document.getElementById('quick-forge-cat-slug')?.value?.trim();
         const color = document.getElementById('quick-forge-cat-color')?.value || 'emerald';
@@ -2904,6 +2973,7 @@ class NotenuxPanel {
         }
 
         try {
+            await this.runCategoryMutation(async () => {
             const response = await fetch('/api/categories', {
                 method: 'POST',
                 headers: {
@@ -2916,19 +2986,21 @@ class NotenuxPanel {
             if (response.ok && data.data) {
                 const newCat = data.data;
                 this.categories.push(newCat);
-                if (this.activeNote) {
-                    this.activeNote.category = newCat.slug;
-                    this.saveActiveNote(true);
+                if (targetNote && this.notes.some(note => note.id === targetNote.id)) {
+                    targetNote.category = newCat.slug;
+                    this.dirtyNotes.add(targetNote.id);
+                    if (this.activeNote?.id === targetNote.id) this.saveDraftLocal();
                 }
                 this.syncCategoriesDOM();
                 this.renderNotesList();
                 this.closeQuickCategoryModals();
-                this.audio.playPowerup();
+                this.audio.playLevelUp();
                 this.toast.show(`Category "${newCat.name}" forged successfully!`, 'success', 'Category Created');
             } else {
                 const errorMsg = data.message || 'Gagal membuat kategori.';
                 this.toast.show(errorMsg, 'danger', 'Forge Failed');
             }
+            });
         } catch (e) {
             this.toast.show('Network error during category creation.', 'danger');
         }
@@ -2983,6 +3055,7 @@ class NotenuxPanel {
         }
 
         try {
+            await this.runCategoryMutation(async () => {
             const response = await fetch(`/api/categories/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -3025,6 +3098,7 @@ class NotenuxPanel {
                 const errorMsg = data.message || 'Gagal memperbarui kategori.';
                 this.toast.show(errorMsg, 'danger', 'Update Failed');
             }
+            });
         } catch (e) {
             this.toast.show('Network error during category update.', 'danger');
         }
@@ -3037,11 +3111,6 @@ class NotenuxPanel {
 
         if (!category) {
             this.toast.show('Kategori tidak ditemukan.', 'warning');
-            return;
-        }
-
-        if (this.categories.length <= 1) {
-            this.toast.show('Tidak dapat menghapus kategori terakhir. Harus menyisakan minimal satu kategori.', 'warning');
             return;
         }
 
@@ -3066,6 +3135,7 @@ class NotenuxPanel {
         this.audio.playDelete();
 
         try {
+            await this.runCategoryMutation(async () => {
             const response = await fetch(`/api/categories/${id}`, {
                 method: 'DELETE',
             });
@@ -3077,6 +3147,8 @@ class NotenuxPanel {
 
                 // Remove from in-memory categories
                 this.categories = this.categories.filter(c => String(c.id) !== String(id));
+                const fallback = data.data?.fallback_category;
+                if (fallback && !this.categories.some(category => category.id === fallback.id)) this.categories.push(fallback);
 
                 // Reassign affected notes in memory
                 if (deletedSlug) {
@@ -3102,6 +3174,7 @@ class NotenuxPanel {
                 const errorMsg = data.message || 'Gagal menghapus kategori.';
                 this.toast.show(errorMsg, 'danger', 'Delete Failed');
             }
+            });
         } catch (e) {
             this.toast.show('Network error during category deletion.', 'danger');
         }
@@ -3112,23 +3185,26 @@ class NotenuxPanel {
         if (this.dom.noteCategorySelect) {
             const currentVal = this.activeNote?.category || this.dom.noteCategorySelect.value;
             this.dom.noteCategorySelect.innerHTML = this.categories.map(cat =>
-                `<option value="${cat.slug}" data-id="${cat.id}">[${(cat.slug || '').toUpperCase()}] ${this.escapeHtml(cat.name)}</option>`
+                `<option value="${this.escapeHtml(cat.slug)}" data-id="${cat.id}">[${this.escapeHtml((cat.slug || '').toUpperCase())}] ${this.escapeHtml(cat.name)}</option>`
             ).join('');
             if (currentVal && this.categories.some(c => c.slug === currentVal)) {
                 this.dom.noteCategorySelect.value = currentVal;
-            } else if (this.categories.length > 0) {
-                this.dom.noteCategorySelect.value = this.categories[0].slug;
-                if (this.activeNote) {
-                    this.activeNote.category = this.categories[0].slug;
-                }
+            } else if (currentVal) {
+                const option = document.createElement('option');
+                option.value = currentVal;
+                option.textContent = currentVal;
+                this.dom.noteCategorySelect.appendChild(option);
+                this.dom.noteCategorySelect.value = currentVal;
             }
         }
 
         // Sync import category dropdown options
         if (this.dom.importCategorySelect) {
+            const currentValue = this.dom.importCategorySelect.value;
             this.dom.importCategorySelect.innerHTML = this.categories.map(cat =>
-                `<option value="${cat.slug}">${this.escapeHtml(cat.name)}</option>`
+                `<option value="${this.escapeHtml(cat.slug)}">${this.escapeHtml(cat.name)}</option>`
             ).join('');
+            if (this.categories.some(category => category.slug === currentValue)) this.dom.importCategorySelect.value = currentValue;
         }
 
         // Sync filter pills row
@@ -3144,8 +3220,8 @@ class NotenuxPanel {
                 const isActive = this.activeCategory === cat.slug;
                 pillsHtml += `
                     <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 ${isActive ? 'bg-blue-600 text-white active-category' : 'bg-surface hover:bg-blue-200 dark:hover:bg-blue-900'} whitespace-nowrap shadow-[1px_1px_0px_#000]"
-                            data-category="${cat.slug}">
-                        <i class="${cat.icon || 'fa-solid fa-folder'} mr-1"></i>${this.escapeHtml((cat.name || cat.slug).slice(0, 10).toUpperCase())}
+                            data-category="${this.escapeHtml(cat.slug)}">
+                        <i class="${this.escapeHtml(cat.icon || 'fa-solid fa-folder')} mr-1"></i>${this.escapeHtml((cat.name || cat.slug).slice(0, 10).toUpperCase())}
                     </button>
                 `;
             });
@@ -3166,23 +3242,23 @@ class NotenuxPanel {
         if (this.dom.sidebarCategoriesList) {
             this.dom.sidebarCategoriesList.innerHTML = this.categories.map(cat => `
                 <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
-                     data-category="${cat.slug}">
+                     data-category="${this.escapeHtml(cat.slug)}">
                     <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate ${this.activeCategory === cat.slug ? 'bg-blue-600 text-white font-bold' : ''}"
-                       data-category="${cat.slug}"
+                       data-category="${this.escapeHtml(cat.slug)}"
                        title="${this.escapeHtml(cat.name)}">
-                        <i class="${cat.icon || 'fa-solid fa-folder'} text-sm w-4 text-center shrink-0"></i>
+                        <i class="${this.escapeHtml(cat.icon || 'fa-solid fa-folder')} text-sm w-4 text-center shrink-0"></i>
                         <span class="nav-text-label font-bold truncate">${this.escapeHtml(cat.name)}</span>
                     </a>
                     <div class="hidden group-hover:flex items-center gap-1 shrink-0">
                         <button type="button"
                                 class="sidebar-edit-category-btn text-[10px] text-cyan-600 dark:text-cyan-400 hover:scale-110 transition-transform p-1"
-                                data-slug="${cat.slug}"
+                                data-slug="${this.escapeHtml(cat.slug)}"
                                 title="Edit Category">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
                         <button type="button"
                                 class="sidebar-delete-category-btn text-[10px] text-rose-500 hover:scale-110 transition-transform p-1"
-                                data-slug="${cat.slug}"
+                                data-slug="${this.escapeHtml(cat.slug)}"
                                 title="Delete Category">
                             <i class="fa-solid fa-trash"></i>
                         </button>
@@ -3239,10 +3315,10 @@ class NotenuxPanel {
 
             if (response.ok && data.status === 'success') {
                 if (this.dom.chunkModalCount) {
-                    this.dom.chunkModalCount.innerHTML = `<i class="fa-solid fa-cubes mr-1 text-cyan-400"></i> ${data.total_chunks} Total Chunks`;
+                    this.dom.chunkModalCount.innerHTML = `<i class="fa-solid fa-cubes mr-1 text-blue-600 dark:text-cyan-400"></i> ${data.total_chunks} Total Chunks`;
                 }
                 if (this.dom.chunkModalBytes) {
-                    this.dom.chunkModalBytes.innerHTML = `<i class="fa-solid fa-database mr-1 text-blue-400"></i> ${data.total_bytes} Bytes Stored`;
+                    this.dom.chunkModalBytes.innerHTML = `<i class="fa-solid fa-database mr-1 text-blue-600 dark:text-blue-400"></i> ${data.total_bytes} Bytes Stored`;
                 }
 
                 if (data.chunks.length === 0) {
@@ -3299,7 +3375,7 @@ class NotenuxPanel {
                         <button onclick="window.notenux.toggleChunkEditor(${chunk.id})" class="arcade-btn bg-surface px-2 py-0.5 text-[10px] rounded hover:bg-blue-300">
                             <i class="fa-solid fa-pen-to-square"></i> Edit
                         </button>
-                        <button onclick="window.notenux.deleteChunk(${chunk.id})" class="arcade-btn bg-red-600 text-white px-2 py-0.5 text-[10px] rounded hover:bg-red-500" title="Delete Shard">
+                        <button onclick="window.notenux.confirmDeleteChunk(${chunk.id}, this)" class="arcade-btn bg-red-600 text-white px-2 py-0.5 text-[10px] rounded hover:bg-red-500" title="Delete Shard">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
@@ -3322,18 +3398,22 @@ class NotenuxPanel {
     }
 
     async moveChunk(index, direction) {
-        if (!this.cachedChunks || this.cachedChunks.length <= 1) return;
+        if (!this.activeNote || this.chunkMutationPending || !this.cachedChunks || this.cachedChunks.length <= 1) return;
+        const note = this.activeNote;
         const newIndex = index + direction;
         if (newIndex < 0 || newIndex >= this.cachedChunks.length) return;
 
         this.audio.playClick();
-        const item = this.cachedChunks.splice(index, 1)[0];
-        this.cachedChunks.splice(newIndex, 0, item);
+        const reordered = [...this.cachedChunks];
+        const item = reordered.splice(index, 1)[0];
+        reordered.splice(newIndex, 0, item);
 
-        const orderedIds = this.cachedChunks.map(c => c.id);
+        const orderedIds = reordered.map(c => c.id);
+        this.chunkMutationPending = true;
 
         try {
-            const response = await fetch(`/api/notes/${this.activeNote.id}/chunks/reorder`, {
+            if (!await this.flushNote(note)) return;
+            const response = await fetch(`/api/notes/${note.id}/chunks/reorder`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3345,24 +3425,38 @@ class NotenuxPanel {
             const data = await response.json();
             if (response.ok && data.status === 'success') {
                 this.toast.show('Shards reordered and scroll reassembled!', 'success');
-                this.cachedChunks = data.data.chunks;
-                this.renderChunkCards(this.cachedChunks);
-                if (data.data.note) {
-                    this.activeNote = data.data.note;
-                    this.loadNoteIntoEditor(this.activeNote);
+                if (this.activeNote?.id === note.id) {
+                    this.cachedChunks = data.data.chunks;
+                    this.renderChunkCards(this.cachedChunks);
                 }
+                if (data.data.note) {
+                    this.acceptChunkNote(note, data.data.note);
+                }
+            } else {
+                throw new Error(data.message || 'Error reordering chunks');
             }
         } catch (e) {
             this.toast.show('Failed to reorder shards', 'danger');
+        } finally {
+            this.chunkMutationPending = false;
         }
     }
 
+    confirmDeleteChunk(chunkId, button) {
+        if (button.dataset.confirmed === 'true') return this.deleteChunk(chunkId);
+        button.dataset.confirmed = 'true';
+        button.textContent = 'Confirm delete shard';
+    }
+
     async deleteChunk(chunkId) {
-        if (!this.activeNote) return;
+        if (!this.activeNote || this.chunkMutationPending) return;
+        const note = this.activeNote;
+        this.chunkMutationPending = true;
 
         this.audio.playDelete();
         try {
-            const response = await fetch(`/api/notes/${this.activeNote.id}/chunks/${chunkId}`, {
+            if (!await this.flushNote(note)) return;
+            const response = await fetch(`/api/notes/${note.id}/chunks/${chunkId}`, {
                 method: 'DELETE',
                 headers: {
                     'Accept': 'application/json',
@@ -3372,16 +3466,17 @@ class NotenuxPanel {
             const data = await response.json();
             if (response.ok && data.status === 'success') {
                 this.toast.show('Shard deleted and parent scroll reassembled!', 'success');
-                this.openChunkInspector();
                 if (data.data && data.data.note) {
-                    this.activeNote = data.data.note;
-                    this.loadNoteIntoEditor(this.activeNote);
+                    this.acceptChunkNote(note, data.data.note);
                 }
+                if (this.activeNote?.id === note.id) await this.openChunkInspector();
             } else {
                 throw new Error(data.message || 'Error deleting chunk');
             }
         } catch (e) {
             this.toast.show('Failed to delete shard', 'danger');
+        } finally {
+            this.chunkMutationPending = false;
         }
     }
 
@@ -3396,16 +3491,19 @@ class NotenuxPanel {
     }
 
     async saveIndividualChunk(chunkId) {
-        if (!this.activeNote) return;
+        if (!this.activeNote || this.chunkMutationPending) return;
+        const note = this.activeNote;
         const editEl = document.getElementById(`chunk-edit-${chunkId}`);
         const textarea = editEl?.querySelector('textarea');
         if (!textarea) return;
 
         const newContent = textarea.value;
         this.audio.playCoin();
+        this.chunkMutationPending = true;
 
         try {
-            const response = await fetch(`/api/notes/${this.activeNote.id}/chunks/${chunkId}`, {
+            if (!await this.flushNote(note)) return;
+            const response = await fetch(`/api/notes/${note.id}/chunks/${chunkId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3417,21 +3515,35 @@ class NotenuxPanel {
             const data = await response.json();
             if (response.ok && data.status === 'success') {
                 this.toast.show('Shard updated & checksum recomputed!', 'success', 'Chunk Saved');
-                this.openChunkInspector();
                 if (data.data && data.data.note) {
-                    this.activeNote = data.data.note;
-                    this.loadNoteIntoEditor(this.activeNote);
+                    this.acceptChunkNote(note, data.data.note);
                 }
+                if (this.activeNote?.id === note.id) await this.openChunkInspector();
             } else {
                 throw new Error(data.message || 'Error updating chunk');
             }
         } catch (e) {
             this.toast.show('Failed to save individual chunk', 'danger');
+        } finally {
+            this.chunkMutationPending = false;
         }
+    }
+
+    acceptChunkNote(note, saved) {
+        if (this.dirtyNotes.has(note.id)) {
+            this.toast.show('Shard tersimpan. Draft baru Anda tetap dipertahankan.', 'warning');
+            return;
+        }
+        Object.assign(note, saved);
+        if (!saved.chunks) delete note.chunks;
+        if (this.activeNote?.id === note.id) this.loadNoteIntoEditor(note);
+        this.renderNotesList();
+        this.refreshPlayerStats();
     }
 
     async verifyChunksIntegrity() {
         if (!this.activeNote) return;
+        const noteId = this.activeNote.id;
         this.audio.playClick();
 
         if (this.dom.chunkVerifyStatus) {
@@ -3440,8 +3552,9 @@ class NotenuxPanel {
         }
 
         try {
-            const response = await fetch(`/api/notes/${this.activeNote.id}/chunks/verify`);
+            const response = await fetch(`/api/notes/${noteId}/chunks/verify`);
             const data = await response.json();
+            if (this.activeNote?.id !== noteId) return;
 
             if (response.ok && data.status === 'success') {
                 const report = data.data;
@@ -3456,6 +3569,8 @@ class NotenuxPanel {
                     this.dom.chunkVerifyStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Warning: ${report.corrupted_chunks} shard(s) checksum mismatch detected!`;
                     this.toast.show('Integrity warning: Shard discrepancy detected.', 'danger', 'Integrity Warning');
                 }
+            } else {
+                throw new Error(data.message || 'Integrity verification failed');
             }
         } catch (e) {
             if (this.dom.chunkVerifyStatus) {
@@ -3502,10 +3617,9 @@ class NotenuxPanel {
     }
 
     escapeHtml(str) {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        return String(str ?? '').replace(/[&<>"']/g, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        })[character]);
     }
 }
 
