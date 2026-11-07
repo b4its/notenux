@@ -16,6 +16,7 @@ test('guest can view the login interface', function () {
         ->assertSee('MASUK SCRIBE')
         ->assertSee('login-submit-btn')
         ->assertSee('to-register-btn')
+        ->assertSee('toggle-password-btn')
         ->assertSee('theme-toggle-btn');
 });
 
@@ -27,6 +28,8 @@ test('guest can view the registration interface', function () {
         ->assertSee('REGISTER SCRIBE')
         ->assertSee('register-submit-btn')
         ->assertSee('to-login-btn')
+        ->assertSee('toggle-password-btn')
+        ->assertSee('toggle-password-confirmation-btn')
         ->assertSee('theme-toggle-btn');
 });
 
@@ -149,4 +152,26 @@ test('auth pages render horizontal and portrait logos with adaptive themes', fun
     $responseRegister->assertOk()
         ->assertSee('assets/logo/dark/icon_horizontal_dark.png')
         ->assertSee('assets/logo/dark/icon_vertical_dark.png');
+});
+
+test('login and register forms include show and close eye toggles for password fields', function () {
+    $loginResponse = $this->get(route('login'));
+    $loginResponse->assertOk()
+        ->assertSee('id="password"', false)
+        ->assertSee('id="toggle-password-btn"', false)
+        ->assertSee('toggle-password-icon')
+        ->assertSee('data-target="password"', false)
+        ->assertSee('data-state="closed"', false)
+        ->assertSee('title="Tampilkan kata sandi (Show password)"', false);
+
+    $registerResponse = $this->get(route('register'));
+    $registerResponse->assertOk()
+        ->assertSee('id="password"', false)
+        ->assertSee('id="toggle-password-btn"', false)
+        ->assertSee('id="password_confirmation"', false)
+        ->assertSee('id="toggle-password-confirmation-btn"', false)
+        ->assertSee('data-target="password"', false)
+        ->assertSee('data-target="password_confirmation"', false)
+        ->assertSee('title="Tampilkan kata sandi (Show password)"', false)
+        ->assertSee('title="Tampilkan konfirmasi kata sandi (Show password)"', false);
 });

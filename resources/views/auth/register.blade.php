@@ -184,13 +184,24 @@
                         <label for="password" class="block font-bold text-slate-800 dark:text-slate-200">
                             <i class="fa-solid fa-lock text-emerald-500 mr-1"></i> KATA SANDI (MIN. 8 KARAKTER)
                         </label>
-                        <input id="password"
-                               type="password"
-                               name="password"
-                               required
-                               autocomplete="new-password"
-                               placeholder="••••••••"
-                               class="w-full px-3.5 py-2.5 rounded-lg border-2 border-black/40 dark:border-blue-500/50 bg-[var(--bg-main)] text-[var(--text-main)] focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-xs font-mono transition-colors">
+                        <div class="relative">
+                            <input id="password"
+                                   type="password"
+                                   name="password"
+                                   required
+                                   autocomplete="new-password"
+                                   placeholder="••••••••"
+                                   class="w-full pl-3.5 pr-10 py-2.5 rounded-lg border-2 border-black/40 dark:border-blue-500/50 bg-[var(--bg-main)] text-[var(--text-main)] focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-xs font-mono transition-colors">
+                            <button type="button"
+                                    id="toggle-password-btn"
+                                    class="toggle-password-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 p-1.5 rounded transition-colors focus:outline-none cursor-pointer flex items-center justify-center"
+                                    data-target="password"
+                                    data-state="closed"
+                                    aria-label="Tampilkan kata sandi"
+                                    title="Tampilkan kata sandi (Show password)">
+                                <i class="fa-solid fa-eye text-xs toggle-password-icon"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Password Confirmation Field -->
@@ -198,13 +209,24 @@
                         <label for="password_confirmation" class="block font-bold text-slate-800 dark:text-slate-200">
                             <i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i> KONFIRMASI KATA SANDI
                         </label>
-                        <input id="password_confirmation"
-                               type="password"
-                               name="password_confirmation"
-                               required
-                               autocomplete="new-password"
-                               placeholder="••••••••"
-                               class="w-full px-3.5 py-2.5 rounded-lg border-2 border-black/40 dark:border-blue-500/50 bg-[var(--bg-main)] text-[var(--text-main)] focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-xs font-mono transition-colors">
+                        <div class="relative">
+                            <input id="password_confirmation"
+                                   type="password"
+                                   name="password_confirmation"
+                                   required
+                                   autocomplete="new-password"
+                                   placeholder="••••••••"
+                                   class="w-full pl-3.5 pr-10 py-2.5 rounded-lg border-2 border-black/40 dark:border-blue-500/50 bg-[var(--bg-main)] text-[var(--text-main)] focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 text-xs font-mono transition-colors">
+                            <button type="button"
+                                    id="toggle-password-confirmation-btn"
+                                    class="toggle-password-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 p-1.5 rounded transition-colors focus:outline-none cursor-pointer flex items-center justify-center"
+                                    data-target="password_confirmation"
+                                    data-state="closed"
+                                    aria-label="Tampilkan konfirmasi kata sandi"
+                                    title="Tampilkan konfirmasi kata sandi (Show password)">
+                                <i class="fa-solid fa-eye text-xs toggle-password-icon"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Submit Button -->
@@ -238,5 +260,44 @@
         </div>
     </main>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.RetroPasswordToggle) {
+                window.RetroPasswordToggle.initAll();
+            } else {
+                document.querySelectorAll('.toggle-password-btn').forEach(function(btn) {
+                    if (btn.dataset.boundPasswordToggle) return;
+                    btn.dataset.boundPasswordToggle = 'true';
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var targetId = btn.getAttribute('data-target');
+                        var input = targetId ? document.getElementById(targetId) : btn.parentElement.querySelector('input');
+                        if (!input) return;
+                        var icon = btn.querySelector('.toggle-password-icon') || btn.querySelector('i');
+                        var isPassword = input.type === 'password';
+                        if (isPassword) {
+                            input.type = 'text';
+                            btn.setAttribute('data-state', 'open');
+                            btn.setAttribute('title', 'Sembunyikan kata sandi (Close password)');
+                            btn.setAttribute('aria-label', 'Sembunyikan kata sandi');
+                            if (icon) {
+                                icon.classList.remove('fa-eye');
+                                icon.classList.add('fa-eye-slash');
+                            }
+                        } else {
+                            input.type = 'password';
+                            btn.setAttribute('data-state', 'closed');
+                            btn.setAttribute('title', 'Tampilkan kata sandi (Show password)');
+                            btn.setAttribute('aria-label', 'Tampilkan kata sandi');
+                            if (icon) {
+                                icon.classList.remove('fa-eye-slash');
+                                icon.classList.add('fa-eye');
+                            }
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>

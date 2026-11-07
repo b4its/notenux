@@ -1533,3 +1533,64 @@ test('white-box: setTheme invokes updateFavicon and sets theme classes and attri
     assert.equal(attributes['data-theme'], 'light');
 });
 
+test('white-box: RetroPasswordToggle switches password input visibility, icons, and titles', () => {
+    const { context } = harness();
+    const RetroPasswordToggle = context.window.RetroPasswordToggle || context.RetroPasswordToggle;
+
+    const listeners = new Map();
+    const iconClassList = new Set(['fa-solid', 'fa-eye', 'toggle-password-icon']);
+    const buttonAttributes = {
+        'data-target': 'test-pass',
+        'data-state': 'closed',
+    };
+
+    const iconElement = {
+        classList: {
+            add(c) { iconClassList.add(c); },
+            remove(c) { iconClassList.delete(c); },
+            contains(c) { return iconClassList.has(c); },
+        },
+    };
+
+    const inputElement = {
+        id: 'test-pass',
+        type: 'password',
+    };
+
+    const buttonElement = {
+        dataset: {},
+        getAttribute(attr) { return buttonAttributes[attr] ?? null; },
+        setAttribute(attr, val) { buttonAttributes[attr] = val; },
+        querySelector(selector) {
+            if (selector === '.toggle-password-icon' || selector === 'i') return iconElement;
+            return null;
+        },
+        addEventListener(event, fn) { listeners.set(event, fn); },
+    };
+
+    context.document.getElementById = (id) => {
+        if (id === 'test-pass') return inputElement;
+        return null;
+    };
+
+    const toggleInstance = new RetroPasswordToggle(buttonElement);
+    assert.equal(buttonElement.dataset.boundPasswordToggle, 'true');
+
+    // First toggle: reveal password
+    toggleInstance.toggle();
+    assert.equal(inputElement.type, 'text');
+    assert.equal(buttonAttributes['data-state'], 'open');
+    assert.equal(buttonAttributes['title'], 'Sembunyikan kata sandi (Close password)');
+    assert.equal(iconClassList.has('fa-eye-slash'), true);
+    assert.equal(iconClassList.has('fa-eye'), false);
+
+    // Second toggle: close/hide password
+    toggleInstance.toggle();
+    assert.equal(inputElement.type, 'password');
+    assert.equal(buttonAttributes['data-state'], 'closed');
+    assert.equal(buttonAttributes['title'], 'Tampilkan kata sandi (Show password)');
+    assert.equal(iconClassList.has('fa-eye'), true);
+    assert.equal(iconClassList.has('fa-eye-slash'), false);
+});
+
+

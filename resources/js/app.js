@@ -796,6 +796,65 @@ class RetroSearchableSelect {
     }
 }
 
+class RetroPasswordToggle {
+    /**
+     * @param {HTMLButtonElement} button
+     */
+    constructor(button) {
+        if (!button || button.dataset.boundPasswordToggle) return;
+        this.button = button;
+        this.button.dataset.boundPasswordToggle = 'true';
+        this.init();
+    }
+
+    init() {
+        this.button.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.toggle();
+        });
+    }
+
+    toggle() {
+        const targetId = this.button.getAttribute('data-target');
+        const input = targetId ? document.getElementById(targetId) : this.button.parentElement?.querySelector('input');
+        if (!input) return;
+
+        const icon = this.button.querySelector('.toggle-password-icon') || this.button.querySelector('i');
+        const isPassword = input.type === 'password';
+
+        if (isPassword) {
+            input.type = 'text';
+            this.button.setAttribute('data-state', 'open');
+            this.button.setAttribute('title', 'Sembunyikan kata sandi (Close password)');
+            this.button.setAttribute('aria-label', 'Sembunyikan kata sandi');
+            if (icon) {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        } else {
+            input.type = 'password';
+            this.button.setAttribute('data-state', 'closed');
+            this.button.setAttribute('title', 'Tampilkan kata sandi (Show password)');
+            this.button.setAttribute('aria-label', 'Tampilkan kata sandi');
+            if (icon) {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        if (typeof window !== 'undefined' && window.notenux && window.notenux.audio) {
+            window.notenux.audio.playClick();
+        }
+    }
+
+    static initAll(root = document) {
+        if (!root || !root.querySelectorAll) return;
+        root.querySelectorAll('.toggle-password-btn').forEach(btn => {
+            new RetroPasswordToggle(btn);
+        });
+    }
+}
+
 class NotenuxPanel {
     constructor() {
         this.audio = new RetroAudio();
@@ -1020,6 +1079,7 @@ class NotenuxPanel {
         this.initClearControls();
         this.bindEvents();
         this.initAiAssistant();
+        this.initPasswordToggles();
         this.bindKeyboardShortcuts();
         window.addEventListener('beforeunload', event => {
             if (this.dirtyNotes.size > 0) {
@@ -1503,6 +1563,11 @@ class NotenuxPanel {
     closeClearModal() {
         if (!this.dom.clearConfirmModal) return;
         this.dom.clearConfirmModal.classList.add('hidden');
+    }
+
+    /* ---------------- PASSWORD VISIBILITY TOGGLE ---------------- */
+    initPasswordToggles() {
+        RetroPasswordToggle.initAll();
     }
 
     /* ---------------- IN-CANVAS FIND & REPLACE ---------------- */
@@ -2371,6 +2436,32 @@ class NotenuxPanel {
 
         this.dom.plainTextCopyBtn?.addEventListener('click', () => {
             this.copyEntirePlainText();
+        });
+
+        this.dom.plainTextClearBtn?.addEventListener('click', () => {
+            if (!this.dom.plainTextEditor || !this.dom.plainTextEditor.value.trim()) return;
+            this.audio?.playDelete?.();
+            this.dom.plainTextEditor.value = '';
+            if (this.dom.editorArea) this.dom.editorArea.innerHTML = '<p><br></p>';
+            this.updatePlainTextStats();
+            this.handleEditorInput();
+            this.toast.show('Teks Notepad berhasil dikosongkan.', 'info', 'Notepad Dikosongkan');
+        });
+
+        this.dom.plainTextEditor?.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const ta = this.dom.plainTextEditor;
+                const start = ta.selectionStart || 0;
+                const end = ta.selectionEnd || 0;
+                if (typeof ta.setRangeText === 'function') {
+                    ta.setRangeText('\t', start, end, 'end');
+                } else {
+                    ta.value = ta.value.substring(0, start) + '\t' + ta.value.substring(end);
+                    ta.selectionStart = ta.selectionEnd = start + 1;
+                }
+                ta.dispatchEvent(new Event('input'));
+            }
         });
 
         this.dom.inspectChunksBtn?.addEventListener('click', () => {
@@ -3295,6 +3386,17 @@ class NotenuxPanel {
         if (success) {
             this.audio?.playCoin?.();
             this.toast.show('Seluruh teks berhasil disalin ke clipboard!', 'success', 'Teks Disalin', 'fa-solid fa-copy text-emerald-400');
+            if (this.dom.plainTextCopyBtn) {
+                const orig = this.dom.plainTextCopyBtn.innerHTML;
+                this.dom.plainTextCopyBtn.innerHTML = '<i class="fa-solid fa-check mr-1 text-white"></i><span>Tersalin!</span>';
+                this.dom.plainTextCopyBtn.classList.add('bg-emerald-700');
+                setTimeout(() => {
+                    if (this.dom.plainTextCopyBtn) {
+                        this.dom.plainTextCopyBtn.innerHTML = orig;
+                        this.dom.plainTextCopyBtn.classList.remove('bg-emerald-700');
+                    }
+                }, 1500);
+            }
         } else {
             this.toast.show('Gagal menyalin teks ke clipboard.', 'danger', 'Gagal Salin');
         }
@@ -3365,6 +3467,12 @@ class NotenuxPanel {
     applyFontSize(size) {
         if (!this.dom.editorArea) return;
         this.dom.editorArea.style.fontSize = size;
+        if (this.dom.plainTextEditor) {
+            this.dom.plainTextEditor.style.fontSize = size;
+        }
+        if (this.dom.markdownRawEditor) {
+            this.dom.markdownRawEditor.style.fontSize = size;
+        }
         if (this.activeNote) {
             this.activeNote.font_size = size;
         }
@@ -3635,6 +3743,15 @@ class NotenuxPanel {
                 const unchanged = ['title', 'content', 'category', 'font_family', 'font_size', 'theme_color'].every(key => note[key] === snapshot[key]);
                 if (unchanged) Object.assign(note, data.data, { is_pinned: note.is_pinned, is_favorite: note.is_favorite });
                 if (unchanged) this.dirtyNotes.delete(note.id);
+
+                if (unchanged && this.isPlainTextMode && this.dom.plainTextEditor) {
+                    this.plainTextOriginalText = this.dom.plainTextEditor.value;
+                    this.plainTextOriginalHtml = note.content;
+                }
+                if (unchanged && this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+                    this.rawViewOriginalMarkdown = this.dom.markdownRawEditor.value;
+                    this.rawViewOriginalHtml = note.content;
+                }
 
                 // Clear draft backup since persisted
                 if (unchanged) localStorage.removeItem(`notenux_draft_${note.id}`);
@@ -4931,10 +5048,13 @@ class NotenuxPanel {
 document.addEventListener('DOMContentLoaded', () => {
     window.notenux = new NotenuxPanel();
     RetroSearchableSelect.initAll();
+    RetroPasswordToggle.initAll();
 });
 
 window.RetroSearchableSelect = RetroSearchableSelect;
+window.RetroPasswordToggle = RetroPasswordToggle;
 window.PlainTextEngine = PlainTextEngine;
 if (typeof globalThis !== 'undefined') {
     globalThis.PlainTextEngine = PlainTextEngine;
+    globalThis.RetroPasswordToggle = RetroPasswordToggle;
 }
