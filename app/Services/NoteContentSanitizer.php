@@ -33,7 +33,7 @@ class NoteContentSanitizer
                     || ($name === 'color' && preg_match('/^(#[a-f0-9]{3,8}|[a-z]+)$/i', $value))
                     || ($name === 'style' && preg_match('/^(\s*(color|background-color|text-align|font-size|font-family|font-weight|font-style|text-decoration)\s*:\s*[a-z0-9#(),.%\s\'"-]+;?\s*)+$/i', $value))
                     || ($name === 'href' && $tag === 'a' && preg_match('~^(https?://|mailto:|\#|/(?!/))~i', $value))
-                    || ($name === 'src' && $tag === 'img' && preg_match('~^https?://~i', $value));
+                    || ($name === 'src' && $tag === 'img' && preg_match('~^(https?://|data:image/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)~is', trim($value)));
 
                 if (! $safe) {
                     $element->removeAttribute($attribute->name);

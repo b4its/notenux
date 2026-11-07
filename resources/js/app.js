@@ -29,7 +29,7 @@ function sanitizeHtml(html) {
                 || (name === 'color' && /^(#[a-f0-9]{3,8}|[a-z]+)$/i.test(value))
                 || (name === 'style' && /^(\s*(color|background-color|text-align|font-size|font-family|font-weight|font-style|text-decoration)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value))
                 || (name === 'href' && element.localName === 'a' && /^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(value))
-                || (name === 'src' && element.localName === 'img' && /^https?:\/\//i.test(value));
+                || (name === 'src' && element.localName === 'img' && /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)/i.test((value || '').trim()));
             if (!safe) element.removeAttribute(name);
         }
         if (element.localName === 'input' && element.type !== 'checkbox') element.remove();

@@ -349,6 +349,17 @@ test('white-box: content sanitizer eliminates malicious XSS vectors while preser
         ->and($cleanHtml)->toContain('https://example.com/art.png');
 });
 
+test('white-box: content sanitizer preserves safe raster base64 images while stripping malicious svg vectors', function () {
+    $sanitizer = new NoteContentSanitizer;
+    $safePng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    $unsafeSvg = 'data:image/svg+xml;base64,PHN2ZyBvbmxvYWQ9YWxlcnQoMSk+PC9zdmc+';
+
+    $clean = $sanitizer->sanitize("<p><img src=\"{$safePng}\"><img src=\"{$unsafeSvg}\"></p>");
+
+    expect($clean)->toContain($safePng)
+        ->and($clean)->not->toContain($unsafeSvg);
+});
+
 test('white-box: category controller generates random slug on empty or non-ascii string', function () {
     $user = User::factory()->create();
 
