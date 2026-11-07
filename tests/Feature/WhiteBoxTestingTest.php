@@ -513,3 +513,26 @@ test('white-box: note controller convertToMarkdown correctly formats embedded ba
 
     expect($markdown)->toContain("![Architecture Diagram]({$pngBase64})");
 });
+
+test('white-box: note controller convertToMarkdown preserves images embedded inside table cells', function () {
+    $controller = app(NoteController::class);
+    $imgUrl = 'https://notenux.dev/assets/logo/icon_dark.png';
+    $html = '<table class="retro-table"><thead><tr><th>Item</th><th>Preview</th></tr></thead><tbody><tr><td>Shield</td><td><img src="'.$imgUrl.'" alt="Dark Emblem"></td></tr></tbody></table>';
+
+    $markdown = $controller->convertToMarkdown($html);
+
+    expect($markdown)->toContain('| Item | Preview |');
+    expect($markdown)->toContain("![Dark Emblem]({$imgUrl})");
+});
+
+test('white-box: content sanitizer preserves custom table styling and cell attributes', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+    $html = '<table style="border: 2px solid #000; width: 100%;"><tr bgcolor="#1e3a8a"><th style="color: #ffffff; text-align: center;">Head</th></tr><tr><td style="background-color: #06b6d4; text-align: right;" align="right" colspan="1">Val</td></tr></table>';
+
+    $clean = $sanitizer->sanitize($html);
+
+    expect($clean)->toContain('background-color: #06b6d4');
+    expect($clean)->toContain('text-align: right');
+    expect($clean)->toContain('color: #ffffff');
+    expect($clean)->toContain('colspan="1"');
+});

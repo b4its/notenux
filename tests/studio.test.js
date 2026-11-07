@@ -579,6 +579,7 @@ test('white-box: MarkdownEngine parses h4, h5, and h6 markdown headings', () => 
                 querySelectorAll: () => [],
                 attributes: [],
                 innerHTML: '',
+                get value() { return this.innerHTML; },
                 content: {
                     querySelectorAll: () => []
                 }
@@ -804,4 +805,248 @@ test('white-box: clear controls normalize rich formatting and clear editor conte
     const paragraphs = plainText.split(/\n\n+/).filter(Boolean);
     panel.dom.editorArea.innerHTML = paragraphs.map(p => `<p>${panel.escapeHtml(p.trim())}</p>`).join('');
     assert.equal(panel.dom.editorArea.innerHTML, '<p>Paragraph 1</p><p>Paragraph 2</p>');
+});
+
+test('white-box: table customization operations add/delete rows and columns and style cells', () => {
+    const { panel, context } = harness();
+    let handledInput = false;
+    panel.handleEditorInput = () => { handledInput = true; };
+
+    // Create a mock table structure
+    const createCell = (tag = 'td') => {
+        const cell = {
+            tagName: tag.toUpperCase(),
+            innerHTML: '',
+            style: {
+                textAlign: '',
+                backgroundColor: '',
+                color: '',
+                removeProperty(prop) {
+                    if (prop === 'background-color') delete this.backgroundColor;
+                    if (prop === 'color') delete this.color;
+                    delete this[prop];
+                }
+            },
+            attributes: [],
+            setAttribute(k, v) { this[k] = v; },
+            classList: { add: () => {}, remove: () => {} },
+            remove() {
+                if (cell.parentTr) {
+                    const idx = cell.parentTr.cells.indexOf(cell);
+                    if (idx !== -1) cell.parentTr.cells.splice(idx, 1);
+                }
+            },
+            closest(selector) {
+                if (selector.includes('tr')) return cell.parentTr;
+                if (selector.includes('table')) return cell.parentTr?.parentTable;
+                return null;
+            }
+        };
+        return cell;
+    };
+
+    const createRow = (cellTags = ['td', 'td']) => {
+        const tr = {
+            tagName: 'TR',
+            cells: [],
+            closest(selector) {
+                if (selector.includes('table')) return tr.parentTable;
+                if (selector.includes('thead')) return tr.parentThead;
+                return null;
+            },
+            parentNode: null,
+            remove() {
+                const idx = tr.parentTable.rows.indexOf(tr);
+                if (idx !== -1) tr.parentTable.rows.splice(idx, 1);
+            },
+            insertBefore(newNode, refNode) {
+                const refIdx = tr.cells.indexOf(refNode);
+                newNode.parentTr = tr;
+                if (refIdx === -1) tr.cells.push(newNode);
+                else tr.cells.splice(refIdx, 0, newNode);
+                return newNode;
+            },
+            appendChild(newNode) {
+                newNode.parentTr = tr;
+                tr.cells.push(newNode);
+                return newNode;
+            },
+            replaceChild(newChild, oldChild) {
+                const idx = tr.cells.indexOf(oldChild);
+                if (idx !== -1) {
+                    newChild.parentTr = tr;
+                    tr.cells[idx] = newChild;
+                }
+            }
+        };
+        tr.cells = cellTags.map(tag => {
+            const c = createCell(tag);
+            c.parentTr = tr;
+            return c;
+        });
+        return tr;
+    };
+
+    const mockTable = {
+        tagName: 'TABLE',
+        rows: [],
+        querySelectorAll(selector) {
+            if (selector.includes('tr')) return mockTable.rows;
+            return [];
+        },
+        insertBefore(newNode, refNode) {
+            const refIdx = mockTable.rows.indexOf(refNode);
+            newNode.parentTable = mockTable;
+            newNode.parentNode = mockTable;
+            if (refIdx === -1) mockTable.rows.push(newNode);
+            else mockTable.rows.splice(refIdx, 0, newNode);
+            return newNode;
+        },
+        remove() { mockTable.removed = true; }
+    };
+
+    const row1 = createRow(['th', 'th']);
+    row1.parentTable = mockTable;
+    row1.parentNode = mockTable;
+    const row2 = createRow(['td', 'td']);
+    row2.parentTable = mockTable;
+    row2.parentNode = mockTable;
+    mockTable.rows = [row1, row2];
+
+    context.document.createElement = (tag) => {
+        if (tag.toLowerCase() === 'tr') {
+            const tr = createRow([]);
+            return tr;
+        }
+        return createCell(tag);
+    };
+
+    // Test cell selection & coordinates
+    panel.activeTableCell = row2.cells[0];
+    row2.cells[0].cellIndex = 0;
+    row2.rowIndex = 1;
+    panel.dom.tableCellCoord = { textContent: '' };
+    panel.dom.tableToolkitBar = { classList: { remove: () => {}, add: () => {} } };
+
+    panel.setActiveTableCell(row2.cells[0]);
+    assert.ok(panel.dom.tableCellCoord.textContent.includes('R2'));
+
+    // Test add row below
+    panel.tableAddRow('below');
+    assert.equal(mockTable.rows.length, 3);
+    assert.equal(handledInput, true);
+
+    // Test styling active cell
+    panel.tableSetAlign('center');
+    assert.equal(panel.activeTableCell.style.textAlign, 'center');
+
+    panel.tableSetCellBg('#10b981');
+    assert.equal(panel.activeTableCell.style.backgroundColor, '#10b981');
+
+    panel.tableSetCellColor('#ffffff');
+    assert.equal(panel.activeTableCell.style.color, '#ffffff');
+
+    panel.tableResetColors();
+    assert.equal(panel.activeTableCell.style.backgroundColor, undefined);
+
+    // Test add column right
+    panel.tableAddColumn('right');
+    assert.equal(mockTable.rows[0].cells.length, 3);
+    assert.equal(mockTable.rows[1].cells.length, 3);
+
+    // Test delete column
+    panel.tableDeleteColumn();
+    assert.equal(mockTable.rows[0].cells.length, 2);
+
+    // Test delete row
+    panel.tableDeleteRow();
+    assert.equal(mockTable.rows.length, 2);
+});
+
+test('white-box: table image paste directly inserts image into active table cell', () => {
+    const listeners = new Map();
+    const cellAppended = [];
+    const mockCell = {
+        tagName: 'TD',
+        appendChild(child) { cellAppended.push(child); }
+    };
+    const mockEditorArea = {
+        addEventListener(event, fn) { listeners.set(event, fn); },
+        cloneNode: () => ({ innerHTML: '', querySelectorAll: () => [] }),
+        contains: (node) => node === mockCell
+    };
+    const { panel, context } = harness(() => Promise.resolve({ ok: true }));
+    panel.dom.editorArea = mockEditorArea;
+    panel.activeTableCell = mockCell;
+
+    context.FileReader = class {
+        readAsDataURL() {
+            this.onload({ target: { result: 'data:image/png;base64,TABLEIMGDATA' } });
+        }
+    };
+    context.document.createElement = (tag) => ({
+        tagName: tag.toUpperCase(),
+        src: '',
+        alt: '',
+        className: ''
+    });
+
+    panel.initPasteInterceptor();
+    const pasteHandler = listeners.get('paste');
+
+    const fakePasteEvent = {
+        preventDefault: () => {},
+        clipboardData: {
+            items: [{
+                type: 'image/png',
+                getAsFile: () => ({ name: 'screenshot.png', type: 'image/png' })
+            }],
+            files: [],
+            getData: () => ''
+        }
+    };
+
+    pasteHandler(fakePasteEvent);
+
+    assert.equal(cellAppended.length, 1);
+    assert.equal(cellAppended[0].tagName, 'IMG');
+    assert.equal(cellAppended[0].src, 'data:image/png;base64,TABLEIMGDATA');
+    assert.ok(cellAppended[0].className.includes('max-h-48'));
+});
+
+test('white-box: MarkdownEngine preserves images inside table cells during conversion', () => {
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({
+                querySelectorAll: () => [],
+                attributes: [],
+                innerHTML: '',
+                get value() { return this.innerHTML; },
+                content: {
+                    querySelectorAll: () => []
+                }
+            }),
+            addEventListener() {},
+            querySelector() { return null; },
+        }
+    });
+    vm.runInContext(source + '\nglobalThis.MarkdownEngine = MarkdownEngine;', context);
+    const MarkdownEngine = context.MarkdownEngine;
+
+    // Test toMarkdown with table containing img
+    const htmlTable = `<table>
+        <tr><th>Header A</th><th>Header B</th></tr>
+        <tr><td>Item 1</td><td><img src="https://example.com/item.png" alt="Item Image"></td></tr>
+    </table>`;
+
+    const md = MarkdownEngine.toMarkdown(htmlTable);
+    assert.ok(md.includes('| Header A | Header B |'));
+    assert.ok(md.includes('![Item Image](https://example.com/item.png)'));
+
+    // Test parse markdown table with image back to HTML
+    const parsedHtml = MarkdownEngine.parse(md);
+    assert.ok(parsedHtml.includes('<table class="retro-table">'));
+    assert.ok(parsedHtml.includes('<img'));
+    assert.ok(parsedHtml.includes('https://example.com/item.png'));
 });

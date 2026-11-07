@@ -26,12 +26,13 @@ class NoteContentSanitizer
             foreach (iterator_to_array($element->attributes) as $attribute) {
                 $name = strtolower($attribute->name);
                 $value = $attribute->value;
-                $safe = in_array($name, ['class', 'title', 'alt'], true)
+                $safe = in_array($name, ['class', 'title', 'alt', 'id'], true)
                     || ($name === 'checked' && $tag === 'input')
                     || ($name === 'type' && $tag === 'input' && $value === 'checkbox')
-                    || (in_array($name, ['colspan', 'rowspan', 'width', 'height', 'size', 'start'], true) && ctype_digit($value))
-                    || ($name === 'color' && preg_match('/^(#[a-f0-9]{3,8}|[a-z]+)$/i', $value))
-                    || ($name === 'style' && preg_match('/^(\s*(color|background-color|text-align|font-size|font-family|font-weight|font-style|text-decoration)\s*:\s*[a-z0-9#(),.%\s\'"-]+;?\s*)+$/i', $value))
+                    || (in_array($name, ['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'], true) && ctype_digit($value))
+                    || (in_array($name, ['color', 'bgcolor', 'bordercolor'], true) && preg_match('/^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i', $value))
+                    || (in_array($name, ['align', 'valign'], true) && in_array(strtolower($value), ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'], true))
+                    || ($name === 'style' && preg_match('/^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s\'"-]+;?\s*)+$/i', $value))
                     || ($name === 'href' && $tag === 'a' && preg_match('~^(https?://|mailto:|\#|/(?!/))~i', $value))
                     || ($name === 'src' && $tag === 'img' && preg_match('~^(https?://|data:image/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)~is', trim($value)));
 

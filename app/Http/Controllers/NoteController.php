@@ -412,7 +412,20 @@ class NoteController extends Controller
             $rows = [];
             foreach ($trMatches[0] as $idx => $trHtml) {
                 preg_match_all('/<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/i', $trHtml, $cellMatches);
-                $cells = array_map(fn ($c) => trim(strip_tags($c)), $cellMatches[1]);
+                $cells = array_map(function ($c) {
+                    $inner = preg_replace_callback('/<img\b[^>]*>/i', function ($m) {
+                        preg_match('/\bsrc="([^"]*)"/i', $m[0], $src);
+                        preg_match('/\balt="([^"]*)"/i', $m[0], $alt);
+                        $url = $src[1] ?? '';
+                        $desc = $alt[1] ?? '';
+
+                        return "![{$desc}]({$url})";
+                    }, $c);
+                    $inner = preg_replace('/<br\s*\/?>/i', ' ', $inner);
+                    $clean = trim(strip_tags($inner));
+
+                    return str_replace('|', '&#124;', $clean);
+                }, $cellMatches[1]);
                 if (! empty($cells)) {
                     $rows[] = '| '.implode(' | ', $cells).' |';
                     if ($idx === 0) {

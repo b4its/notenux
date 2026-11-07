@@ -22,14 +22,15 @@ function sanitizeHtml(html) {
         }
         for (const attribute of [...element.attributes]) {
             const { name, value } = attribute;
-            const safe = ['class', 'title', 'alt'].includes(name)
+            const safe = ['class', 'title', 'alt', 'id'].includes(name)
                 || (name === 'type' && element.localName === 'input' && value === 'checkbox')
                 || (name === 'checked' && element.localName === 'input')
-                || (['colspan', 'rowspan', 'width', 'height', 'size', 'start'].includes(name) && /^\d+$/.test(value))
-                || (name === 'color' && /^(#[a-f0-9]{3,8}|[a-z]+)$/i.test(value))
-                || (name === 'style' && /^(\s*(color|background-color|text-align|font-size|font-family|font-weight|font-style|text-decoration)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value))
+                || (['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'].includes(name) && /^\d+$/.test(value))
+                || (['color', 'bgcolor', 'bordercolor'].includes(name) && /^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i.test(value))
+                || (['align', 'valign'].includes(name) && ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'].includes((value || '').toLowerCase()))
+                || (name === 'style' && /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value))
                 || (name === 'href' && element.localName === 'a' && /^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(value))
-                || (name === 'src' && element.localName === 'img' && /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)/i.test((value || '').trim()));
+                || (name === 'src' && element.localName === 'img' && /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=\s]+$)/i.test((value || '').trim()));
             if (!safe) element.removeAttribute(name);
         }
         if (element.localName === 'input' && element.type !== 'checkbox') element.remove();
@@ -240,7 +241,7 @@ class MarkdownEngine {
         html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+|#[^\s)]+)\)/gi, (_, text, url) => `<a href="${MarkdownEngine.escape(url).replace(/"/g, '&quot;')}">${text}</a>`);
 
         // Markdown Tables
-        html = html.replace(/((?:\|[^\n]+\|\r?\n)+)/g, (tableBlock) => {
+        html = html.replace(/((?:\|[^\n]+\|(?:\r?\n|$))+)/g, (tableBlock) => {
             const lines = tableBlock.trim().split('\n').map(l => l.trim()).filter(Boolean);
             if (lines.length < 2) return tableBlock;
 
@@ -335,7 +336,16 @@ class MarkdownEngine {
             const trMatches = tableContent.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi) || [];
             trMatches.forEach((trHtml, idx) => {
                 const cellMatches = trHtml.match(/<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/gi) || [];
-                const cells = cellMatches.map(c => c.replace(/<[^>]+>/g, '').trim());
+                const cells = cellMatches.map(c => {
+                    let inner = c.replace(/^<(?:th|td)[^>]*>/i, '').replace(/<\/(?:th|td)>$/i, '');
+                    // Convert images to markdown syntax if not already converted
+                    inner = inner.replace(/<img\b[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/gi, '![$2]($1)');
+                    inner = inner.replace(/<img\b[^>]*alt="([^"]*)"[^>]*src="([^"]*)"[^>]*>/gi, '![$1]($2)');
+                    inner = inner.replace(/<img\b[^>]*src="([^"]*)"[^>]*>/gi, '![]($1)');
+                    inner = inner.replace(/<br\s*\/?>/gi, ' ');
+                    inner = inner.replace(/<[^>]+>/g, '').trim();
+                    return inner.replace(/\|/g, '&#124;');
+                });
                 if (cells.length > 0) {
                     rows.push(`| ${cells.join(' | ')} |`);
                     if (idx === 0) {
@@ -369,7 +379,7 @@ class MarkdownEngine {
         md = md.replace(/<br[^>]*>/gi, '\n');
         const decoder = document.createElement('textarea');
         decoder.innerHTML = md.replace(/<[^>]+>/g, '').trim();
-        return decoder.value;
+        return decoder.value !== undefined ? decoder.value : (decoder.innerHTML || md);
     }
 
     static escape(str) {
@@ -732,6 +742,7 @@ class NotenuxPanel {
         this.saveQueue = Promise.resolve();
         this.selectionVersion = 0;
         this.dirtyNotes = new Set();
+        this.activeTableCell = null;
 
         this.dom = {
             primaryNavSidebar: document.getElementById('primary-nav-sidebar'),
@@ -802,6 +813,26 @@ class NotenuxPanel {
             insertMediaBtn: document.getElementById('insert-media-btn'),
             markdownPasteBtn: document.getElementById('markdown-paste-btn'),
             markdownViewToggleBtn: document.getElementById('markdown-view-toggle-btn'),
+
+            tableToolkitBar: document.getElementById('table-toolkit-bar'),
+            tableCellCoord: document.getElementById('table-cell-coord'),
+            tableAddRowAboveBtn: document.getElementById('table-add-row-above-btn'),
+            tableAddRowBelowBtn: document.getElementById('table-add-row-below-btn'),
+            tableDelRowBtn: document.getElementById('table-del-row-btn'),
+            tableAddColLeftBtn: document.getElementById('table-add-col-left-btn'),
+            tableAddColRightBtn: document.getElementById('table-add-col-right-btn'),
+            tableDelColBtn: document.getElementById('table-del-col-btn'),
+            tableToggleHeaderBtn: document.getElementById('table-toggle-header-btn'),
+            tableAlignLeftBtn: document.getElementById('table-align-left-btn'),
+            tableAlignCenterBtn: document.getElementById('table-align-center-btn'),
+            tableAlignRightBtn: document.getElementById('table-align-right-btn'),
+            tableCellBgPicker: document.getElementById('table-cell-bg-picker'),
+            tableCellTextPicker: document.getElementById('table-cell-text-picker'),
+            tableClearColorsBtn: document.getElementById('table-clear-colors-btn'),
+            tableInsertImgBtn: document.getElementById('table-insert-img-btn'),
+            tableCellImgInput: document.getElementById('table-cell-img-input'),
+            tableDeleteTableBtn: document.getElementById('table-delete-table-btn'),
+            tableCloseToolkitBtn: document.getElementById('table-close-toolkit-btn'),
 
             questGoalText: document.getElementById('quest-goal-text'),
             questGoalSelect: document.getElementById('quest-goal-select'),
@@ -885,6 +916,7 @@ class NotenuxPanel {
         this.initZoom();
         this.initEditorToolbar();
         this.initPasteInterceptor();
+        this.initTableToolkit();
         this.initGoalTracking();
         this.initFindReplace();
         this.initImportModal();
@@ -2269,8 +2301,25 @@ class NotenuxPanel {
     initPasteInterceptor() {
         if (!this.dom.editorArea) return;
 
+        const getActiveCell = () => {
+            if (this.activeTableCell && (typeof this.dom.editorArea.contains !== 'function' || this.dom.editorArea.contains(this.activeTableCell))) {
+                return this.activeTableCell;
+            }
+            const sel = window.getSelection ? window.getSelection() : null;
+            if (sel && sel.rangeCount > 0) {
+                let node = sel.getRangeAt(0).startContainer;
+                if (node && node.nodeType === 3) node = node.parentNode;
+                const cell = node?.closest ? node.closest('td, th') : null;
+                if (cell && (typeof this.dom.editorArea.contains !== 'function' || this.dom.editorArea.contains(cell))) {
+                    return cell;
+                }
+            }
+            return null;
+        };
+
         const handleImageFile = (imageFile) => {
             if (!imageFile) return false;
+            const targetCell = getActiveCell();
             const reader = new FileReader();
             reader.onload = (loadEvent) => {
                 const dataUrl = loadEvent.target?.result;
@@ -2278,16 +2327,24 @@ class NotenuxPanel {
                     const img = document.createElement('img');
                     img.src = dataUrl;
                     img.alt = 'Pasted Image';
-                    img.className = 'rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2';
-                    const container = document.createElement('p');
-                    container.appendChild(img);
-                    const breakP = document.createElement('p');
-                    breakP.innerHTML = '<br>';
-                    const htmlToInsert = container.outerHTML + breakP.outerHTML;
 
-                    document.execCommand('insertHTML', false, htmlToInsert);
-                    this.handleEditorInput();
-                    this.toast.show('Image pasted into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
+                    if (targetCell) {
+                        img.className = 'max-w-full max-h-48 object-contain rounded border border-blue-400 my-1 inline-block';
+                        targetCell.appendChild(img);
+                        this.handleEditorInput();
+                        this.toast.show('Image pasted into table cell!', 'success', 'Cell Image Inscribed', 'fa-solid fa-table-cells text-cyan-400');
+                    } else {
+                        img.className = 'rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2';
+                        const container = document.createElement('p');
+                        container.appendChild(img);
+                        const breakP = document.createElement('p');
+                        breakP.innerHTML = '<br>';
+                        const htmlToInsert = container.outerHTML + breakP.outerHTML;
+
+                        document.execCommand('insertHTML', false, htmlToInsert);
+                        this.handleEditorInput();
+                        this.toast.show('Image pasted into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
+                    }
                 }
             };
             reader.readAsDataURL(imageFile);
@@ -2380,6 +2437,10 @@ class NotenuxPanel {
             const imageFile = files.find(f => f.type && f.type.startsWith('image/'));
             if (imageFile) {
                 e.preventDefault();
+                const cell = e.target?.closest ? e.target.closest('td, th') : null;
+                if (cell && (typeof this.dom.editorArea.contains !== 'function' || this.dom.editorArea.contains(cell))) {
+                    this.setActiveTableCell(cell);
+                }
                 handleImageFile(imageFile);
             }
         });
@@ -2446,6 +2507,394 @@ class NotenuxPanel {
         this.dom.editorArea.focus();
         this.handleEditorInput();
         this.toast.show('3x4 Retro Data Table inserted into editor', 'success', 'Table Added', 'fa-solid fa-table text-cyan-400');
+    }
+
+    /* ---------------- DETAILED TABLE CUSTOMIZATION TOOLKIT ---------------- */
+    setActiveTableCell(cell) {
+        if (this.activeTableCell && this.activeTableCell !== cell) {
+            this.activeTableCell.classList.remove('active-table-cell');
+        }
+        this.activeTableCell = cell;
+        if (cell) {
+            cell.classList.add('active-table-cell');
+            const tr = cell.closest ? cell.closest('tr') : null;
+            const table = cell.closest ? cell.closest('table') : null;
+            if (tr && table) {
+                const rowIndex = (tr.rowIndex !== undefined ? tr.rowIndex : 0) + 1;
+                const colIndex = (cell.cellIndex !== undefined ? cell.cellIndex : 0) + 1;
+                const totalRows = table.rows ? table.rows.length : (table.querySelectorAll ? table.querySelectorAll('tr').length : 1);
+                const totalCols = tr.cells ? tr.cells.length : (tr.querySelectorAll ? tr.querySelectorAll('td, th').length : 1);
+                if (this.dom.tableCellCoord) {
+                    this.dom.tableCellCoord.textContent = `R${rowIndex}:${totalRows} | C${colIndex}:${totalCols}`;
+                }
+                if (this.dom.tableToolkitBar) {
+                    this.dom.tableToolkitBar.classList.remove('hidden');
+                }
+            }
+        } else {
+            if (this.dom.tableToolkitBar) {
+                this.dom.tableToolkitBar.classList.add('hidden');
+            }
+        }
+    }
+
+    initTableToolkit() {
+        if (!this.dom.editorArea) return;
+
+        const detectCellFromSelection = () => {
+            const sel = window.getSelection ? window.getSelection() : null;
+            if (sel && sel.rangeCount > 0) {
+                let node = sel.getRangeAt(0).startContainer;
+                if (node && node.nodeType === 3) node = node.parentNode;
+                const cell = node?.closest ? node.closest('td, th') : null;
+                if (cell && (typeof this.dom.editorArea.contains !== 'function' || this.dom.editorArea.contains(cell))) {
+                    this.setActiveTableCell(cell);
+                    return;
+                }
+            }
+            if (!document.activeElement?.closest('#table-toolkit-bar')) {
+                this.setActiveTableCell(null);
+            }
+        };
+
+        this.dom.editorArea.addEventListener('click', (e) => {
+            const cell = e.target?.closest ? e.target.closest('td, th') : null;
+            if (cell && (typeof this.dom.editorArea.contains !== 'function' || this.dom.editorArea.contains(cell))) {
+                this.setActiveTableCell(cell);
+            } else {
+                this.setActiveTableCell(null);
+            }
+        });
+
+        this.dom.editorArea.addEventListener('keyup', () => {
+            detectCellFromSelection();
+        });
+
+        // Add Row Above
+        this.dom.tableAddRowAboveBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableAddRow('above');
+        });
+
+        // Add Row Below
+        this.dom.tableAddRowBelowBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableAddRow('below');
+        });
+
+        // Delete Row
+        this.dom.tableDelRowBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableDeleteRow();
+        });
+
+        // Add Col Left
+        this.dom.tableAddColLeftBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableAddColumn('left');
+        });
+
+        // Add Col Right
+        this.dom.tableAddColRightBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableAddColumn('right');
+        });
+
+        // Delete Col
+        this.dom.tableDelColBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableDeleteColumn();
+        });
+
+        // Toggle Header (TH / TD)
+        this.dom.tableToggleHeaderBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableToggleHeader();
+        });
+
+        // Alignments
+        this.dom.tableAlignLeftBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableSetAlign('left');
+        });
+        this.dom.tableAlignCenterBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableSetAlign('center');
+        });
+        this.dom.tableAlignRightBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableSetAlign('right');
+        });
+
+        // Colors
+        this.dom.tableCellBgPicker?.addEventListener('input', (e) => {
+            this.tableSetCellBg(e.target.value);
+        });
+        this.dom.tableCellTextPicker?.addEventListener('input', (e) => {
+            this.tableSetCellColor(e.target.value);
+        });
+        this.dom.tableClearColorsBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableResetColors();
+        });
+
+        // Insert Image into Active Cell
+        this.dom.tableInsertImgBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.dom.tableCellImgInput?.click();
+        });
+        this.dom.tableCellImgInput?.addEventListener('change', (e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (loadEvt) => {
+                    if (loadEvt.target?.result) {
+                        this.tableInsertImage(loadEvt.target.result);
+                    }
+                };
+                reader.readAsDataURL(file);
+                e.target.value = '';
+            }
+        });
+
+        // Delete Table
+        this.dom.tableDeleteTableBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.tableDeleteTable();
+        });
+
+        // Close Toolkit Bar
+        this.dom.tableCloseToolkitBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.setActiveTableCell(null);
+        });
+    }
+
+    tableAddRow(position = 'below') {
+        const cell = this.activeTableCell;
+        if (!cell) {
+            this.toast.show('Pilih sel tabel terlebih dahulu!', 'warning');
+            return;
+        }
+        const tr = cell.closest ? cell.closest('tr') : null;
+        const table = tr?.closest ? tr.closest('table') : null;
+        if (!tr || !table) return;
+
+        const colCount = tr.cells ? tr.cells.length : 1;
+        const newTr = document.createElement('tr');
+        const isHeader = position === 'above' && (tr.closest ? tr.closest('thead') !== null : false);
+
+        for (let i = 0; i < colCount; i++) {
+            const newCell = document.createElement(isHeader ? 'th' : 'td');
+            newCell.innerHTML = '<br>';
+            newTr.appendChild(newCell);
+        }
+
+        if (position === 'above') {
+            tr.parentNode.insertBefore(newTr, tr);
+        } else {
+            tr.parentNode.insertBefore(newTr, tr.nextSibling);
+        }
+
+        const targetCellIndex = Math.min(cell.cellIndex || 0, (newTr.cells ? newTr.cells.length - 1 : 0));
+        if (newTr.cells && newTr.cells[targetCellIndex]) {
+            this.setActiveTableCell(newTr.cells[targetCellIndex]);
+        }
+        this.handleEditorInput();
+        this.audio?.playClick?.();
+        this.toast.show(position === 'above' ? 'Baris ditambahkan di atas' : 'Baris ditambahkan di bawah', 'success');
+    }
+
+    tableDeleteRow() {
+        const cell = this.activeTableCell;
+        if (!cell) {
+            this.toast.show('Pilih sel tabel terlebih dahulu!', 'warning');
+            return;
+        }
+        const tr = cell.closest ? cell.closest('tr') : null;
+        const table = tr?.closest ? tr.closest('table') : null;
+        if (!tr || !table) return;
+
+        const allRows = table.querySelectorAll ? table.querySelectorAll('tr') : [];
+        if (allRows.length <= 1) {
+            table.remove();
+            this.setActiveTableCell(null);
+            this.handleEditorInput();
+            this.toast.show('Tabel dihapus karena baris terakhir dibuang', 'info');
+            return;
+        }
+
+        const nextTr = tr.nextElementSibling || tr.previousElementSibling;
+        const colIdx = cell.cellIndex || 0;
+        tr.remove();
+
+        if (nextTr && nextTr.cells && nextTr.cells.length > 0) {
+            const targetCell = nextTr.cells[Math.min(colIdx, nextTr.cells.length - 1)];
+            this.setActiveTableCell(targetCell);
+        } else {
+            this.setActiveTableCell(null);
+        }
+
+        this.handleEditorInput();
+        this.audio?.playClick?.();
+        this.toast.show('Baris berhasil dihapus', 'info');
+    }
+
+    tableAddColumn(position = 'right') {
+        const cell = this.activeTableCell;
+        if (!cell) {
+            this.toast.show('Pilih sel tabel terlebih dahulu!', 'warning');
+            return;
+        }
+        const table = cell.closest ? cell.closest('table') : null;
+        if (!table) return;
+
+        const colIdx = cell.cellIndex !== undefined ? cell.cellIndex : 0;
+        const rows = table.querySelectorAll ? table.querySelectorAll('tr') : [];
+        const activeRow = cell.closest ? cell.closest('tr') : null;
+        let newActiveCell = null;
+
+        rows.forEach(r => {
+            const isHeader = (r.closest ? r.closest('thead') !== null : false) || (r.querySelector ? r.querySelector('th') !== null : false);
+            const newCell = document.createElement(isHeader ? 'th' : 'td');
+            newCell.innerHTML = '<br>';
+            if (position === 'left') {
+                r.insertBefore(newCell, r.cells ? r.cells[colIdx] || null : null);
+            } else {
+                r.insertBefore(newCell, r.cells ? r.cells[colIdx + 1] || null : null);
+            }
+            if (r === activeRow) {
+                newActiveCell = newCell;
+            }
+        });
+
+        if (newActiveCell) {
+            this.setActiveTableCell(newActiveCell);
+        }
+        this.handleEditorInput();
+        this.audio?.playClick?.();
+        this.toast.show(position === 'left' ? 'Kolom ditambahkan di kiri' : 'Kolom ditambahkan di kanan', 'success');
+    }
+
+    tableDeleteColumn() {
+        const cell = this.activeTableCell;
+        if (!cell) {
+            this.toast.show('Pilih sel tabel terlebih dahulu!', 'warning');
+            return;
+        }
+        const table = cell.closest ? cell.closest('table') : null;
+        if (!table) return;
+
+        const colIdx = cell.cellIndex !== undefined ? cell.cellIndex : 0;
+        const rows = table.querySelectorAll ? table.querySelectorAll('tr') : [];
+        const firstRow = rows[0];
+        if (!firstRow || (firstRow.cells && firstRow.cells.length <= 1)) {
+            table.remove();
+            this.setActiveTableCell(null);
+            this.handleEditorInput();
+            this.toast.show('Tabel dihapus karena kolom terakhir dibuang', 'info');
+            return;
+        }
+
+        const activeRow = cell.closest ? cell.closest('tr') : null;
+        rows.forEach(r => {
+            if (r.cells && r.cells[colIdx]) {
+                r.cells[colIdx].remove();
+            }
+        });
+
+        if (activeRow && activeRow.cells && activeRow.cells.length > 0) {
+            const targetIdx = Math.max(0, Math.min(colIdx, activeRow.cells.length - 1));
+            this.setActiveTableCell(activeRow.cells[targetIdx]);
+        } else {
+            this.setActiveTableCell(null);
+        }
+
+        this.handleEditorInput();
+        this.audio?.playClick?.();
+        this.toast.show('Kolom berhasil dihapus', 'info');
+    }
+
+    tableToggleHeader() {
+        const cell = this.activeTableCell;
+        if (!cell) return;
+        const tr = cell.closest ? cell.closest('tr') : null;
+        if (!tr || !tr.cells) return;
+
+        const cells = Array.from(tr.cells);
+        const isHeader = cells.every(c => c.tagName.toLowerCase() === 'th');
+        const targetTag = isHeader ? 'td' : 'th';
+
+        cells.forEach((c) => {
+            const replacement = document.createElement(targetTag);
+            replacement.innerHTML = c.innerHTML;
+            if (c.attributes) {
+                Array.from(c.attributes).forEach(attr => {
+                    replacement.setAttribute(attr.name, attr.value);
+                });
+            }
+            tr.replaceChild(replacement, c);
+            if (c === cell) {
+                this.setActiveTableCell(replacement);
+            }
+        });
+
+        this.handleEditorInput();
+        this.audio?.playClick?.();
+        this.toast.show(isHeader ? 'Diubah menjadi Baris Data (TD)' : 'Diubah menjadi Baris Header (TH)', 'info');
+    }
+
+    tableSetAlign(align) {
+        if (!this.activeTableCell) return;
+        this.activeTableCell.style.textAlign = align;
+        this.handleEditorInput();
+        this.toast.show(`Perataan teks: ${align}`, 'info');
+    }
+
+    tableSetCellBg(color) {
+        if (!this.activeTableCell) return;
+        this.activeTableCell.style.backgroundColor = color;
+        this.handleEditorInput();
+    }
+
+    tableSetCellColor(color) {
+        if (!this.activeTableCell) return;
+        this.activeTableCell.style.color = color;
+        this.handleEditorInput();
+    }
+
+    tableResetColors() {
+        if (!this.activeTableCell) return;
+        this.activeTableCell.style.removeProperty('background-color');
+        this.activeTableCell.style.removeProperty('color');
+        this.handleEditorInput();
+        this.toast.show('Warna sel dikembalikan ke bawaan', 'info');
+    }
+
+    tableInsertImage(dataUrl) {
+        if (!this.activeTableCell) {
+            this.toast.show('Pilih sel tabel terlebih dahulu!', 'warning');
+            return;
+        }
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.alt = 'Table Image';
+        img.className = 'max-w-full max-h-48 object-contain rounded border border-blue-400 my-1 inline-block';
+        this.activeTableCell.appendChild(img);
+        this.handleEditorInput();
+        this.audio?.playCoin?.();
+        this.toast.show('Gambar berhasil disisipkan ke dalam sel tabel!', 'success', 'Gambar Tersimpan', 'fa-solid fa-image text-cyan-400');
+    }
+
+    tableDeleteTable() {
+        const table = this.activeTableCell?.closest ? this.activeTableCell.closest('table') : null;
+        if (table) {
+            table.remove();
+            this.setActiveTableCell(null);
+            this.handleEditorInput();
+            this.audio?.playDelete?.();
+            this.toast.show('Tabel berhasil dihapus', 'info', 'Tabel Dihapus', 'fa-solid fa-trash-can text-red-400');
+        }
     }
 
     insertInteractiveTask() {

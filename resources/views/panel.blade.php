@@ -937,6 +937,95 @@
                     </button>
                 </div>
 
+                <!-- Detailed Table Customization Matrix Toolkit -->
+                <div id="table-toolkit-bar" class="shrink-0 hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono select-none transition-all">
+                    <!-- Left: Table Info & Row/Col Operations -->
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-100 dark:bg-blue-950/80 border border-blue-400 dark:border-blue-700 text-blue-900 dark:text-cyan-300">
+                            <i class="fa-solid fa-table text-blue-600 dark:text-cyan-400"></i>
+                            <span class="font-pixel text-[10px] hidden sm:inline">TABLE MATRIX</span>
+                            <span id="table-cell-coord" class="font-bold text-[10px] font-mono text-cyan-700 dark:text-cyan-300">R1:C1</span>
+                        </div>
+
+                        <!-- Row Actions Group -->
+                        <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded border border-black/20 dark:border-blue-900">
+                            <button id="table-add-row-above-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-2 py-1 rounded text-[11px]" title="Tambah Baris di Atas">
+                                <i class="fa-solid fa-arrow-up text-cyan-600 dark:text-cyan-400 sm:mr-1"></i><span class="hidden md:inline">+Baris ↑</span>
+                            </button>
+                            <button id="table-add-row-below-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-2 py-1 rounded text-[11px]" title="Tambah Baris di Bawah">
+                                <i class="fa-solid fa-arrow-down text-cyan-600 dark:text-cyan-400 sm:mr-1"></i><span class="hidden md:inline">+Baris ↓</span>
+                            </button>
+                            <button id="table-del-row-btn" type="button" class="arcade-btn bg-surface hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 px-2 py-1 rounded text-[11px]" title="Hapus Baris Aktif">
+                                <i class="fa-solid fa-trash-can sm:mr-1"></i><span class="hidden md:inline">-Baris</span>
+                            </button>
+                        </div>
+
+                        <!-- Column Actions Group -->
+                        <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded border border-black/20 dark:border-blue-900">
+                            <button id="table-add-col-left-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-2 py-1 rounded text-[11px]" title="Tambah Kolom di Kiri">
+                                <i class="fa-solid fa-arrow-left text-blue-600 dark:text-blue-400 sm:mr-1"></i><span class="hidden md:inline">+Kolom ←</span>
+                            </button>
+                            <button id="table-add-col-right-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-2 py-1 rounded text-[11px]" title="Tambah Kolom di Kanan">
+                                <i class="fa-solid fa-arrow-right text-blue-600 dark:text-blue-400 sm:mr-1"></i><span class="hidden md:inline">+Kolom →</span>
+                            </button>
+                            <button id="table-del-col-btn" type="button" class="arcade-btn bg-surface hover:bg-red-100 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 px-2 py-1 rounded text-[11px]" title="Hapus Kolom Aktif">
+                                <i class="fa-solid fa-trash-can sm:mr-1"></i><span class="hidden md:inline">-Kolom</span>
+                            </button>
+                        </div>
+
+                        <!-- Header Toggle & Alignment -->
+                        <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded border border-black/20 dark:border-blue-900">
+                            <button id="table-toggle-header-btn" type="button" class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-950/50 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-[11px]" title="Toggle Header (TH / TD)">
+                                <i class="fa-solid fa-heading sm:mr-1"></i><span class="hidden lg:inline">TH/TD</span>
+                            </button>
+                            <button id="table-align-left-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-1.5 py-1 rounded text-[11px]" title="Rata Kiri">
+                                <i class="fa-solid fa-align-left"></i>
+                            </button>
+                            <button id="table-align-center-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-1.5 py-1 rounded text-[11px]" title="Rata Tengah">
+                                <i class="fa-solid fa-align-center"></i>
+                            </button>
+                            <button id="table-align-right-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-1.5 py-1 rounded text-[11px]" title="Rata Kanan">
+                                <i class="fa-solid fa-align-right"></i>
+                            </button>
+                        </div>
+
+                        <!-- Cell Color Picker & Text Color -->
+                        <div class="flex items-center gap-1.5 bg-surface px-2 py-0.5 rounded border border-black/20 dark:border-blue-900">
+                            <!-- Cell Bg Color Picker -->
+                            <label class="flex items-center gap-1 cursor-pointer" title="Warna Latar Sel (Background Color)">
+                                <i class="fa-solid fa-fill-drip text-[10px] text-cyan-600 dark:text-cyan-400"></i>
+                                <input id="table-cell-bg-picker" type="color" value="#1e3a8a" class="w-4 h-4 p-0 border-0 rounded cursor-pointer bg-transparent">
+                            </label>
+                            <!-- Cell Text Color Picker -->
+                            <label class="flex items-center gap-1 cursor-pointer" title="Warna Teks Sel (Text Color)">
+                                <i class="fa-solid fa-font text-[10px] text-amber-500"></i>
+                                <input id="table-cell-text-picker" type="color" value="#ffffff" class="w-4 h-4 p-0 border-0 rounded cursor-pointer bg-transparent">
+                            </label>
+                            <button id="table-clear-colors-btn" type="button" class="arcade-btn bg-surface hover:bg-slate-200 dark:hover:bg-slate-800 text-[10px] px-1 py-0.5 rounded" title="Reset Warna Sel ke Normal">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
+
+                        <!-- Insert / Paste Image in Active Cell -->
+                        <div class="flex items-center gap-1">
+                            <button id="table-insert-img-btn" type="button" class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded text-[11px] font-mono shadow-[1px_1px_0px_#000]" title="Sisipkan Gambar ke Sel Aktif">
+                                <i class="fa-solid fa-file-image mr-1 text-emerald-200"></i>+Gambar Sel
+                            </button>
+                            <input id="table-cell-img-input" type="file" accept="image/*" class="hidden">
+                        </div>
+                    </div>
+
+                    <!-- Right: Delete Table & Close Toolbar -->
+                    <div class="flex items-center gap-1">
+                        <button id="table-delete-table-btn" type="button" class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2.5 py-1 rounded text-[11px] font-mono shadow-[1px_1px_0px_#000]" title="Hapus Keseluruhan Tabel">
+                            <i class="fa-solid fa-trash mr-1"></i>Hapus Tabel
+                        </button>
+                        <button id="table-close-toolkit-btn" type="button" class="arcade-btn bg-surface hover:bg-slate-200 dark:hover:bg-slate-800 px-2 py-1 rounded text-[10px]" title="Tutup Toolbar Tabel">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Zoomable Editable Content Area (The Core Canvas) -->
                 <div class="arcade-card flex-1 min-h-0 p-4 sm:p-6 rounded-xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000] bg-[var(--bg-surface)]">
                     <div id="editor-zoom-wrapper" class="zoom-canvas-container min-h-full flex flex-col">
