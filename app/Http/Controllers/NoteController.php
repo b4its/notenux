@@ -246,6 +246,40 @@ class NoteController extends Controller
     }
 
     /**
+     * Remove multiple specified notes and their chunks atomically.
+     */
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:notes,id'],
+        ]);
+
+        $deletedIds = DB::transaction(function () use ($validated): array {
+            $notes = Note::whereIn('id', $validated['ids'])->get();
+            $ids = [];
+
+            foreach ($notes as $note) {
+                $ids[] = $note->id;
+                $note->delete();
+            }
+
+            return $ids;
+        });
+
+        $count = count($deletedIds);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully banished {$count} scrolls into the void.",
+            'data' => [
+                'deleted_count' => $count,
+                'deleted_ids' => $deletedIds,
+            ],
+        ]);
+    }
+
+    /**
      * Toggle pinned state for quick access.
      */
     public function togglePin(Note $note): JsonResponse
@@ -313,7 +347,7 @@ class NoteController extends Controller
             $text .= "WORDS: {$note->word_count} | XP: {$note->xp}\n";
             $text .= "UPDATED: {$note->updated_at}\n";
             $text .= str_repeat('-', 40)."\n\n";
-            $text .= trim(strip_tags($note->content));
+            $text .= $this->convertToPlainText($note->content);
 
             return response($text, 200, [
                 'Content-Type' => 'text/plain; charset=UTF-8',
@@ -473,6 +507,65 @@ class NoteController extends Controller
         $md = preg_replace("/\n{3,}/", "\n\n", $md);
 
         return trim($md);
+    }
+
+    /**
+     * Convert rich HTML content to clean, unformatted plain text.
+     */
+    public function convertToPlainText(?string $html): string
+    {
+        if (blank($html)) {
+            return '';
+        }
+
+        $text = (string) $html;
+        $text = preg_replace('/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i', '', $text);
+        $text = preg_replace('/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/i', '', $text);
+        $text = preg_replace('/<!--[\s\S]*?-->/', '', $text);
+        $text = preg_replace('/<br\s*[\/]?>/i', "\n", $text);
+
+        // Task checkboxes
+        $text = preg_replace('/\s*<li[^>]*>\s*(?:<label[^>]*>\s*)?<input\b[^>]*?\btype=["\']checkbox["\'][^>]*?\bchecked\b[^>]*>\s*/i', "\n[x] ", $text);
+        $text = preg_replace('/\s*<li[^>]*>\s*(?:<label[^>]*>\s*)?<input\b[^>]*?\bchecked\b[^>]*?\btype=["\']checkbox["\'][^>]*>\s*/i', "\n[x] ", $text);
+        $text = preg_replace('/\s*<li[^>]*>\s*(?:<label[^>]*>\s*)?<input\b[^>]*?\btype=["\']checkbox["\'][^>]*>\s*/i', "\n[ ] ", $text);
+        $text = preg_replace('/<input\b[^>]*?\btype=["\']checkbox["\'][^>]*?\bchecked\b[^>]*>/i', '[x] ', $text);
+        $text = preg_replace('/<input\b[^>]*?\bchecked\b[^>]*?\btype=["\']checkbox["\'][^>]*>/i', '[x] ', $text);
+        $text = preg_replace('/<input\b[^>]*?\btype=["\']checkbox["\'][^>]*>/i', '[ ] ', $text);
+
+        // Ordered lists
+        $text = preg_replace_callback('/<ol[^>]*>(.*?)<\/ol>/is', function ($matches) {
+            $index = 1;
+
+            return preg_replace_callback('/\s*<li[^>]*>(.*?)<\/li>\s*/is', function ($li) use (&$index) {
+                return ($index++).'. '.trim($li[1])."\n";
+            }, $matches[1]);
+        }, $text);
+
+        // Unordered lists
+        $text = preg_replace('/\s*<li[^>]*>/i', "\n• ", $text);
+        $text = preg_replace('/<\/li>\s*/i', "\n", $text);
+
+        // Table cells and rows
+        $text = preg_replace('/<\/(td|th)>\s*<(td|th)[^>]*>/i', "\t", $text);
+        $text = preg_replace('/<tr[^>]*>\s*/i', '', $text);
+        $text = preg_replace('/<\/tr>\s*/i', "\n", $text);
+        $text = preg_replace('/<\/?(thead|tbody|tfoot)[^>]*>\s*/i', '', $text);
+
+        // Block elements
+        $text = preg_replace('/<\/(p|div|h[1-6]|blockquote|pre|table)>/i', "\n\n", $text);
+
+        // Horizontal rules
+        $text = preg_replace('/<hr\s*[\/]?>/i', "\n---\n", $text);
+
+        // Strip remaining HTML tags & decode entities
+        $text = strip_tags($text);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // Normalize carriage returns and excessive newlines
+        $text = preg_replace("/\r\n|\r/", "\n", $text);
+        $text = preg_replace("/\n{3,}/", "\n\n", $text);
+
+        return trim($text);
     }
 
     /**

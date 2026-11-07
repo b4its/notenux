@@ -407,13 +407,29 @@ class PlainTextEngine {
         // Handle line breaks
         text = text.replace(/<br\s*[\/]?>/gi, '\n');
 
-        // Handle lists
-        text = text.replace(/<li[^>]*>/gi, '• ');
-        text = text.replace(/<\/li>/gi, '\n');
+        // Handle task list checkboxes
+        text = text.replace(/\s*<li[^>]*>\s*(?:<label[^>]*>\s*)?<input\b[^>]*?\btype=["']checkbox["'][^>]*?\bchecked\b[^>]*>\s*/gi, '\n[x] ');
+        text = text.replace(/\s*<li[^>]*>\s*(?:<label[^>]*>\s*)?<input\b[^>]*?\bchecked\b[^>]*?\btype=["']checkbox["'][^>]*>\s*/gi, '\n[x] ');
+        text = text.replace(/\s*<li[^>]*>\s*(?:<label[^>]*>\s*)?<input\b[^>]*?\btype=["']checkbox["'][^>]*>\s*/gi, '\n[ ] ');
+        text = text.replace(/<input\b[^>]*?\btype=["']checkbox["'][^>]*?\bchecked\b[^>]*>/gi, '[x] ');
+        text = text.replace(/<input\b[^>]*?\bchecked\b[^>]*?\btype=["']checkbox["'][^>]*>/gi, '[x] ');
+        text = text.replace(/<input\b[^>]*?\btype=["']checkbox["'][^>]*>/gi, '[ ] ');
+
+        // Handle ordered lists
+        text = text.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, items) => {
+            let index = 1;
+            return items.replace(/\s*<li[^>]*>([\s\S]*?)<\/li>\s*/gi, (_, content) => `${index++}. ${content.trim()}\n`);
+        });
+
+        // Handle unordered lists
+        text = text.replace(/\s*<li[^>]*>/gi, '\n• ');
+        text = text.replace(/<\/li>\s*/gi, '\n');
 
         // Handle table cells and rows
         text = text.replace(/<\/(td|th)>\s*<(td|th)[^>]*>/gi, '\t');
-        text = text.replace(/<\/(tr|thead|tbody|tfoot)>/gi, '\n');
+        text = text.replace(/<tr[^>]*>\s*/gi, '');
+        text = text.replace(/<\/tr>\s*/gi, '\n');
+        text = text.replace(/<\/?(thead|tbody|tfoot)[^>]*>\s*/gi, '');
 
         // Handle block elements
         text = text.replace(/<\/(p|div|h[1-6]|blockquote|pre|table)>/gi, '\n\n');
@@ -886,6 +902,9 @@ class NotenuxPanel {
         this.isPerformingHistory = false;
         this.historyDebounce = null;
 
+        this.isBulkSelectNotes = false;
+        this.selectedNoteIds = new Set();
+
         this.dom = {
             undoBtn: document.getElementById('editor-undo-btn'),
             redoBtn: document.getElementById('editor-redo-btn'),
@@ -907,6 +926,20 @@ class NotenuxPanel {
             notesList: document.getElementById('notes-list'),
             searchInput: document.getElementById('search-notes-input'),
             sortNotesSelect: document.getElementById('sort-notes-select'),
+            toggleBulkSelectNotesBtn: document.getElementById('toggle-bulk-select-notes-btn'),
+            bulkToggleLabel: document.getElementById('bulk-toggle-label'),
+            notesBulkBar: document.getElementById('notes-bulk-bar'),
+            bulkSelectAllNotesCb: document.getElementById('bulk-select-all-notes-cb'),
+            bulkSelectedNotesCount: document.getElementById('bulk-selected-notes-count'),
+            bulkDeleteNotesBtn: document.getElementById('bulk-delete-notes-btn'),
+            bulkCancelNotesBtn: document.getElementById('bulk-cancel-notes-btn'),
+
+            bulkDeleteNotesModal: document.getElementById('bulk-delete-notes-modal'),
+            bulkDeleteNotesCountBadge: document.getElementById('bulk-delete-notes-count-badge'),
+            closeBulkDeleteNotesX: document.getElementById('close-bulk-delete-notes-x'),
+            cancelBulkDeleteNotesBtn: document.getElementById('cancel-bulk-delete-notes-btn'),
+            confirmBulkDeleteNotesBtn: document.getElementById('confirm-bulk-delete-notes-btn'),
+
             newNoteBtn: document.getElementById('new-note-btn'),
             categoryPills: document.querySelectorAll('.category-filter-btn'),
             navCategoryLinks: document.querySelectorAll('.nav-category-link'),
@@ -963,10 +996,12 @@ class NotenuxPanel {
             plainTextContainer: document.getElementById('plain-text-container'),
             plainTextEditor: document.getElementById('plain-text-editor'),
             plainTextCopyBtn: document.getElementById('plain-text-copy-btn'),
+            plainTextClearBtn: document.getElementById('plain-text-clear-btn'),
             plainTextExitBtn: document.getElementById('plain-text-exit-btn'),
             plainTextCharCount: document.getElementById('plain-text-char-count'),
             plainTextWordCount: document.getElementById('plain-text-word-count'),
             plainTextLineCount: document.getElementById('plain-text-line-count'),
+            notepadModeBanner: document.getElementById('notepad-mode-banner'),
 
             tableToolkitBar: document.getElementById('table-toolkit-bar'),
             tableCellCoord: document.getElementById('table-cell-coord'),
@@ -2204,6 +2239,41 @@ class NotenuxPanel {
             this.confirmQuickDeleteCategory();
         });
 
+        // Bulk Select Notes Mode toggles and actions
+        this.dom.toggleBulkSelectNotesBtn?.addEventListener('click', () => {
+            this.toggleBulkSelectNotesMode();
+        });
+
+        this.dom.bulkCancelNotesBtn?.addEventListener('click', () => {
+            this.toggleBulkSelectNotesMode(false);
+        });
+
+        this.dom.bulkSelectAllNotesCb?.addEventListener('change', (e) => {
+            this.selectAllFilteredNotes(e.target.checked);
+        });
+
+        this.dom.bulkDeleteNotesBtn?.addEventListener('click', () => {
+            this.openBulkDeleteNotesModal();
+        });
+
+        this.dom.closeBulkDeleteNotesX?.addEventListener('click', () => {
+            this.closeBulkDeleteNotesModal();
+        });
+
+        this.dom.cancelBulkDeleteNotesBtn?.addEventListener('click', () => {
+            this.closeBulkDeleteNotesModal();
+        });
+
+        this.dom.confirmBulkDeleteNotesBtn?.addEventListener('click', () => {
+            this.executeBulkDeleteNotes();
+        });
+
+        this.dom.bulkDeleteNotesModal?.addEventListener('click', (e) => {
+            if (e.target === this.dom.bulkDeleteNotesModal) {
+                this.closeBulkDeleteNotesModal();
+            }
+        });
+
         // Sidebar category action delegation (Edit & Delete)
         this.dom.sidebarCategoriesList?.addEventListener('click', (e) => {
             const editBtn = e.target.closest('.sidebar-edit-category-btn');
@@ -3320,6 +3390,11 @@ class NotenuxPanel {
                 this.dom.editorToolbarDecks.classList.add('notepad-mode');
             }
 
+            if (this.dom.notepadModeBanner) {
+                this.dom.notepadModeBanner.classList.remove('hidden');
+                this.dom.notepadModeBanner.classList.add('flex');
+            }
+
             this.toast.show('Mode Teks Biasa (Notepad) aktif. Teks siap disalin keseluruhan.', 'info', 'Notepad Mode', 'fa-solid fa-file-lines text-emerald-400');
             this.dom.plainTextEditor?.focus();
         } else {
@@ -3344,6 +3419,11 @@ class NotenuxPanel {
 
             if (this.dom.editorToolbarDecks) {
                 this.dom.editorToolbarDecks.classList.remove('notepad-mode');
+            }
+
+            if (this.dom.notepadModeBanner) {
+                this.dom.notepadModeBanner.classList.add('hidden');
+                this.dom.notepadModeBanner.classList.remove('flex');
             }
 
             this.toast.show('Kembali ke Mode Rich Editor (WYSIWYG).', 'info', 'Rich Editor', 'fa-solid fa-pen-nib text-blue-400');
@@ -4194,10 +4274,7 @@ class NotenuxPanel {
         }
     }
 
-    /* ---------------- RENDER NOTES LIST ---------------- */
-    renderNotesList() {
-        if (!this.dom.notesList) return;
-
+    getFilteredNotes() {
         let filtered = [...this.notes];
 
         if (this.activeCategory !== 'all') {
@@ -4211,6 +4288,15 @@ class NotenuxPanel {
                 (n.content && n.content.toLowerCase().includes(this.searchQuery))
             );
         }
+
+        return filtered;
+    }
+
+    /* ---------------- RENDER NOTES LIST ---------------- */
+    renderNotesList() {
+        if (!this.dom.notesList) return;
+
+        let filtered = this.getFilteredNotes();
 
         filtered.sort((a, b) => {
             if (a.is_pinned && !b.is_pinned) return -1;
@@ -4250,24 +4336,38 @@ class NotenuxPanel {
 
         this.dom.notesList.innerHTML = filtered.map(note => {
             const isActive = this.activeNote && this.activeNote.id === note.id;
+            const isSelected = this.selectedNoteIds?.has(note.id) ?? false;
             const categoryBadge = this.getCategoryBadge(note.category);
             const chunkCount = note.chunks ? note.chunks.length : (note.chunks_count || 1);
             const badgeClasses = isActive
                 ? 'bg-black/30 text-white border-white/50'
                 : categoryBadge.classes;
 
+            const cardClasses = (this.isBulkSelectNotes && isSelected)
+                ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-500 ring-2 ring-rose-500 shadow-[3px_3px_0px_#000] text-main'
+                : (isActive
+                    ? 'bg-blue-600 text-white border-black dark:border-cyan-400 shadow-[3px_3px_0px_#000]'
+                    : 'bg-surface hover:bg-slate-100 dark:hover:bg-blue-900/40 border-black/20 dark:border-blue-900/60 shadow-[2px_2px_0px_rgba(0,0,0,0.15)] text-main');
+
+            const checkboxHtml = this.isBulkSelectNotes ? `
+                <div class="note-checkbox-wrapper mr-2 shrink-0 flex items-center">
+                    <input type="checkbox"
+                           class="note-select-checkbox cursor-pointer accent-rose-600 w-4 h-4 rounded"
+                           data-note-id="${note.id}"
+                           ${isSelected ? 'checked' : ''}
+                           title="Pilih gulungan ${this.escapeHtml(note.title)}">
+                </div>
+            ` : '';
+
             return `
                 <div data-note-id="${note.id}"
-                     class="note-list-card cursor-pointer p-3 rounded-lg border-2 transition-all mb-2 select-none
-                            ${isActive
-                                ? 'bg-blue-600 text-white border-black dark:border-cyan-400 shadow-[3px_3px_0px_#000]'
-                                : 'bg-surface hover:bg-slate-100 dark:hover:bg-blue-900/40 border-black/20 dark:border-blue-900/60 shadow-[2px_2px_0px_rgba(0,0,0,0.15)] text-main'
-                            }">
+                     class="note-list-card cursor-pointer p-3 rounded-lg border-2 transition-all mb-2 select-none ${cardClasses}">
                     <div class="flex items-center justify-between gap-1 mb-1">
-                        <div class="flex items-center gap-1.5 overflow-hidden">
+                        <div class="flex items-center gap-1.5 overflow-hidden min-w-0">
+                            ${checkboxHtml}
                             ${note.is_pinned ? '<i title="Pinned Scroll" class="fa-solid fa-thumbtack text-amber-500 dark:text-amber-400 text-xs shrink-0"></i>' : ''}
                             ${note.is_favorite ? '<i title="Favorite Scroll" class="fa-solid fa-star text-amber-500 dark:text-yellow-400 text-xs shrink-0"></i>' : ''}
-                            <h4 class="font-bold text-sm truncate ${isActive ? 'text-white' : 'text-main'}">
+                            <h4 class="font-bold text-sm truncate ${isActive && !this.isBulkSelectNotes ? 'text-white' : 'text-main'}">
                                 ${this.escapeHtml(note.title)}
                             </h4>
                         </div>
@@ -4277,7 +4377,7 @@ class NotenuxPanel {
                         </span>
                     </div>
 
-                    <div class="flex items-center justify-between text-[11px] font-mono mt-2 pt-1 border-t ${isActive ? 'border-white/20 text-blue-100' : 'border-black/10 dark:border-white/10 text-slate-500 dark:text-slate-400'}">
+                    <div class="flex items-center justify-between text-[11px] font-mono mt-2 pt-1 border-t ${isActive && !this.isBulkSelectNotes ? 'border-white/20 text-blue-100' : 'border-black/10 dark:border-white/10 text-slate-500 dark:text-slate-400'}">
                         <span><i class="fa-solid fa-cubes text-[10px] mr-1"></i>${chunkCount} chunks</span>
                         <span>Lv.${note.level || 1} • ${note.word_count || 0}w</span>
                     </div>
@@ -4288,12 +4388,158 @@ class NotenuxPanel {
         this.dom.notesList.querySelectorAll('.note-list-card').forEach(card => {
             card.addEventListener('click', () => {
                 const id = parseInt(card.dataset.noteId, 10);
+                if (this.isBulkSelectNotes) {
+                    this.toggleSelectNote(id);
+                    return;
+                }
                 const note = this.notes.find(n => n.id === id);
                 if (note) {
                     this.selectNote(note);
                 }
             });
+
+            card.querySelector('.note-select-checkbox')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = parseInt(card.dataset.noteId, 10);
+                this.toggleSelectNote(id);
+            });
         });
+    }
+
+    /* ---------------- BULK SELECT & DELETE SCROLLS ---------------- */
+    toggleBulkSelectNotesMode(forceState) {
+        this.isBulkSelectNotes = typeof forceState === 'boolean' ? forceState : !this.isBulkSelectNotes;
+        this.audio?.playClick?.();
+
+        if (this.isBulkSelectNotes) {
+            this.dom.notesBulkBar?.classList.remove('hidden');
+            if (this.dom.bulkToggleLabel) this.dom.bulkToggleLabel.textContent = 'BATAL';
+            this.dom.toggleBulkSelectNotesBtn?.classList.add('bg-blue-600', 'text-white', 'border-blue-700');
+        } else {
+            this.dom.notesBulkBar?.classList.add('hidden');
+            if (this.dom.bulkToggleLabel) this.dom.bulkToggleLabel.textContent = 'PILIH';
+            this.dom.toggleBulkSelectNotesBtn?.classList.remove('bg-blue-600', 'text-white', 'border-blue-700');
+            if (this.selectedNoteIds) {
+                this.selectedNoteIds.clear();
+            } else {
+                this.selectedNoteIds = new Set();
+            }
+            if (this.dom.bulkSelectAllNotesCb) this.dom.bulkSelectAllNotesCb.checked = false;
+        }
+        this.updateBulkNotesUI();
+        this.renderNotesList();
+    }
+
+    toggleSelectNote(noteId) {
+        this.selectedNoteIds ??= new Set();
+        const id = Number(noteId);
+        if (this.selectedNoteIds.has(id)) {
+            this.selectedNoteIds.delete(id);
+        } else {
+            this.selectedNoteIds.add(id);
+        }
+        this.audio?.playClick?.();
+        this.updateBulkNotesUI();
+        this.renderNotesList();
+    }
+
+    selectAllFilteredNotes(checked = true) {
+        this.selectedNoteIds ??= new Set();
+        const filtered = this.getFilteredNotes();
+        if (checked) {
+            filtered.forEach(n => this.selectedNoteIds.add(n.id));
+        } else {
+            filtered.forEach(n => this.selectedNoteIds.delete(n.id));
+        }
+        this.audio?.playBlip?.();
+        this.updateBulkNotesUI();
+        this.renderNotesList();
+    }
+
+    updateBulkNotesUI() {
+        const count = this.selectedNoteIds?.size || 0;
+        if (this.dom.bulkSelectedNotesCount) {
+            this.dom.bulkSelectedNotesCount.textContent = `${count} dipilih`;
+        }
+        if (this.dom.bulkDeleteNotesBtn) {
+            this.dom.bulkDeleteNotesBtn.disabled = count === 0;
+        }
+        if (this.dom.bulkSelectAllNotesCb) {
+            const filtered = this.getFilteredNotes();
+            this.dom.bulkSelectAllNotesCb.checked = filtered.length > 0 && filtered.every(n => this.selectedNoteIds?.has(n.id));
+        }
+    }
+
+    openBulkDeleteNotesModal() {
+        if (!this.selectedNoteIds || this.selectedNoteIds.size === 0) return;
+        if (this.dom.bulkDeleteNotesCountBadge) {
+            this.dom.bulkDeleteNotesCountBadge.textContent = `${this.selectedNoteIds.size} Gulungan Terpilih`;
+        }
+        this.audio?.playBlip?.();
+        this.dom.bulkDeleteNotesModal?.classList.remove('hidden');
+    }
+
+    closeBulkDeleteNotesModal() {
+        this.dom.bulkDeleteNotesModal?.classList.add('hidden');
+    }
+
+    async executeBulkDeleteNotes() {
+        const idsToDelete = Array.from(this.selectedNoteIds || []);
+        if (idsToDelete.length === 0) return;
+
+        this.closeBulkDeleteNotesModal();
+        this.audio?.playDelete?.();
+
+        clearTimeout(this.saveTimeout);
+        await this.saveQueue;
+
+        try {
+            const response = await fetch('/api/notes/bulk-delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ids: idsToDelete }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.status === 'success') {
+                const deletedSet = new Set(data.data?.deleted_ids || idsToDelete);
+
+                this.notes = this.notes.filter(n => !deletedSet.has(n.id));
+
+                deletedSet.forEach(id => {
+                    this.dirtyNotes.delete(id);
+                    if (typeof localStorage !== 'undefined') {
+                        localStorage.removeItem(`notenux_draft_${id}`);
+                    }
+                });
+
+                if (this.activeNote && deletedSet.has(this.activeNote.id)) {
+                    this.activeNote = null;
+                    if (this.notes.length > 0) {
+                        await this.selectNote(this.notes[0]);
+                    } else {
+                        await this.createNewNote(true);
+                    }
+                }
+
+                this.selectedNoteIds.clear();
+                this.toggleBulkSelectNotesMode(false);
+                this.refreshPlayerStats();
+                this.toast.show(
+                    `Berhasil memusnahkan ${deletedSet.size} gulungan catatan ke digital void!`,
+                    'danger',
+                    'Scrolls Banished',
+                    'fa-solid fa-skull-crossbones text-rose-500'
+                );
+            } else {
+                throw new Error(data.message || 'Gagal menghapus beberapa catatan.');
+            }
+        } catch (e) {
+            this.toast.show(e.message || 'Network error during bulk delete.', 'danger');
+        }
     }
 
     updateActiveNoteInList() {

@@ -44,6 +44,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::post('/categories/bulk-delete', [CategoryController::class, 'bulkDestroy'])->name('categories.bulk-delete');
+    Route::delete('/categories/bulk-delete', [CategoryController::class, 'bulkDestroy']);
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 });
@@ -56,6 +58,8 @@ Route::middleware('auth')->group(function () {
 Route::prefix('api/categories')->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::post('/', [CategoryController::class, 'store'])->name('api.categories.store');
+    Route::post('/bulk-delete', [CategoryController::class, 'bulkDestroy'])->name('api.categories.bulk-delete');
+    Route::delete('/bulk-delete', [CategoryController::class, 'bulkDestroy']);
     Route::put('/{category}', [CategoryController::class, 'update'])->name('api.categories.update');
     Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('api.categories.destroy');
 });
@@ -64,6 +68,8 @@ Route::prefix('api/notes')->group(function () {
     Route::get('/', [NoteController::class, 'index'])->name('notes.index');
     Route::post('/', [NoteController::class, 'store'])->name('notes.store');
     Route::post('/import', [NoteController::class, 'import'])->name('notes.import');
+    Route::post('/bulk-delete', [NoteController::class, 'bulkDestroy'])->name('notes.bulk-delete');
+    Route::delete('/bulk-delete', [NoteController::class, 'bulkDestroy']);
     Route::get('/{note}', [NoteController::class, 'show'])->name('notes.show');
     Route::put('/{note}', [NoteController::class, 'update'])->name('notes.update');
     Route::delete('/{note}', [NoteController::class, 'destroy'])->name('notes.destroy');

@@ -533,19 +533,54 @@
                            class="w-full bg-white dark:bg-black/40 border-2 border-black dark:border-blue-700 rounded pl-8 pr-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-cyan-400 shadow-[2px_2px_0px_#000]">
                 </div>
 
-                <!-- Sort Notes Dropdown -->
-                <div class="flex items-center justify-between mb-2 px-1 text-[11px] font-mono">
-                    <span class="opacity-75"><i class="fa-solid fa-arrow-down-wide-short mr-1"></i>SORT:</span>
-                    <select id="sort-notes-select" class="bg-white dark:bg-black/50 border border-black/40 rounded px-1.5 py-0.5 text-[10px] font-mono focus:outline-none focus:border-cyan-400">
-                        <option value="updated_desc">Recently Updated</option>
-                        <option value="updated_asc">Oldest First</option>
-                        <option value="created_desc">Newest Inscribed</option>
-                        <option value="created_asc">Oldest Inscribed</option>
-                        <option value="title_asc">Title A-Z</option>
-                        <option value="title_desc">Title Z-A</option>
-                        <option value="word_count_desc">Word Count</option>
-                        <option value="level_desc">Level / XP</option>
-                    </select>
+                <!-- Sort Notes & Multi-Select Row -->
+                <div class="flex items-center justify-between gap-1 mb-2 px-1 text-[11px] font-mono">
+                    <div class="flex items-center gap-1 min-w-0">
+                        <span class="opacity-75 shrink-0"><i class="fa-solid fa-arrow-down-wide-short mr-1"></i>SORT:</span>
+                        <select id="sort-notes-select" class="bg-white dark:bg-black/50 border border-black/40 rounded px-1.5 py-0.5 text-[10px] font-mono focus:outline-none focus:border-cyan-400 truncate">
+                            <option value="updated_desc">Recently Updated</option>
+                            <option value="updated_asc">Oldest First</option>
+                            <option value="created_desc">Newest Inscribed</option>
+                            <option value="created_asc">Oldest Inscribed</option>
+                            <option value="title_asc">Title A-Z</option>
+                            <option value="title_desc">Title Z-A</option>
+                            <option value="word_count_desc">Word Count</option>
+                            <option value="level_desc">Level / XP</option>
+                        </select>
+                    </div>
+                    <button id="toggle-bulk-select-notes-btn"
+                            type="button"
+                            class="arcade-btn bg-slate-200 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900 text-main text-[10px] font-mono px-2 py-0.5 rounded border border-black/30 dark:border-blue-700 flex items-center gap-1 shrink-0"
+                            title="Aktifkan mode multiple choice / pilih banyak gulungan">
+                        <i class="fa-solid fa-list-check text-blue-600 dark:text-cyan-400"></i>
+                        <span id="bulk-toggle-label">PILIH</span>
+                    </button>
+                </div>
+
+                <!-- Sticky / Collapsible Bulk Actions Bar for Scrolls -->
+                <div id="notes-bulk-bar" class="hidden mb-2 p-2 bg-blue-50 dark:bg-blue-950/70 border-2 border-blue-600 dark:border-cyan-400 rounded-lg shadow-[2px_2px_0px_#000] font-mono text-[11px]">
+                    <div class="flex items-center justify-between gap-1 mb-1.5">
+                        <label class="flex items-center gap-1.5 cursor-pointer font-bold select-none text-[10px]">
+                            <input type="checkbox" id="bulk-select-all-notes-cb" class="cursor-pointer accent-blue-600 w-3.5 h-3.5">
+                            <span>PILIH SEMUA</span>
+                        </label>
+                        <span id="bulk-selected-notes-count" class="font-bold text-blue-700 dark:text-cyan-300 bg-white dark:bg-black/50 px-1.5 py-0.5 rounded border border-blue-400/40 text-[10px]">
+                            0 dipilih
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button id="bulk-delete-notes-btn"
+                                type="button"
+                                disabled
+                                class="arcade-btn flex-1 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1 px-2 rounded text-[10px] font-bold tracking-wider flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i> HAPUS TERPILIH
+                        </button>
+                        <button id="bulk-cancel-notes-btn"
+                                type="button"
+                                class="arcade-btn bg-surface hover:bg-slate-200 dark:hover:bg-slate-800 text-main py-1 px-2 rounded text-[10px] font-bold">
+                            BATAL
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Category Filter Pills -->
@@ -1138,6 +1173,15 @@
                                         <span>Copy Semua Teks</span>
                                     </button>
 
+                                    <!-- Clear Notepad Button -->
+                                    <button id="plain-text-clear-btn"
+                                            type="button"
+                                            class="arcade-btn bg-surface hover:bg-rose-100 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 px-2.5 py-1 rounded text-xs font-mono flex items-center gap-1 shadow-[1px_1px_0px_#000]"
+                                            title="Kosongkan Notepad (Clear Text)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                        <span class="hidden sm:inline">Bersihkan</span>
+                                    </button>
+
                                     <!-- Switch Back to Rich Editor -->
                                     <button id="plain-text-exit-btn"
                                             type="button"
@@ -1415,6 +1459,63 @@
                 <button id="confirm-delete-modal-btn" class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center gap-2 shadow-[2px_2px_0px_#000] active:translate-y-0.5">
                     <i class="fa-solid fa-fire"></i>
                     <span>YES, BANISH SCROLL</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- BULK DELETE MULTIPLE SCROLLS CONFIRMATION MODAL -->
+    <!-- ============================================================================== -->
+    <div id="bulk-delete-notes-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+        <div class="arcade-card w-full max-w-md bg-[var(--bg-surface)] rounded-2xl border-4 border-rose-600 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden animate-pop-in">
+            <!-- Modal Warning Header -->
+            <div class="p-3.5 sm:p-4 bg-rose-600 text-white flex items-center justify-between border-b-2 border-black">
+                <div class="flex items-center gap-2 font-mono font-bold">
+                    <i class="fa-solid fa-triangle-exclamation text-lg text-yellow-300 animate-pulse"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">BANISH MULTIPLE SCROLLS</h3>
+                </div>
+                <button id="close-bulk-delete-notes-x" class="arcade-btn bg-black text-white hover:bg-gray-800 px-2 py-0.5 rounded text-xs font-mono" title="Abort (ESC)">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-5 space-y-4 font-mono text-xs">
+                <div class="text-center py-1">
+                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-rose-100 dark:bg-rose-950/70 border-2 border-rose-500 text-rose-600 dark:text-rose-400 mb-3 shadow-[2px_2px_0px_#000]">
+                        <i class="fa-solid fa-dumpster-fire text-2xl"></i>
+                    </div>
+                    <h4 class="text-sm font-bold text-rose-600 dark:text-rose-400 mb-1">Banish Selected Scrolls to Void?</h4>
+                    <p class="text-xs opacity-80 max-w-xs mx-auto">
+                        Tindakan ini permanen. Semua gulungan catatan terpilih beserta seluruh data fragmen/chunk akan dibersihkan dari database.
+                    </p>
+                </div>
+
+                <!-- Selected Count Badge -->
+                <div class="p-3 bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-300 dark:border-rose-900 rounded-xl">
+                    <div class="text-[10px] uppercase font-bold text-rose-500 tracking-wider mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-scroll"></i> TOTAL TARGET:
+                    </div>
+                    <div id="bulk-delete-notes-count-badge" class="font-bold text-sm text-rose-800 dark:text-rose-200">
+                        0 Gulungan Terpilih
+                    </div>
+                </div>
+
+                <div class="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-lg text-[11px] text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-amber-500 shrink-0"></i>
+                    <span>Tindakan multiple delete bersifat atomik dan aman dari fragmentasi data.</span>
+                </div>
+            </div>
+
+            <!-- Modal Actions Footer -->
+            <div class="p-3.5 border-t-2 border-black/10 dark:border-white/10 bg-surface-alt flex items-center justify-end gap-2.5">
+                <button id="cancel-bulk-delete-notes-btn" class="arcade-btn bg-surface hover:bg-gray-200 dark:hover:bg-slate-800 px-4 py-2 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#000]">
+                    <span>BATAL</span>
+                </button>
+                <button id="confirm-bulk-delete-notes-btn" class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center gap-2 shadow-[2px_2px_0px_#000] active:translate-y-0.5">
+                    <i class="fa-solid fa-fire"></i>
+                    <span>BANISH SELECTED</span>
                 </button>
             </div>
         </div>

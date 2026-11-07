@@ -158,7 +158,7 @@ class CategoryController extends Controller
             return [$name, $slug, $deletedCount];
         });
 
-        if ($request->wantsJson() || $request->ajax()) {
+        if ($request->wantsJson() || $request->ajax() || $request->is('api/*')) {
             return response()->json([
                 'status' => 'success',
                 'message' => "Category '{$name}' and all associated scrolls were banished.",
@@ -173,6 +173,60 @@ class CategoryController extends Controller
         return redirect()->route('categories.index')
             ->with('status', 'success')
             ->with('message', "Category '{$name}' and all associated scrolls were banished.");
+    }
+
+    /**
+     * Remove multiple specified categories and their associated notes atomically.
+     */
+    public function bulkDestroy(Request $request): RedirectResponse|JsonResponse
+    {
+        $user = $this->resolveUser($request);
+
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:categories,id'],
+        ]);
+
+        $categories = Category::whereIn('id', $validated['ids'])->get();
+
+        foreach ($categories as $category) {
+            if ($category->user_id !== null && $category->user_id !== $user->id) {
+                abort(403, 'Unauthorized access to one or more categories.');
+            }
+        }
+
+        [$deletedCount, $deletedNotesCount, $deletedIds, $deletedSlugs] = $this->mutateCategories(function () use ($categories): array {
+            $deletedNotesCount = 0;
+            $deletedIds = [];
+            $deletedSlugs = [];
+
+            foreach ($categories as $category) {
+                $category->refresh();
+                $deletedNotesCount += $category->notes()->count();
+                $deletedIds[] = $category->id;
+                $deletedSlugs[] = $category->slug;
+                $category->delete();
+            }
+
+            return [count($deletedIds), $deletedNotesCount, $deletedIds, $deletedSlugs];
+        });
+
+        if ($request->wantsJson() || $request->ajax() || $request->is('api/*')) {
+            return response()->json([
+                'status' => 'success',
+                'message' => "Successfully banished {$deletedCount} categories and {$deletedNotesCount} associated scrolls.",
+                'data' => [
+                    'deleted_count' => $deletedCount,
+                    'deleted_notes_count' => $deletedNotesCount,
+                    'deleted_ids' => $deletedIds,
+                    'deleted_slugs' => $deletedSlugs,
+                ],
+            ]);
+        }
+
+        return redirect()->route('categories.index')
+            ->with('status', 'success')
+            ->with('message', "Successfully banished {$deletedCount} categories and {$deletedNotesCount} associated scrolls.");
     }
 
     protected function allocateSlug(string $value, ?int $exceptId = null): string

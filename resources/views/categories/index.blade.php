@@ -344,9 +344,45 @@
                             </div>
                         </div>
 
-                        <span class="text-xs font-mono font-bold bg-blue-100 dark:bg-blue-950 px-2.5 py-1 rounded border border-blue-500/40 text-blue-600 dark:text-cyan-300">
-                            {{ $categories->count() }} Total
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <button id="toggle-bulk-categories-btn"
+                                    type="button"
+                                    class="arcade-btn bg-slate-200 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900 text-main text-xs font-mono px-2.5 py-1 rounded border border-black/30 dark:border-blue-700 flex items-center gap-1.5"
+                                    title="Pilih banyak kategori untuk multiple delete">
+                                <i class="fa-solid fa-list-check text-blue-600 dark:text-cyan-400"></i>
+                                <span id="bulk-cat-toggle-label">PILIH BANYAK</span>
+                            </button>
+                            <span class="text-xs font-mono font-bold bg-blue-100 dark:bg-blue-950 px-2.5 py-1 rounded border border-blue-500/40 text-blue-600 dark:text-cyan-300">
+                                {{ $categories->count() }} Total
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Bulk Category Action Bar -->
+                    <div id="categories-bulk-bar" class="hidden mb-4 p-3 bg-blue-50 dark:bg-blue-950/70 border-2 border-blue-600 dark:border-cyan-400 rounded-xl shadow-[2px_2px_0px_#000] font-mono text-xs flex items-center justify-between flex-wrap gap-2">
+                        <div class="flex items-center gap-3">
+                            <label class="flex items-center gap-2 cursor-pointer font-bold select-none text-xs">
+                                <input type="checkbox" id="bulk-select-all-cat-cb" class="cursor-pointer accent-blue-600 w-4 h-4">
+                                <span>PILIH SEMUA</span>
+                            </label>
+                            <span id="bulk-selected-cat-count" class="font-bold text-blue-700 dark:text-cyan-300 bg-white dark:bg-black/50 px-2 py-0.5 rounded border border-blue-400/40 text-[11px]">
+                                0 kategori dipilih
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="bulk-delete-cat-btn"
+                                    type="button"
+                                    disabled
+                                    onclick="openBulkDeleteCategoriesModal()"
+                                    class="arcade-btn bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1.5 px-3 rounded text-xs font-bold tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-trash-can"></i> HAPUS TERPILIH
+                            </button>
+                            <button id="bulk-cancel-cat-btn"
+                                    type="button"
+                                    class="arcade-btn bg-surface hover:bg-slate-200 dark:hover:bg-slate-800 text-main py-1.5 px-3 rounded text-xs font-bold">
+                                BATAL
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Categories Grid Cards -->
@@ -364,15 +400,24 @@
                                 };
                             @endphp
 
-                            <div class="category-card p-3 rounded-xl border-2 {{ $colorClasses }} shadow-[2px_2px_0px_#000] flex flex-col justify-between font-mono relative">
+                            <div class="category-card p-3 rounded-xl border-2 {{ $colorClasses }} shadow-[2px_2px_0px_#000] flex flex-col justify-between font-mono relative transition-all" data-id="{{ $cat->id }}">
                                 <div>
                                     <div class="flex items-center justify-between gap-1 mb-1.5">
-                                        <div class="flex items-center gap-2">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="category-checkbox-wrapper hidden shrink-0">
+                                                <input type="checkbox"
+                                                       class="category-select-checkbox cursor-pointer accent-rose-600 w-4 h-4 rounded"
+                                                       data-id="{{ $cat->id }}"
+                                                       data-name="{{ $cat->name }}"
+                                                       data-notes="{{ $cat->notes_count ?? 0 }}"
+                                                       value="{{ $cat->id }}"
+                                                       title="Pilih kategori {{ $cat->name }}">
+                                            </div>
                                             <span class="w-7 h-7 rounded border border-black/40 bg-surface flex items-center justify-center text-xs shrink-0 shadow-[1px_1px_0px_#000]">
                                                 <i class="{{ $cat->icon }}"></i>
                                             </span>
-                                            <div>
-                                                <h3 class="font-bold text-xs">{{ $cat->name }}</h3>
+                                            <div class="min-w-0">
+                                                <h3 class="font-bold text-xs truncate">{{ $cat->name }}</h3>
                                                 <code class="text-[10px] opacity-75">[{{ $cat->slug }}]</code>
                                             </div>
                                         </div>
@@ -521,6 +566,47 @@
         </div>
     </div>
 
+    <!-- ============================================================================== -->
+    <!-- BULK DELETE CATEGORIES CONFIRMATION MODAL -->
+    <!-- ============================================================================== -->
+    <div id="bulk-delete-categories-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-md bg-[var(--bg-surface)] rounded-xl border-4 border-rose-600 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden">
+            <div class="p-3.5 bg-rose-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-lg text-yellow-300"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">BANISH MULTIPLE CATEGORIES</h3>
+                </div>
+                <button type="button" onclick="closeBulkDeleteCategoriesModal()" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-4 space-y-3 font-mono text-xs">
+                <p>Apakah Anda yakin ingin memusnahkan <span id="bulk-delete-cat-count-badge" class="font-bold text-rose-500">0 kategori</span> terpilih?</p>
+
+                <div id="bulk-delete-cat-list" class="max-h-28 overflow-y-auto p-2 bg-surface-alt border border-black/20 rounded text-[11px] space-y-1">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <div class="p-2.5 bg-rose-100 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 rounded text-rose-900 dark:text-rose-200 text-[11px]">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 mr-1"></i>
+                    <strong>Peringatan / Warning:</strong> Semua catatan / gulungan (<span id="bulk-delete-notes-impact-badge" class="font-bold">0</span> scroll) yang terhubung dengan kategori-kategori ini akan otomatis ikut terhapus secara permanen.
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-black/10 bg-surface-alt flex justify-end gap-2 font-mono text-xs">
+                <button type="button" onclick="closeBulkDeleteCategoriesModal()" class="arcade-btn bg-surface px-3 py-1.5 rounded">Batal</button>
+                <form id="bulk-delete-categories-form" action="{{ route('categories.bulk-delete') }}" method="POST">
+                    @csrf
+                    <div id="bulk-delete-categories-hidden-inputs"></div>
+                    <button type="submit" class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-4 py-1.5 rounded font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash mr-1"></i> YA, HAPUS TERPILIH
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Interactive Scripts for Category Guild -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -565,14 +651,128 @@
                 });
             });
 
+            // Bulk category mode toggles and listeners
+            document.getElementById('toggle-bulk-categories-btn')?.addEventListener('click', () => {
+                toggleBulkCategoryMode();
+            });
+
+            document.getElementById('bulk-cancel-cat-btn')?.addEventListener('click', () => {
+                toggleBulkCategoryMode(false);
+            });
+
+            document.getElementById('bulk-select-all-cat-cb')?.addEventListener('change', (e) => {
+                const checked = e.target.checked;
+                document.querySelectorAll('.category-select-checkbox').forEach(cb => {
+                    cb.checked = checked;
+                });
+                updateBulkCategoryUI();
+            });
+
+            document.querySelectorAll('.category-select-checkbox').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    updateBulkCategoryUI();
+                });
+            });
+
             // Close modals on backdrop click
-            ['edit-category-modal', 'delete-category-modal'].forEach(id => {
+            ['edit-category-modal', 'delete-category-modal', 'bulk-delete-categories-modal'].forEach(id => {
                 const el = document.getElementById(id);
                 el?.addEventListener('click', (e) => {
                     if (e.target === el) el.classList.add('hidden');
                 });
             });
         });
+
+        let isBulkCategoryMode = false;
+
+        function toggleBulkCategoryMode(forceState) {
+            isBulkCategoryMode = typeof forceState === 'boolean' ? forceState : !isBulkCategoryMode;
+            const bar = document.getElementById('categories-bulk-bar');
+            const wrappers = document.querySelectorAll('.category-checkbox-wrapper');
+            const toggleLabel = document.getElementById('bulk-cat-toggle-label');
+            const toggleBtn = document.getElementById('toggle-bulk-categories-btn');
+
+            if (isBulkCategoryMode) {
+                bar?.classList.remove('hidden');
+                wrappers.forEach(w => w.classList.remove('hidden'));
+                if (toggleLabel) toggleLabel.textContent = 'BATAL PILIH';
+                toggleBtn?.classList.add('bg-blue-600', 'text-white', 'border-blue-700');
+            } else {
+                bar?.classList.add('hidden');
+                wrappers.forEach(w => w.classList.add('hidden'));
+                if (toggleLabel) toggleLabel.textContent = 'PILIH BANYAK';
+                toggleBtn?.classList.remove('bg-blue-600', 'text-white', 'border-blue-700');
+                // Uncheck all
+                document.querySelectorAll('.category-select-checkbox').forEach(cb => {
+                    cb.checked = false;
+                });
+                const allCb = document.getElementById('bulk-select-all-cat-cb');
+                if (allCb) allCb.checked = false;
+                updateBulkCategoryUI();
+            }
+        }
+
+        function updateBulkCategoryUI() {
+            const checkedBoxes = Array.from(document.querySelectorAll('.category-select-checkbox:checked'));
+            const totalBoxes = document.querySelectorAll('.category-select-checkbox');
+            const countBadge = document.getElementById('bulk-selected-cat-count');
+            const deleteBtn = document.getElementById('bulk-delete-cat-btn');
+            const allCb = document.getElementById('bulk-select-all-cat-cb');
+
+            if (countBadge) {
+                countBadge.textContent = `${checkedBoxes.length} kategori dipilih`;
+            }
+            if (deleteBtn) {
+                deleteBtn.disabled = checkedBoxes.length === 0;
+            }
+            if (allCb) {
+                allCb.checked = totalBoxes.length > 0 && checkedBoxes.length === totalBoxes.length;
+            }
+
+            // Highlight cards
+            document.querySelectorAll('.category-card').forEach(card => {
+                const cb = card.querySelector('.category-select-checkbox');
+                if (cb && cb.checked) {
+                    card.classList.add('ring-2', 'ring-rose-500');
+                } else {
+                    card.classList.remove('ring-2', 'ring-rose-500');
+                }
+            });
+        }
+
+        function openBulkDeleteCategoriesModal() {
+            const checkedBoxes = Array.from(document.querySelectorAll('.category-select-checkbox:checked'));
+            if (checkedBoxes.length === 0) return;
+
+            const modal = document.getElementById('bulk-delete-categories-modal');
+            const countBadge = document.getElementById('bulk-delete-cat-count-badge');
+            const impactBadge = document.getElementById('bulk-delete-notes-impact-badge');
+            const listEl = document.getElementById('bulk-delete-cat-list');
+            const hiddenInputs = document.getElementById('bulk-delete-categories-hidden-inputs');
+
+            if (countBadge) countBadge.textContent = `${checkedBoxes.length} kategori`;
+            let totalNotes = 0;
+            let listHtml = '';
+            let inputsHtml = '';
+
+            checkedBoxes.forEach(cb => {
+                const name = cb.dataset.name || 'Category';
+                const notes = parseInt(cb.dataset.notes || '0', 10);
+                totalNotes += notes;
+                listHtml += `<div class="flex items-center justify-between py-0.5 border-b border-black/10 last:border-0"><span class="font-bold">${name}</span><span class="opacity-70">${notes} scrolls</span></div>`;
+                inputsHtml += `<input type="hidden" name="ids[]" value="${cb.value}">`;
+            });
+
+            if (impactBadge) impactBadge.textContent = totalNotes;
+            if (listEl) listEl.innerHTML = listHtml;
+            if (hiddenInputs) hiddenInputs.innerHTML = inputsHtml;
+
+            modal?.classList.remove('hidden');
+        }
+
+        function closeBulkDeleteCategoriesModal() {
+            document.getElementById('bulk-delete-categories-modal')?.classList.add('hidden');
+        }
 
         function openEditCategoryModal(category) {
             const modal = document.getElementById('edit-category-modal');

@@ -9,6 +9,7 @@ function harness(fetchHandler) {
     const storage = new Map();
     const messages = [];
     const context = vm.createContext({
+        fetch: fetchHandler,
         window: { fetch: fetchHandler, innerWidth: 1440 },
         document: { addEventListener() {}, querySelector: () => ({ content: 'csrf-test' }) },
         localStorage: { removeItem: key => storage.delete(key), setItem: (key, value) => storage.set(key, value) },
@@ -20,6 +21,7 @@ function harness(fetchHandler) {
     Object.assign(panel, {
         activeNote: { id: 1, title: 'Alpha', content: 'First draft' },
         notes: [], saveQueue: Promise.resolve(), dirtyNotes: new Set([1]), selectionVersion: 0,
+        selectedNoteIds: new Set(),
         dom: { saveStatusText: { innerHTML: '' } },
         toast: { show(...args) { messages.push(args); } },
         audio: { playBlip() {}, playCoin() {}, playDelete() {}, playLevelUp() {} },
@@ -1591,6 +1593,289 @@ test('white-box: RetroPasswordToggle switches password input visibility, icons, 
     assert.equal(buttonAttributes['title'], 'Tampilkan kata sandi (Show password)');
     assert.equal(iconClassList.has('fa-eye'), true);
     assert.equal(iconClassList.has('fa-eye-slash'), false);
+});
+
+test('white-box: PlainTextEngine converts task checkboxes, ordered lists, and tables without formatting artifacts', () => {
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({ querySelectorAll: () => [], attributes: [], content: { querySelectorAll: () => [] } }),
+            addEventListener() {},
+        }
+    });
+    vm.runInContext(source + '\nglobalThis.PlainTextEngine = PlainTextEngine;', context);
+    const PlainTextEngine = context.PlainTextEngine;
+
+    const html = `
+        <h2>Quests</h2>
+        <ul>
+            <li><input type="checkbox"> Slay Dragon</li>
+            <li><input type="checkbox" checked> Save Village</li>
+        </ul>
+        <ol>
+            <li>First Step</li>
+            <li>Second Step</li>
+        </ol>
+        <table>
+            <tr><th>Weapon</th><th>Power</th></tr>
+            <tr><td>Excalibur</td><td>100</td></tr>
+        </table>
+    `;
+
+    const plain = PlainTextEngine.toPlainText(html);
+
+    assert.ok(plain.includes('[ ] Slay Dragon'));
+    assert.ok(plain.includes('[x] Save Village'));
+    assert.ok(plain.includes('1. First Step'));
+    assert.ok(plain.includes('2. Second Step'));
+    assert.ok(plain.includes("Weapon\tPower"));
+    assert.ok(plain.includes("Excalibur\t100"));
+    assert.equal(plain.includes('<li'), false);
+    assert.equal(plain.includes('<table'), false);
+});
+
+test('white-box: plainTextClearBtn clears plainTextEditor, resets editorArea, and updates stats', () => {
+    const { panel, messages } = harness();
+    let handledInput = false;
+    let playedDelete = false;
+    panel.handleEditorInput = () => { handledInput = true; };
+    panel.audio = { playDelete: () => { playedDelete = true; } };
+
+    panel.dom.plainTextEditor = { value: 'Some note text inside notepad' };
+    panel.dom.editorArea = { innerHTML: '<p>Some note text inside notepad</p>' };
+    panel.dom.plainTextCharCount = { textContent: '' };
+    panel.dom.plainTextWordCount = { textContent: '' };
+    panel.dom.plainTextLineCount = { textContent: '' };
+
+    const clearHandler = () => {
+        if (!panel.dom.plainTextEditor || !panel.dom.plainTextEditor.value.trim()) return;
+        panel.audio?.playDelete?.();
+        panel.dom.plainTextEditor.value = '';
+        if (panel.dom.editorArea) panel.dom.editorArea.innerHTML = '<p><br></p>';
+        panel.updatePlainTextStats();
+        panel.handleEditorInput();
+        panel.toast.show('Teks Notepad berhasil dikosongkan.', 'info', 'Notepad Dikosongkan');
+    };
+
+    clearHandler();
+
+    assert.equal(panel.dom.plainTextEditor.value, '');
+    assert.equal(panel.dom.editorArea.innerHTML, '<p><br></p>');
+    assert.equal(playedDelete, true);
+    assert.equal(handledInput, true);
+    assert.equal(panel.dom.plainTextCharCount.textContent, '0 karakter');
+    assert.equal(panel.dom.plainTextWordCount.textContent, '0 kata');
+    assert.equal(panel.dom.plainTextLineCount.textContent, '0 baris');
+    assert.ok(messages.some(m => m[0].includes('berhasil dikosongkan')));
+});
+
+test('white-box: applyFontSize adjusts plainTextEditor, markdownRawEditor, and editorArea style', () => {
+    const { panel } = harness();
+    panel.dom.editorArea = { style: { fontSize: '14px' } };
+    panel.dom.plainTextEditor = { style: { fontSize: '14px' } };
+    panel.dom.markdownRawEditor = { style: { fontSize: '14px' } };
+    panel.activeNote = { font_size: '14px' };
+
+    panel.applyFontSize('18px');
+
+    assert.equal(panel.dom.editorArea.style.fontSize, '18px');
+    assert.equal(panel.dom.plainTextEditor.style.fontSize, '18px');
+    assert.equal(panel.dom.markdownRawEditor.style.fontSize, '18px');
+    assert.equal(panel.activeNote.font_size, '18px');
+});
+
+test('white-box: togglePlainTextMode manages notepadModeBanner visibility along with editor panels', () => {
+    const { panel } = harness();
+    panel.handleEditorInput = () => {};
+
+    const bannerClasses = new Set(['hidden']);
+    panel.dom.notepadModeBanner = {
+        classList: {
+            add(c) { bannerClasses.add(c); },
+            remove(c) { bannerClasses.delete(c); },
+            contains(c) { return bannerClasses.has(c); },
+        }
+    };
+    panel.dom.editorArea = {
+        innerHTML: '<p>Notepad test</p>',
+        classList: { add() {}, remove() {}, contains: () => false },
+    };
+    panel.dom.plainTextContainer = {
+        classList: { add() {}, remove() {}, contains: () => false },
+    };
+    panel.dom.plainTextEditor = { value: '', focus() {} };
+    panel.dom.plainTextToggleBtn = { classList: { add() {}, remove() {} }, innerHTML: '', title: '' };
+    panel.dom.editorToolbarDecks = { classList: { add() {}, remove() {} } };
+    panel.dom.plainTextCharCount = { textContent: '' };
+    panel.dom.plainTextWordCount = { textContent: '' };
+    panel.dom.plainTextLineCount = { textContent: '' };
+
+    // Toggle to Plain Text mode
+    panel.togglePlainTextMode(true);
+    assert.equal(panel.isPlainTextMode, true);
+    assert.equal(bannerClasses.has('hidden'), false);
+    assert.equal(bannerClasses.has('flex'), true);
+
+    // Toggle back to Rich Editor mode
+    panel.togglePlainTextMode(false);
+    assert.equal(panel.isPlainTextMode, false);
+    assert.equal(bannerClasses.has('hidden'), true);
+    assert.equal(bannerClasses.has('flex'), false);
+});
+
+test('white-box: copyEntirePlainText provides feedback and restores copy button', async () => {
+    const { panel, messages, context } = harness();
+    let copiedText = '';
+    context.navigator = {
+        clipboard: {
+            writeText: async (t) => { copiedText = t; }
+        }
+    };
+
+    let btnHtml = '<span>Copy Semua Teks</span>';
+    const btnClasses = new Set();
+    panel.dom.plainTextCopyBtn = {
+        get innerHTML() { return btnHtml; },
+        set innerHTML(val) { btnHtml = val; },
+        classList: {
+            add(c) { btnClasses.add(c); },
+            remove(c) { btnClasses.delete(c); },
+            contains(c) { return btnClasses.has(c); },
+        }
+    };
+
+    panel.isPlainTextMode = true;
+    panel.dom.plainTextEditor = { value: 'All plain text copied cleanly.' };
+
+    const success = await panel.copyEntirePlainText();
+    assert.equal(success, true);
+    assert.equal(copiedText, 'All plain text copied cleanly.');
+    assert.ok(btnHtml.includes('Tersalin!'));
+    assert.equal(btnClasses.has('bg-emerald-700'), true);
+});
+
+test('white-box: toggleBulkSelectNotesMode toggles bulk mode and manages bulk bar UI', () => {
+    const { panel } = harness();
+    const barClasses = new Set(['hidden']);
+    const btnClasses = new Set();
+    panel.dom.notesBulkBar = {
+        classList: {
+            add(c) { barClasses.add(c); },
+            remove(c) { barClasses.delete(c); },
+            contains(c) { return barClasses.has(c); },
+        }
+    };
+    panel.dom.toggleBulkSelectNotesBtn = {
+        classList: {
+            add(c) { btnClasses.add(c); },
+            remove(c) { btnClasses.delete(c); },
+            contains(c) { return btnClasses.has(c); },
+        }
+    };
+    panel.dom.bulkToggleLabel = { textContent: 'PILIH' };
+    panel.dom.bulkSelectedNotesCount = { textContent: '' };
+    panel.dom.bulkDeleteNotesBtn = { disabled: true };
+    panel.dom.bulkSelectAllNotesCb = { checked: false };
+
+    // 1. Enable bulk selection mode
+    panel.toggleBulkSelectNotesMode(true);
+    assert.equal(panel.isBulkSelectNotes, true);
+    assert.equal(barClasses.has('hidden'), false);
+    assert.equal(panel.dom.bulkToggleLabel.textContent, 'BATAL');
+    assert.equal(btnClasses.has('bg-blue-600'), true);
+
+    // 2. Disable bulk selection mode
+    panel.toggleBulkSelectNotesMode(false);
+    assert.equal(panel.isBulkSelectNotes, false);
+    assert.equal(barClasses.has('hidden'), true);
+    assert.equal(panel.dom.bulkToggleLabel.textContent, 'PILIH');
+    assert.equal(btnClasses.has('bg-blue-600'), false);
+    assert.equal(panel.selectedNoteIds.size, 0);
+});
+
+test('white-box: toggleSelectNote and selectAllFilteredNotes accurately track selected note ids', () => {
+    const { panel } = harness();
+    panel.notes = [
+        { id: 10, title: 'Scroll 1', category: 'quest' },
+        { id: 20, title: 'Scroll 2', category: 'quest' },
+        { id: 30, title: 'Scroll 3', category: 'spellbook' },
+    ];
+    panel.activeCategory = 'all';
+    panel.searchQuery = '';
+    panel.selectedNoteIds = new Set();
+    panel.dom.bulkSelectedNotesCount = { textContent: '' };
+    panel.dom.bulkDeleteNotesBtn = { disabled: true };
+    panel.dom.bulkSelectAllNotesCb = { checked: false };
+
+    // Toggle note 10 on
+    panel.toggleSelectNote(10);
+    assert.equal(panel.selectedNoteIds.has(10), true);
+    assert.equal(panel.selectedNoteIds.size, 1);
+    assert.equal(panel.dom.bulkDeleteNotesBtn.disabled, false);
+
+    // Toggle note 10 off
+    panel.toggleSelectNote(10);
+    assert.equal(panel.selectedNoteIds.has(10), false);
+    assert.equal(panel.selectedNoteIds.size, 0);
+    assert.equal(panel.dom.bulkDeleteNotesBtn.disabled, true);
+
+    // Select all filtered notes
+    panel.selectAllFilteredNotes(true);
+    assert.equal(panel.selectedNoteIds.size, 3);
+    assert.equal(panel.selectedNoteIds.has(10), true);
+    assert.equal(panel.selectedNoteIds.has(20), true);
+    assert.equal(panel.selectedNoteIds.has(30), true);
+    assert.equal(panel.dom.bulkSelectAllNotesCb.checked, true);
+
+    // Deselect all
+    panel.selectAllFilteredNotes(false);
+    assert.equal(panel.selectedNoteIds.size, 0);
+    assert.equal(panel.dom.bulkSelectAllNotesCb.checked, false);
+});
+
+test('white-box: executeBulkDeleteNotes sends bulk delete payload and switches active note if deleted', async () => {
+    const requestedUrls = [];
+    let requestedPayload = null;
+
+    const { panel, storage } = harness((url, options = {}) => {
+        requestedUrls.push(url);
+        if (options.body) {
+            requestedPayload = JSON.parse(options.body);
+        }
+        return Promise.resolve(response({
+            deleted_count: 2,
+            deleted_ids: [1, 2],
+        }));
+    });
+
+    const note1 = { id: 1, title: 'Scroll 1', category: 'quest', content: 'c1' };
+    const note2 = { id: 2, title: 'Scroll 2', category: 'quest', content: 'c2' };
+    const note3 = { id: 3, title: 'Scroll 3', category: 'spellbook', content: 'c3' };
+
+    panel.notes = [note1, note2, note3];
+    panel.activeNote = note1;
+    panel.selectNote = async (note) => { panel.activeNote = note; };
+    panel.dirtyNotes = new Set([1, 2, 3]);
+    storage.set('notenux_draft_1', 'draft 1');
+    storage.set('notenux_draft_2', 'draft 2');
+    panel.selectedNoteIds = new Set([1, 2]);
+
+    panel.dom.notesBulkBar = { classList: { add() {}, remove() {} } };
+    panel.dom.toggleBulkSelectNotesBtn = { classList: { add() {}, remove() {} } };
+    panel.dom.bulkDeleteNotesModal = { classList: { add() {}, remove() {} } };
+
+    await panel.executeBulkDeleteNotes();
+
+    assert.ok(requestedUrls.includes('/api/notes/bulk-delete'));
+    assert.deepEqual(requestedPayload, { ids: [1, 2] });
+    assert.equal(panel.notes.length, 1);
+    assert.equal(panel.notes[0].id, 3);
+    assert.equal(panel.dirtyNotes.has(1), false);
+    assert.equal(panel.dirtyNotes.has(2), false);
+    assert.equal(storage.has('notenux_draft_1'), false);
+    assert.equal(storage.has('notenux_draft_2'), false);
+    // Active note switched to remaining note
+    assert.equal(panel.activeNote.id, 3);
 });
 
 

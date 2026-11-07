@@ -9,7 +9,10 @@ use App\Models\User;
 use App\Services\NoteChunkService;
 use App\Services\NoteContentSanitizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 uses(RefreshDatabase::class);
 
@@ -632,6 +635,37 @@ test('white-box: note controller export formats plain text with clean stripped t
         ->and($response->getContent())->not->toContain('<table');
 });
 
+test('white-box: note controller convertToPlainText converts tasks, ordered lists, and tables without formatting artifacts', function () {
+    $controller = app(NoteController::class);
+
+    $html = <<<'HTML'
+<h2>Daily Quests</h2>
+<ul>
+    <li><input type="checkbox"> Slay the Dungeon Boss</li>
+    <li><input type="checkbox" checked> Gather 10 Mystic Herbs</li>
+</ul>
+<ol>
+    <li>Enter Cave</li>
+    <li>Find Torch</li>
+</ol>
+<table>
+    <tr><th>Skill</th><th>Level</th></tr>
+    <tr><td>Archery</td><td>99</td></tr>
+</table>
+HTML;
+
+    $plain = $controller->convertToPlainText($html);
+
+    expect($plain)->toContain('Daily Quests')
+        ->and($plain)->toContain('[ ] Slay the Dungeon Boss')
+        ->and($plain)->toContain('[x] Gather 10 Mystic Herbs')
+        ->and($plain)->toContain("1. Enter Cave\n2. Find Torch")
+        ->and($plain)->toContain("Skill\tLevel\nArchery\t99")
+        ->and($plain)->not->toContain('<li')
+        ->and($plain)->not->toContain('<input')
+        ->and($plain)->not->toContain('<table');
+});
+
 test('white-box: note controller export json contains complete chunk array with chunk_uid, checksum, and byte_size', function () {
     $note = Note::factory()->create([
         'title' => 'Telemetry Scroll',
@@ -651,4 +685,84 @@ test('white-box: note controller export json contains complete chunk array with 
         ->and($decoded['title'])->toBe('Telemetry Scroll')
         ->and($decoded['chunks'])->not->toBeEmpty()
         ->and($decoded['chunks'][0])->toHaveKeys(['id', 'chunk_uid', 'chunk_index', 'chunk_type', 'content', 'byte_size', 'checksum']);
+});
+
+test('white-box: note controller bulkDestroy validates required ids array and rejects invalid elements', function () {
+    $controller = app(NoteController::class);
+
+    expect(fn () => $controller->bulkDestroy(Request::create('/api/notes/bulk-delete', 'POST', ['ids' => []])))
+        ->toThrow(ValidationException::class);
+
+    expect(fn () => $controller->bulkDestroy(Request::create('/api/notes/bulk-delete', 'POST', ['ids' => [999999]])))
+        ->toThrow(ValidationException::class);
+});
+
+test('white-box: note controller bulkDestroy atomically deletes multiple notes and cascading chunks', function () {
+    $note1 = Note::factory()->create(['title' => 'Scroll Alpha', 'content' => '<p>Alpha content</p>']);
+    $note2 = Note::factory()->create(['title' => 'Scroll Beta', 'content' => '<p>Beta content</p>']);
+    $service = app(NoteChunkService::class);
+    $service->syncChunks($note1, $note1->content);
+    $service->syncChunks($note2, $note2->content);
+
+    $chunkIds = NoteChunk::whereIn('note_id', [$note1->id, $note2->id])->pluck('id')->all();
+    expect($chunkIds)->not->toBeEmpty();
+
+    $controller = app(NoteController::class);
+    $response = $controller->bulkDestroy(Request::create('/api/notes/bulk-delete', 'POST', [
+        'ids' => [$note1->id, $note2->id],
+    ]));
+
+    expect($response->getStatusCode())->toBe(200);
+    $data = $response->getData(true);
+    expect($data['status'])->toBe('success')
+        ->and($data['data']['deleted_count'])->toBe(2)
+        ->and($data['data']['deleted_ids'])->toContain($note1->id, $note2->id)
+        ->and(Note::whereIn('id', [$note1->id, $note2->id])->exists())->toBeFalse()
+        ->and(NoteChunk::whereIn('id', $chunkIds)->exists())->toBeFalse();
+});
+
+test('white-box: category controller bulkDestroy prevents unauthorized user from banishing other users categories', function () {
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+
+    $catUser1 = Category::factory()->create(['user_id' => $user1->id, 'name' => 'User 1 Secrets']);
+
+    $request = Request::create('/categories/bulk-delete', 'POST', [
+        'ids' => [$catUser1->id],
+    ]);
+    $request->setUserResolver(fn () => $user2);
+
+    $controller = app(CategoryController::class);
+
+    expect(fn () => $controller->bulkDestroy($request))->toThrow(HttpException::class);
+});
+
+test('white-box: category controller bulkDestroy cascades deletion to categories, notes, and chunks atomically', function () {
+    $user = User::factory()->create();
+    $cat1 = Category::factory()->create(['user_id' => $user->id, 'name' => 'Bulk Realm 1', 'slug' => 'bulk-realm-1']);
+    $cat2 = Category::factory()->create(['user_id' => $user->id, 'name' => 'Bulk Realm 2', 'slug' => 'bulk-realm-2']);
+
+    $note1 = Note::factory()->create(['category' => 'bulk-realm-1', 'title' => 'Note 1']);
+    $note2 = Note::factory()->create(['category' => 'bulk-realm-2', 'title' => 'Note 2']);
+
+    $service = app(NoteChunkService::class);
+    $service->syncChunks($note1, '<p>Content 1</p>');
+    $service->syncChunks($note2, '<p>Content 2</p>');
+
+    $request = Request::create('/api/categories/bulk-delete', 'POST', [
+        'ids' => [$cat1->id, $cat2->id],
+    ]);
+    $request->headers->set('Accept', 'application/json');
+    $request->setUserResolver(fn () => $user);
+
+    $controller = app(CategoryController::class);
+    $response = $controller->bulkDestroy($request);
+
+    expect($response->getStatusCode())->toBe(200);
+    $data = $response->getData(true);
+    expect($data['status'])->toBe('success')
+        ->and($data['data']['deleted_count'])->toBe(2)
+        ->and(Category::whereIn('id', [$cat1->id, $cat2->id])->exists())->toBeFalse()
+        ->and(Note::whereIn('id', [$note1->id, $note2->id])->exists())->toBeFalse()
+        ->and(NoteChunk::whereIn('note_id', [$note1->id, $note2->id])->exists())->toBeFalse();
 });

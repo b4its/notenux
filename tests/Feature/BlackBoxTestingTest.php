@@ -399,6 +399,7 @@ test('black-box: studio view provides plain text notepad mode and one-click copy
         ->assertSee('plain-text-container')
         ->assertSee('plain-text-editor')
         ->assertSee('plain-text-copy-btn')
+        ->assertSee('plain-text-clear-btn')
         ->assertSee('plain-text-exit-btn')
         ->assertSee('copy-plain-btn')
         ->assertSee('notepad-mode-banner')
@@ -886,4 +887,121 @@ test('black-box: user can export scroll in json format with intact chunk array a
     $importedNote = Note::find($importedNoteId);
     expect($importedNote->chunks()->count())->toBeGreaterThan(0)
         ->and($importedNote->content)->toContain('Grand Lore');
+});
+
+test('black-box: user bulk deletes multiple scrolls via api/notes/bulk-delete endpoint', function () {
+    $note1 = Note::factory()->create(['title' => 'Ancient Shard 1']);
+    $note2 = Note::factory()->create(['title' => 'Ancient Shard 2']);
+    $note3 = Note::factory()->create(['title' => 'Keeper Scroll']);
+
+    $response = $this->postJson('/api/notes/bulk-delete', [
+        'ids' => [$note1->id, $note2->id],
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.deleted_count', 2)
+        ->assertJsonPath('data.deleted_ids', [$note1->id, $note2->id]);
+
+    expect(Note::find($note1->id))->toBeNull()
+        ->and(Note::find($note2->id))->toBeNull()
+        ->and(Note::find($note3->id))->not->toBeNull();
+});
+
+test('black-box: user bulk deletes multiple categories via categories/bulk-delete web route and api route', function () {
+    $user = User::factory()->create();
+    $cat1 = Category::factory()->create(['user_id' => $user->id, 'name' => 'Guild 1', 'slug' => 'guild-1']);
+    $cat2 = Category::factory()->create(['user_id' => $user->id, 'name' => 'Guild 2', 'slug' => 'guild-2']);
+    $catKeep = Category::factory()->create(['user_id' => $user->id, 'name' => 'Guild Keep', 'slug' => 'guild-keep']);
+
+    $note1 = Note::factory()->create(['category' => 'guild-1', 'title' => 'Scroll In Guild 1']);
+    $note2 = Note::factory()->create(['category' => 'guild-2', 'title' => 'Scroll In Guild 2']);
+    $noteKeep = Note::factory()->create(['category' => 'guild-keep', 'title' => 'Scroll In Guild Keep']);
+
+    // 1. Web route with redirect
+    $webResponse = $this->actingAs($user)->post('/categories/bulk-delete', [
+        'ids' => [$cat1->id],
+    ]);
+    $webResponse->assertRedirect(route('categories.index'));
+
+    expect(Category::find($cat1->id))->toBeNull()
+        ->and(Note::find($note1->id))->toBeNull();
+
+    // 2. API route with JSON
+    $apiResponse = $this->actingAs($user)->postJson('/api/categories/bulk-delete', [
+        'ids' => [$cat2->id],
+    ]);
+    $apiResponse->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.deleted_count', 1);
+
+    expect(Category::find($cat2->id))->toBeNull()
+        ->and(Note::find($note2->id))->toBeNull()
+        ->and(Category::find($catKeep->id))->not->toBeNull()
+        ->and(Note::find($noteKeep->id))->not->toBeNull();
+});
+
+test('black-box: studio view and categories index include bulk selection controls and modals', function () {
+    $user = User::factory()->create();
+
+    // Check studio panel view
+    $studioRes = $this->actingAs($user)->get(route('studio'));
+    $studioRes->assertOk()
+        ->assertSee('toggle-bulk-select-notes-btn')
+        ->assertSee('notes-bulk-bar')
+        ->assertSee('bulk-delete-notes-btn')
+        ->assertSee('bulk-delete-notes-modal');
+
+    // Check categories index view
+    $categoriesRes = $this->actingAs($user)->get(route('categories.index'));
+    $categoriesRes->assertOk()
+        ->assertSee('toggle-bulk-categories-btn')
+        ->assertSee('categories-bulk-bar')
+        ->assertSee('bulk-delete-cat-btn')
+        ->assertSee('bulk-delete-categories-modal');
+});
+
+test('black-box: user bulk deletes multiple notes atomically via api', function () {
+    $note1 = Note::factory()->create(['title' => 'Batch Note Alpha']);
+    $note2 = Note::factory()->create(['title' => 'Batch Note Beta']);
+    $note3 = Note::factory()->create(['title' => 'Untouched Note']);
+
+    $res = $this->postJson('/api/notes/bulk-delete', [
+        'ids' => [$note1->id, $note2->id],
+    ]);
+
+    $res->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.deleted_count', 2);
+
+    $this->assertDatabaseMissing('notes', ['id' => $note1->id]);
+    $this->assertDatabaseMissing('notes', ['id' => $note2->id]);
+    $this->assertDatabaseHas('notes', ['id' => $note3->id]);
+});
+
+test('black-box: user bulk deletes multiple categories and their associated notes atomically', function () {
+    $user = User::factory()->create();
+    $cat1 = Category::factory()->create(['user_id' => $user->id, 'name' => 'Cat Alpha', 'slug' => 'cat-alpha']);
+    $cat2 = Category::factory()->create(['user_id' => $user->id, 'name' => 'Cat Beta', 'slug' => 'cat-beta']);
+    $cat3 = Category::factory()->create(['user_id' => $user->id, 'name' => 'Cat Gamma', 'slug' => 'cat-gamma']);
+
+    $note1 = Note::factory()->create(['category' => 'cat-alpha']);
+    $note2 = Note::factory()->create(['category' => 'cat-beta']);
+    $note3 = Note::factory()->create(['category' => 'cat-gamma']);
+
+    $res = $this->actingAs($user)->postJson('/api/categories/bulk-delete', [
+        'ids' => [$cat1->id, $cat2->id],
+    ]);
+
+    $res->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.deleted_count', 2);
+
+    $this->assertDatabaseMissing('categories', ['id' => $cat1->id]);
+    $this->assertDatabaseMissing('categories', ['id' => $cat2->id]);
+    $this->assertDatabaseHas('categories', ['id' => $cat3->id]);
+
+    $this->assertDatabaseMissing('notes', ['id' => $note1->id]);
+    $this->assertDatabaseMissing('notes', ['id' => $note2->id]);
+    $this->assertDatabaseHas('notes', ['id' => $note3->id]);
 });
