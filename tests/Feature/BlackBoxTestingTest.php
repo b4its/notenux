@@ -1,10 +1,12 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Note;
 use App\Models\User;
 use App\Services\NoteChunkService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
 
@@ -684,4 +686,142 @@ test('black-box: user creates and updates scroll with large pasted base64 raster
     $chunksResponse->assertOk();
     $chunks = $chunksResponse->json('chunks');
     expect(count($chunks))->toBeGreaterThan(0);
+});
+
+test('black-box: non-owner user receives 403 forbidden when attempting to update or delete another users category', function () {
+    $owner = User::factory()->create();
+    $attacker = User::factory()->create();
+    $category = Category::factory()->create(['user_id' => $owner->id, 'name' => 'Owner Secret']);
+
+    // Attempt update as attacker
+    $updateRes = $this->actingAs($attacker)->putJson(route('api.categories.update', $category), [
+        'name' => 'Hijacked Category',
+    ]);
+    $updateRes->assertStatus(403);
+
+    // Attempt delete as attacker
+    $deleteRes = $this->actingAs($attacker)->deleteJson(route('api.categories.destroy', $category));
+    $deleteRes->assertStatus(403);
+
+    // Category remains untouched
+    expect($category->fresh()->name)->toBe('Owner Secret');
+});
+
+test('black-box: ai assistant handles improve, summarize, continue, translate, and custom actions with error boundary fallbacks', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->create();
+
+    // 1. Validation error: missing instruction on custom action
+    $resMissingInst = $this->actingAs($user)->postJson(route('notes.assistant', $note), [
+        'action' => 'custom',
+        'content' => 'Short text',
+    ]);
+    $resMissingInst->assertStatus(422)
+        ->assertJsonValidationErrors(['instruction']);
+
+    // 2. Validation error: content exceeds max limit
+    $resOversized = $this->actingAs($user)->postJson(route('notes.assistant', $note), [
+        'action' => 'improve',
+        'content' => str_repeat('X', 30001),
+    ]);
+    $resOversized->assertStatus(422)
+        ->assertJsonValidationErrors(['content']);
+
+    // 3. Service unconfigured (503) when API key or model is empty
+    config(['services.ai.key' => null, 'services.ai.model' => null]);
+    $resUnconfigured = $this->actingAs($user)->postJson(route('notes.assistant', $note), [
+        'action' => 'improve',
+        'content' => 'Good content to polish',
+    ]);
+    $resUnconfigured->assertStatus(503)
+        ->assertJsonPath('status', 'error');
+
+    // 4. Mock successful AI call
+    config(['services.ai.key' => 'test-key', 'services.ai.model' => 'test-model', 'services.ai.base_url' => 'https://api.test-ai.dev/v1']);
+    Http::fake([
+        'api.test-ai.dev/*' => Http::response([
+            'choices' => [
+                [
+                    'message' => ['content' => 'Polished and perfected manuscript.'],
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ], 200),
+    ]);
+
+    $resSuccess = $this->actingAs($user)->postJson(route('notes.assistant', $note), [
+        'action' => 'improve',
+        'content' => 'Rough manuscript text needing polish.',
+    ]);
+    $resSuccess->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.content', 'Polished and perfected manuscript.');
+});
+
+test('black-box: auth registration workflow initializes default categories, welcome scroll, and establishes session', function () {
+    $email = 'adventurer_'.uniqid().'@notenux.dev';
+    $response = $this->post(route('register'), [
+        'name' => 'Brave Adventurer',
+        'email' => $email,
+        'password' => 'secret-password-123',
+        'password_confirmation' => 'secret-password-123',
+    ]);
+
+    $response->assertRedirect(route('studio'));
+    $this->assertAuthenticated();
+
+    $user = User::where('email', $email)->first();
+    expect($user)->not->toBeNull();
+
+    // Verify default categories
+    $categories = Category::forUser($user)->pluck('slug')->all();
+    expect($categories)->toContain('catatan')
+        ->and($categories)->toContain('tugas');
+
+    // Verify welcome note
+    $welcomeNote = Note::where('title', 'Halo! Selamat Datang di Notenux')->first();
+    expect($welcomeNote)->not->toBeNull()
+        ->and($welcomeNote->category)->toBe('catatan')
+        ->and($welcomeNote->chunks()->count())->toBeGreaterThan(0);
+});
+
+test('black-box: chunk reordering rejects mismatched, missing, or duplicate shard identities with 422 error', function () {
+    $note = Note::factory()->create();
+    $service = app(NoteChunkService::class);
+    $content = '<p>'.str_repeat('A', 1100).'</p><p>'.str_repeat('B', 1100).'</p><p>'.str_repeat('C', 1100).'</p>';
+    $chunks = $service->syncChunks($note, $content);
+
+    expect(count($chunks))->toBe(3);
+    $chunk1 = $chunks[0];
+    $chunk2 = $chunks[1];
+
+    // Reorder payload missing chunk 3
+    $responseMissing = $this->postJson(route('notes.chunks.reorder', $note), [
+        'order' => [$chunk1->chunk_uid, $chunk2->chunk_uid],
+    ]);
+    $responseMissing->assertStatus(422)
+        ->assertJsonValidationErrors(['order']);
+
+    // Reorder payload containing duplicates
+    $responseDuplicate = $this->postJson(route('notes.chunks.reorder', $note), [
+        'order' => [$chunk1->chunk_uid, $chunk1->chunk_uid, $chunk2->chunk_uid],
+    ]);
+    $responseDuplicate->assertStatus(422)
+        ->assertJsonValidationErrors(['order']);
+});
+
+test('black-box: duplicate scroll handles multibyte unicode titles up to 255 characters without truncation errors', function () {
+    $longTitle = str_repeat('📜 Gulungan Mistik Bersejarah Kuno ', 7); // Very long unicode title
+    $note = Note::factory()->create([
+        'title' => mb_substr($longTitle, 0, 240),
+        'content' => '<p>Konten naskah kuno.</p>',
+    ]);
+
+    $response = $this->postJson(route('notes.duplicate', $note));
+    $response->assertCreated()
+        ->assertJsonPath('status', 'success');
+
+    $clonedTitle = $response->json('data.title');
+    expect(mb_strlen($clonedTitle))->toBeLessThanOrEqual(255)
+        ->and($clonedTitle)->toEndWith('(Copy)');
 });

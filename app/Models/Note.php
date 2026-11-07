@@ -81,6 +81,10 @@ class Note extends Model
                 $note->uuid = (string) Str::uuid();
             }
         });
+
+        static::deleting(function (Note $note): void {
+            $note->chunks()->delete();
+        });
     }
 
     /**

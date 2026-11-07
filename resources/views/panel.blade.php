@@ -644,6 +644,9 @@
                                             <i class="fa-solid fa-file-code text-cyan-600 dark:text-cyan-400"></i> JSON Backup (.json)
                                         </button>
                                         <div class="border-t border-black/20 my-1"></div>
+                                        <button id="copy-plain-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                            <i class="fa-solid fa-file-lines text-amber-600 dark:text-amber-400"></i> Copy Plain Text
+                                        </button>
                                         <button id="copy-markdown-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
                                             <i class="fa-solid fa-copy text-blue-600 dark:text-cyan-400"></i> Copy Markdown
                                         </button>

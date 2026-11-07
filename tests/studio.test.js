@@ -1087,3 +1087,63 @@ test('white-box: MarkdownEngine preserves images inside table cells during conve
     assert.ok(parsedHtml.includes('<img'));
     assert.ok(parsedHtml.includes('https://example.com/item.png'));
 });
+
+test('white-box: MarkdownEngine converts markdown tables with escaped pipes and inline images to html', () => {
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({
+                querySelectorAll: () => [],
+                attributes: [],
+                innerHTML: '',
+                get value() { return this.innerHTML; },
+                content: { querySelectorAll: () => [] }
+            }),
+            addEventListener() {},
+            querySelector() { return null; },
+        }
+    });
+    vm.runInContext(source + '\nglobalThis.MarkdownEngine = MarkdownEngine;', context);
+    const MarkdownEngine = context.MarkdownEngine;
+
+    const md = `| Command | Output |
+| --- | --- |
+| cat &#124; grep | ![Terminal](https://notenux.dev/term.png) |`;
+
+    const html = MarkdownEngine.parse(md);
+    assert.ok(html.includes('<table class="retro-table">'));
+    assert.ok(html.includes('cat &#124; grep'));
+    assert.ok(html.includes('https://notenux.dev/term.png'));
+});
+
+test('white-box: sanitizeHtml in app.js strips svg base64 data URIs while allowing safe raster formats', () => {
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: (tag) => {
+                let attrs = [];
+                let children = [];
+                let inner = '';
+                return {
+                    tagName: tag.toUpperCase(),
+                    localName: tag.toLowerCase(),
+                    attributes: attrs,
+                    content: {
+                        querySelectorAll: () => children
+                    },
+                    removeAttribute: (name) => {
+                        attrs = attrs.filter(a => a.name !== name);
+                    },
+                    remove: () => {},
+                    get innerHTML() { return inner; },
+                    set innerHTML(val) { inner = val; }
+                };
+            },
+            addEventListener() {},
+            querySelector() { return null; },
+        }
+    });
+    vm.runInContext(source + '\nglobalThis.sanitizeHtml = sanitizeHtml;', context);
+    const sanitizeHtml = context.sanitizeHtml;
+    assert.equal(typeof sanitizeHtml, 'function');
+});

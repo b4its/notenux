@@ -379,6 +379,7 @@ class NoteChunkService
 
             $html = Str::markdown($rawMarkdown, ['html_input' => 'strip', 'allow_unsafe_links' => false]);
             $html = str_replace('<table>', '<table class="retro-table">', $html);
+            $html = app(NoteContentSanitizer::class)->sanitize($html);
 
             $validCategory = ! empty($category) ? trim($category) : 'quest';
 

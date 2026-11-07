@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\NoteController;
+use App\Models\Category;
 use App\Models\Note;
 use App\Models\NoteChunk;
 use App\Models\User;
@@ -535,4 +537,76 @@ test('white-box: content sanitizer preserves custom table styling and cell attri
     expect($clean)->toContain('text-align: right');
     expect($clean)->toContain('color: #ffffff');
     expect($clean)->toContain('colspan="1"');
+});
+
+test('white-box: note deleting model event cleanly purges all associated chunks from database', function () {
+    $note = Note::factory()->create();
+    $service = app(NoteChunkService::class);
+    $service->syncChunks($note, '<p>Section 1</p><p>Section 2</p>');
+
+    expect($note->chunks()->count())->toBeGreaterThan(0);
+    $chunkIds = $note->chunks()->pluck('id')->all();
+
+    $note->delete();
+
+    expect(NoteChunk::whereIn('id', $chunkIds)->exists())->toBeFalse();
+});
+
+test('white-box: note chunk service splits deeply nested html table with cell images without breaking tags', function () {
+    $service = app(NoteChunkService::class);
+    $html = '<table class="retro-table"><thead><tr><th>Hero</th><th>Item</th></tr></thead><tbody><tr><td>Paladin</td><td><img src="https://notenux.dev/sword.png" alt="Sword"></td></tr><tr><td>Wizard</td><td><img src="https://notenux.dev/staff.png" alt="Staff"></td></tr></tbody></table>';
+
+    $chunks = $service->splitIntoChunks($html);
+    expect($chunks)->not->toBeEmpty();
+
+    foreach ($chunks as $chunk) {
+        // Ensure no broken HTML tag boundaries
+        $openCount = substr_count($chunk['content'], '<table');
+        $closeCount = substr_count($chunk['content'], '</table>');
+        expect($openCount)->toBe($closeCount);
+    }
+});
+
+test('white-box: content sanitizer removes malicious event handlers and javascript pseudo-protocols from links and images', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+    $dirty = '<p><a href="javascript:alert(1)" onclick="steal()" onmouseover="hack()">Link</a><img src="javascript:evil()" onerror="pwn()" alt="Evil"><img src="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==" alt="XSS"></p>';
+
+    $clean = $sanitizer->sanitize($dirty);
+
+    expect($clean)->not->toContain('javascript:')
+        ->and($clean)->not->toContain('onclick')
+        ->and($clean)->not->toContain('onmouseover')
+        ->and($clean)->not->toContain('onerror')
+        ->and($clean)->not->toContain('steal')
+        ->and($clean)->not->toContain('data:text/html');
+});
+
+test('white-box: category slug allocation skips reserved slug all and resolves multiple collisions sequentially', function () {
+    $controller = app(CategoryController::class);
+    $allocate = new ReflectionMethod($controller, 'allocateSlug');
+    $allocate->setAccessible(true);
+
+    // Collision with 'all'
+    $slug1 = $allocate->invoke($controller, 'all');
+    expect($slug1)->not->toBe('all')
+        ->and($slug1)->toBe('all-2');
+
+    // Create a category to collide with
+    Category::factory()->create(['slug' => 'spells']);
+    Category::factory()->create(['slug' => 'spells-2']);
+
+    $slug2 = $allocate->invoke($controller, 'spells');
+    expect($slug2)->toBe('spells-3');
+});
+
+test('white-box: note controller export defaults to markdown for unknown or unrecognized formats safely', function () {
+    $note = Note::factory()->create(['title' => 'Ancient Scroll', 'content' => '<p>Lore of the ancients</p>']);
+    $controller = app(NoteController::class);
+
+    $response = $controller->export($note, 'unrecognized_format');
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->headers->get('Content-Type'))->toContain('text/markdown')
+        ->and($response->getContent())->toContain('# Ancient Scroll')
+        ->and($response->getContent())->toContain('Lore of the ancients');
 });

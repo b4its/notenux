@@ -30,7 +30,7 @@ function sanitizeHtml(html) {
                 || (['align', 'valign'].includes(name) && ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'].includes((value || '').toLowerCase()))
                 || (name === 'style' && /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value))
                 || (name === 'href' && element.localName === 'a' && /^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(value))
-                || (name === 'src' && element.localName === 'img' && /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=\s]+$)/i.test((value || '').trim()));
+                || (name === 'src' && element.localName === 'img' && /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)/i.test((value || '').trim()));
             if (!safe) element.removeAttribute(name);
         }
         if (element.localName === 'input' && element.type !== 'checkbox') element.remove();
