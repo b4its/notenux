@@ -1878,4 +1878,202 @@ test('white-box: executeBulkDeleteNotes sends bulk delete payload and switches a
     assert.equal(panel.activeNote.id, 3);
 });
 
+test('white-box: formatDateTime and formatDateCompact correctly format ISO timestamps and handle edge cases', () => {
+    const { panel } = harness();
+
+    // Valid date
+    const iso = '2026-11-08T01:45:00.000Z';
+    const formatted = panel.formatDateTime(iso);
+    assert.ok(formatted.includes('2026'));
+    assert.ok(formatted.includes('Nov'));
+
+    const compact = panel.formatDateCompact(iso);
+    assert.ok(compact.includes('Nov'));
+
+    // Null or undefined or invalid
+    assert.equal(panel.formatDateTime(null), '-');
+    assert.equal(panel.formatDateTime(undefined), '-');
+    assert.equal(panel.formatDateTime(''), '-');
+    assert.equal(panel.formatDateCompact(null), '-');
+    assert.equal(panel.formatDateCompact('invalid date string'), '-');
+});
+
+test('white-box: renderNotesList renders created_at and updated_at metadata timestamps on note cards', () => {
+    const { panel } = harness();
+    delete panel.renderNotesList;
+    panel.categories = [];
+    panel.activeCategory = 'all';
+    panel.searchQuery = '';
+    let renderedHtml = '';
+    panel.dom.notesList = {
+        get innerHTML() { return renderedHtml; },
+        set innerHTML(val) { renderedHtml = val; },
+        querySelectorAll: () => [],
+    };
+
+    panel.notes = [
+        {
+            id: 42,
+            title: 'Legendary Chronicle',
+            category: 'lore',
+            created_at: '2026-10-15T10:00:00.000Z',
+            updated_at: '2026-11-08T01:30:00.000Z',
+            chunks_count: 2,
+            word_count: 120,
+            level: 3,
+        }
+    ];
+
+    panel.renderNotesList();
+
+    assert.ok(renderedHtml.includes('scroll-created-meta'));
+    assert.ok(renderedHtml.includes('scroll-updated-meta'));
+    assert.ok(renderedHtml.includes('Dibuat:'));
+    assert.ok(renderedHtml.includes('Update:'));
+    assert.ok(renderedHtml.includes('15 Okt'));
+    assert.ok(renderedHtml.includes('08 Nov'));
+});
+
+test('white-box: loadNoteIntoEditor populates scrollCreatedText and scrollUpdatedText HUD badges', () => {
+    const { panel } = harness();
+    delete panel.loadNoteIntoEditor;
+    panel.clearFindHighlights = () => {};
+    panel.initHistory = () => {};
+    panel.applyFontFamily = () => {};
+    panel.applyFontSize = () => {};
+    panel.updateWordAndCharMetrics = () => {};
+    panel.updatePinButtonUI = () => {};
+    panel.updateFavoriteButtonUI = () => {};
+    panel.updatePlainTextStats = () => {};
+
+    let createdText = '';
+    let updatedText = '';
+
+    panel.dom.scrollCreatedText = {
+        get textContent() { return createdText; },
+        set textContent(val) { createdText = val; },
+    };
+    panel.dom.scrollUpdatedText = {
+        get textContent() { return updatedText; },
+        set textContent(val) { updatedText = val; },
+    };
+
+    const note = {
+        id: 99,
+        title: 'Ancient Scroll of Wisdom',
+        content: '<p>Wisdom words</p>',
+        category: 'spellbook',
+        created_at: '2026-05-20T12:00:00.000Z',
+        updated_at: '2026-11-08T01:15:00.000Z',
+    };
+
+    panel.loadNoteIntoEditor(note);
+
+    assert.ok(createdText.includes('Dibuat:'));
+    assert.ok(createdText.includes('20 Mei 2026'));
+    assert.ok(updatedText.includes('Diperbarui:'));
+    assert.ok(updatedText.includes('08 Nov 2026'));
+});
+
+test('white-box: RetroSearchableSelect ignores dropdown internal clicks and prevents premature closing', () => {
+    const docListeners = new Map();
+    const mockSelect = {
+        className: 'w-full',
+        dataset: {},
+        value: 'opt1',
+        options: [
+            { value: 'opt1', textContent: 'Quest Log' },
+        ],
+        querySelector() {
+            return this.options.find(o => o.value === 'opt1');
+        },
+        classList: { add() {}, remove() {}, contains: () => false },
+        parentNode: { insertBefore() {} },
+        addEventListener() {},
+        dispatchEvent() {}
+    };
+
+    const createdElements = [];
+    const context = vm.createContext({
+        window: {
+            innerWidth: 1024,
+            innerHeight: 768,
+            addEventListener() {},
+            removeEventListener() {}
+        },
+        document: {
+            body: {
+                appendChild(child) { return child; }
+            },
+            createElement: (tag) => {
+                const el = {
+                    tagName: tag,
+                    className: '',
+                    innerHTML: '',
+                    children: [],
+                    dataset: {},
+                    style: {},
+                    offsetHeight: 200,
+                    offsetWidth: 220,
+                    classList: {
+                        classes: new Set(),
+                        add(c) { this.classes.add(c); },
+                        remove(c) { this.classes.delete(c); },
+                        contains(c) { return this.classes.has(c); },
+                        toggle(c, s) { if (s) this.classes.add(c); else this.classes.delete(c); }
+                    },
+                    appendChild(child) { this.children.push(child); return child; },
+                    contains(target) {
+                        return this === target || this.children.some(c => c === target || (c.contains && c.contains(target)));
+                    },
+                    querySelector(sel) {
+                        if (sel === '.retro-select-label') return { textContent: '' };
+                        if (sel === '.fa-chevron-down') return { classList: this.classList };
+                        if (sel === '.retro-select-search-input') return { value: '', focus() {}, addEventListener() {} };
+                        if (sel === '.retro-select-options-list') return { innerHTML: '', appendChild() {} };
+                        if (sel === '.retro-select-no-results') return { classList: this.classList };
+                        return null;
+                    },
+                    addEventListener() {},
+                    focus() {},
+                    scrollIntoView() {},
+                    getBoundingClientRect() {
+                        return { top: 100, bottom: 130, left: 200, right: 350, width: 150, height: 30 };
+                    }
+                };
+                createdElements.push(el);
+                return el;
+            },
+            querySelectorAll: () => [],
+            addEventListener: (event, fn) => { docListeners.set(event, fn); }
+        },
+        MutationObserver: class { observe() {} disconnect() {} },
+        HTMLSelectElement: class {},
+        Event: class { constructor(type) { this.type = type; } },
+        setTimeout: (fn) => fn(),
+        clearTimeout: () => {}
+    });
+
+    vm.runInContext(source + '\nglobalThis.RetroSearchableSelect = RetroSearchableSelect;', context);
+    const instance = new context.RetroSearchableSelect(mockSelect);
+    assert.equal(mockSelect.dataset.retroSelectInit, 'true');
+
+    instance.open();
+    assert.equal(instance.isOpen, true);
+
+    const docClickHandler = docListeners.get('click');
+    assert.equal(typeof docClickHandler, 'function');
+
+    // Click inside dropdown does not close
+    const dropdownChild = { contains: () => false };
+    instance.dropdown.children.push(dropdownChild);
+    docClickHandler({ target: dropdownChild });
+    assert.equal(instance.isOpen, true);
+
+    // Click outside closes
+    const outsideTarget = { notContained: true };
+    docClickHandler({ target: outsideTarget });
+    assert.equal(instance.isOpen, false);
+});
+
 

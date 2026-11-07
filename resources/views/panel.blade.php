@@ -793,6 +793,20 @@
                             <span id="reading-time-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 font-bold flex items-center">
                                 <i class="fa-solid fa-clock mr-1 text-blue-600 dark:text-cyan-400"></i> 1m Read
                             </span>
+
+                            <!-- Created At & Updated At Badges for Active Scroll -->
+                            <span id="scroll-created-badge"
+                                  class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[11px] hidden sm:inline-flex items-center gap-1 shadow-[1px_1px_0px_#000]"
+                                  title="Waktu Gulungan Ini Dibuat">
+                                <i class="fa-solid fa-calendar-plus text-blue-600 dark:text-cyan-400"></i>
+                                <span id="scroll-created-text">Dibuat: -</span>
+                            </span>
+                            <span id="scroll-updated-badge"
+                                  class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[11px] inline-flex items-center gap-1 shadow-[1px_1px_0px_#000]"
+                                  title="Waktu Gulungan Ini Terakhir Diperbarui">
+                                <i class="fa-solid fa-clock-rotate-left text-emerald-600 dark:text-emerald-400"></i>
+                                <span id="scroll-updated-text">Diperbarui: -</span>
+                            </span>
                         </div>
 
                         <!-- Right: Goal Progress, Save Status -->

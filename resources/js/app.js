@@ -539,7 +539,9 @@ class RetroSearchableSelect {
         this.searchInput = this.dropdown.querySelector('.retro-select-search-input');
         this.optionsList = this.dropdown.querySelector('.retro-select-options-list');
         this.noResultsEl = this.dropdown.querySelector('.retro-select-no-results');
-        this.container.appendChild(this.dropdown);
+
+        const mountTarget = (typeof document !== 'undefined' && document.body) ? document.body : this.container;
+        mountTarget.appendChild(this.dropdown);
 
         this.refreshOptions();
         this.bindEvents();
@@ -738,8 +740,13 @@ class RetroSearchableSelect {
 
     bindEvents() {
         this.trigger.addEventListener('click', (e) => {
+            e.preventDefault();
             e.stopPropagation();
             this.toggle();
+        });
+
+        this.dropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
         });
 
         this.searchInput.addEventListener('input', () => {
@@ -773,7 +780,7 @@ class RetroSearchableSelect {
         });
 
         document.addEventListener('click', (e) => {
-            if (!this.container.contains(e.target)) {
+            if (!this.container.contains(e.target) && !this.dropdown.contains(e.target)) {
                 this.close();
             }
         });
@@ -1035,6 +1042,10 @@ class NotenuxPanel {
             charCountBadge: document.getElementById('char-count-badge'),
             readingTimeBadge: document.getElementById('reading-time-badge'),
             chunkCountBadge: document.getElementById('chunk-count-badge'),
+            scrollCreatedBadge: document.getElementById('scroll-created-badge'),
+            scrollCreatedText: document.getElementById('scroll-created-text'),
+            scrollUpdatedBadge: document.getElementById('scroll-updated-badge'),
+            scrollUpdatedText: document.getElementById('scroll-updated-text'),
 
             chunkModal: document.getElementById('chunk-inspector-modal'),
             chunkModalClose: document.getElementById('chunk-modal-close'),
@@ -3840,6 +3851,10 @@ class NotenuxPanel {
                     this.dom.saveStatusText.innerHTML = '<span class="text-emerald-700 dark:text-emerald-400 font-bold"><i class="fa-solid fa-check mr-1"></i> Synchronized</span>';
                 }
 
+                if (this.dom.scrollUpdatedText && this.activeNote?.id === note.id && unchanged) {
+                    this.dom.scrollUpdatedText.textContent = `Diperbarui: ${this.formatDateTime(note.updated_at)}`;
+                }
+
                 this.renderNotesList();
                 this.refreshPlayerStats();
 
@@ -4229,6 +4244,13 @@ class NotenuxPanel {
         if (this.dom.saveStatusText) {
             this.dom.saveStatusText.innerHTML = '<span class="text-emerald-700 dark:text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i> Synchronized</span>';
         }
+
+        if (this.dom.scrollCreatedText) {
+            this.dom.scrollCreatedText.textContent = `Dibuat: ${this.formatDateTime(note.created_at)}`;
+        }
+        if (this.dom.scrollUpdatedText) {
+            this.dom.scrollUpdatedText.textContent = `Diperbarui: ${this.formatDateTime(note.updated_at)}`;
+        }
     }
 
     updatePinButtonUI() {
@@ -4377,9 +4399,19 @@ class NotenuxPanel {
                         </span>
                     </div>
 
-                    <div class="flex items-center justify-between text-[11px] font-mono mt-2 pt-1 border-t ${isActive && !this.isBulkSelectNotes ? 'border-white/20 text-blue-100' : 'border-black/10 dark:border-white/10 text-slate-500 dark:text-slate-400'}">
-                        <span><i class="fa-solid fa-cubes text-[10px] mr-1"></i>${chunkCount} chunks</span>
-                        <span>Lv.${note.level || 1} • ${note.word_count || 0}w</span>
+                    <div class="mt-2 pt-1 border-t ${isActive && !this.isBulkSelectNotes ? 'border-white/20 text-blue-100' : 'border-black/10 dark:border-white/10 text-slate-500 dark:text-slate-400'} text-[10px] font-mono flex flex-col gap-1">
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span><i class="fa-solid fa-cubes text-[10px] mr-1"></i>${chunkCount} chunks</span>
+                            <span>Lv.${note.level || 1} • ${note.word_count || 0}w</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[9px] opacity-80 pt-0.5 border-t border-dashed ${isActive && !this.isBulkSelectNotes ? 'border-white/20 text-white/90' : 'border-black/10 dark:border-white/10 text-slate-600 dark:text-slate-400'}">
+                            <span class="truncate scroll-created-meta" title="Waktu Pembuatan: ${this.formatDateTime(note.created_at)}">
+                                <i class="fa-regular fa-calendar-plus mr-0.5 text-blue-500 dark:text-cyan-400"></i>Dibuat: ${this.formatDateCompact(note.created_at)}
+                            </span>
+                            <span class="truncate ml-1 text-right scroll-updated-meta" title="Terakhir Diperbarui: ${this.formatDateTime(note.updated_at)}">
+                                <i class="fa-regular fa-clock mr-0.5 text-emerald-600 dark:text-emerald-400"></i>Update: ${this.formatDateCompact(note.updated_at)}
+                            </span>
+                        </div>
                     </div>
                 </div>
             `;
@@ -5280,6 +5312,44 @@ class NotenuxPanel {
             }
         } catch (e) {
             // Background telemetry
+        }
+    }
+
+    formatDateTime(dateStr) {
+        if (!dateStr) return '-';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '-';
+            const day = String(date.getDate()).padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const month = months[date.getMonth()];
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const mins = String(date.getMinutes()).padStart(2, '0');
+            return `${day} ${month} ${year}, ${hours}:${mins}`;
+        } catch (_) {
+            return '-';
+        }
+    }
+
+    formatDateCompact(dateStr) {
+        if (!dateStr) return '-';
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '-';
+            const day = String(date.getDate()).padStart(2, '0');
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const month = months[date.getMonth()];
+            const now = new Date();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const mins = String(date.getMinutes()).padStart(2, '0');
+
+            if (date.getFullYear() === now.getFullYear()) {
+                return `${day} ${month}, ${hours}:${mins}`;
+            }
+            return `${day} ${month} '${String(date.getFullYear()).slice(-2)}`;
+        } catch (_) {
+            return '-';
         }
     }
 
