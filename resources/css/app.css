@@ -406,6 +406,12 @@
     animation: arcadePopIn 0.12s ease-out;
 }
 
+.retro-select-container.w-full .retro-select-dropdown {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+}
+
 .retro-select-search-box {
     padding: 0.4rem;
     background-color: var(--bg-surface-alt);

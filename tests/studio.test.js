@@ -200,3 +200,102 @@ test('white-box: RetroSearchableSelect wraps native select, provides search filt
     assert.equal(mockSelect.value, 'opt2');
     assert.equal(changeFired, true);
 });
+
+test('white-box: RetroSearchableSelect filters options and toggles no-results element', () => {
+    const listeners = new Map();
+    const mockSelect = {
+        className: 'w-full',
+        dataset: {},
+        value: 'opt1',
+        options: [
+            { value: 'opt1', textContent: 'Quest Log' },
+            { value: 'opt2', textContent: 'Ancient Lore' },
+            { value: 'opt3', textContent: 'Boss Tactics' },
+        ],
+        querySelector(selector) {
+            const val = selector.match(/value="([^"]+)"/)?.[1];
+            return this.options.find(o => o.value === val);
+        },
+        classList: { add() {}, remove() {}, contains: () => false },
+        parentNode: { insertBefore() {} },
+        addEventListener(event, fn) { listeners.set(event, fn); },
+        dispatchEvent() {}
+    };
+
+    let noResultsHidden = true;
+    const noResultsEl = {
+        classList: {
+            add(c) { if (c === 'hidden') noResultsHidden = true; },
+            remove(c) { if (c === 'hidden') noResultsHidden = false; },
+            contains(c) { return c === 'hidden' ? noResultsHidden : false; }
+        }
+    };
+    const optionsListEl = {
+        children: [],
+        innerHTML: '',
+        appendChild(child) { this.children.push(child); return child; }
+    };
+
+    const context = vm.createContext({
+        window: { innerWidth: 1024 },
+        document: {
+            createElement: (tag) => {
+                const el = {
+                    tagName: tag,
+                    className: '',
+                    innerHTML: '',
+                    children: [],
+                    dataset: {},
+                    classList: {
+                        add() {}, remove() {}, contains: () => false, toggle() {}
+                    },
+                    appendChild(child) { this.children.push(child); return child; },
+                    querySelector(sel) {
+                        if (sel === '.retro-select-label') return { textContent: '' };
+                        if (sel === '.fa-chevron-down') return { classList: { add() {}, remove() {} } };
+                        if (sel === '.retro-select-search-input') return { value: '', focus() {}, addEventListener() {} };
+                        if (sel === '.retro-select-options-list') return optionsListEl;
+                        if (sel === '.retro-select-no-results') return noResultsEl;
+                        return null;
+                    },
+                    addEventListener() {},
+                    focus() {},
+                    scrollIntoView() {},
+                    getBoundingClientRect() { return { right: 500, width: 200 }; }
+                };
+                return el;
+            },
+            querySelectorAll: () => [],
+            addEventListener: () => {}
+        },
+        MutationObserver: class { observe() {} disconnect() {} },
+        HTMLSelectElement: class {},
+        Event: class { constructor(type) { this.type = type; } },
+        setTimeout: (fn) => fn(),
+        clearTimeout: () => {}
+    });
+
+    vm.runInContext(source + '\nglobalThis.RetroSearchableSelect = RetroSearchableSelect;', context);
+    const instance = new context.RetroSearchableSelect(mockSelect);
+
+    // Filter with matching text
+    instance.renderOptions('Ancient');
+    assert.equal(instance.filteredOptions.length, 1);
+    assert.equal(instance.filteredOptions[0].value, 'opt2');
+    assert.equal(noResultsHidden, true);
+
+    // Filter with non-matching text
+    instance.renderOptions('Nonexistent Query');
+    assert.equal(instance.filteredOptions.length, 0);
+    assert.equal(noResultsHidden, false);
+
+    // Keyboard navigation
+    instance.renderOptions('');
+    assert.equal(instance.filteredOptions.length, 3);
+    instance.moveHighlight(1);
+    assert.equal(instance.highlightIndex, 0);
+    instance.moveHighlight(1);
+    assert.equal(instance.highlightIndex, 1);
+    instance.moveHighlight(-1);
+    assert.equal(instance.highlightIndex, 0);
+});

@@ -534,6 +534,16 @@ class RetroSearchableSelect {
         this.chevronEl.classList.add('rotate-180');
         this.searchInput.value = '';
         this.renderOptions('');
+
+        const rect = this.dropdown.getBoundingClientRect?.() || { right: 0 };
+        if (rect.right > (window.innerWidth || 1024) - 10) {
+            this.dropdown.style.left = 'auto';
+            this.dropdown.style.right = '0';
+        } else {
+            this.dropdown.style.left = '0';
+            this.dropdown.style.right = 'auto';
+        }
+
         setTimeout(() => this.searchInput.focus(), 50);
     }
 
@@ -1560,7 +1570,8 @@ class NotenuxPanel {
         this.dom.sortNotesSelect?.addEventListener('change', (e) => {
             this.currentSort = e.target.value;
             this.renderNotesList();
-            this.toast.show(`Scrolls sorted by ${e.target.options[e.target.selectedIndex].text}`, 'info', 'Sorting');
+            const text = e.target.options[e.target.selectedIndex]?.text || e.target.value;
+            this.toast.show(`Scrolls sorted by ${text}`, 'info', 'Sorting');
         });
 
         this.dom.categoryPills.forEach(pill => {
@@ -1839,7 +1850,8 @@ class NotenuxPanel {
         this.dom.fontFamilySelect?.addEventListener('change', (e) => {
             this.audio.playClick();
             this.applyFontFamily(e.target.value);
-            this.toast.show(`Font changed to ${e.target.options[e.target.selectedIndex].text}`, 'info', 'Typography');
+            const text = e.target.options[e.target.selectedIndex]?.text || e.target.value;
+            this.toast.show(`Font changed to ${text}`, 'info', 'Typography');
             this.scheduleAutoSave();
         });
 

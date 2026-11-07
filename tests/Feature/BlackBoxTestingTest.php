@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Note;
+use App\Models\User;
 use App\Services\NoteChunkService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -378,4 +379,113 @@ test('black-box: studio view features clean command deck, semantic toolbar clust
         ->assertSee('cancel-delete-modal-btn')
         ->assertSee('confirm-delete-modal-btn')
         ->assertSee('BANISH SCROLL CONFIRMATION');
+});
+
+test('black-box: user filters notes by pinned_only and favorites_only', function () {
+    Note::factory()->create(['title' => 'Pinned Only Note', 'is_pinned' => true, 'is_favorite' => false]);
+    Note::factory()->create(['title' => 'Favorite Only Note', 'is_pinned' => false, 'is_favorite' => true]);
+    Note::factory()->create(['title' => 'Both Pinned & Fav', 'is_pinned' => true, 'is_favorite' => true]);
+    Note::factory()->create(['title' => 'Normal Note', 'is_pinned' => false, 'is_favorite' => false]);
+
+    // Pinned only filter
+    $pinnedRes = $this->getJson('/api/notes?pinned_only=1');
+    $pinnedRes->assertOk();
+    $pinnedData = $pinnedRes->json('data');
+    expect(count($pinnedData))->toBe(2);
+    foreach ($pinnedData as $n) {
+        expect((bool) $n['is_pinned'])->toBeTrue();
+    }
+
+    // Favorites only filter
+    $favRes = $this->getJson('/api/notes?favorites_only=1');
+    $favRes->assertOk();
+    $favData = $favRes->json('data');
+    expect(count($favData))->toBe(2);
+    foreach ($favData as $n) {
+        expect((bool) $n['is_favorite'])->toBeTrue();
+    }
+});
+
+test('black-box: complete personalized category journey with automatic note preservation', function () {
+    $user = User::factory()->create();
+
+    // 1. Forge new category
+    $createCatRes = $this->actingAs($user)->postJson('/api/categories', [
+        'name' => 'Arcane Invocations',
+        'slug' => 'arcane-invocations',
+        'color' => 'purple',
+        'icon' => 'fa-solid fa-wand-magic-sparkles',
+        'description' => 'Chants and ancient runes.',
+    ]);
+    $createCatRes->assertStatus(201)
+        ->assertJsonPath('data.slug', 'arcane-invocations');
+
+    $catId = $createCatRes->json('data.id');
+
+    // 2. Inscribe note in this category
+    $createNoteRes = $this->postJson('/api/notes', [
+        'title' => 'Frostbolt Spell Formula',
+        'category' => 'arcane-invocations',
+        'content' => '<h2>Frostbolt</h2><p>Inflicts cold damage.</p>',
+    ]);
+    $createNoteRes->assertStatus(201);
+    $noteId = $createNoteRes->json('data.id');
+
+    // 3. Update category name and slug
+    $updateCatRes = $this->actingAs($user)->putJson("/api/categories/{$catId}", [
+        'name' => 'Grand Invocations',
+        'slug' => 'grand-invocations',
+        'color' => 'cyan',
+    ]);
+    $updateCatRes->assertOk()
+        ->assertJsonPath('data.slug', 'grand-invocations');
+
+    // Note should have its category updated automatically to match new slug
+    $checkNoteRes = $this->getJson("/api/notes/{$noteId}");
+    $checkNoteRes->assertOk()
+        ->assertJsonPath('data.category', 'grand-invocations');
+
+    // 4. Delete the category
+    $deleteCatRes = $this->actingAs($user)->deleteJson("/api/categories/{$catId}");
+    $deleteCatRes->assertOk();
+
+    // 5. Verify the category is gone, but note is preserved safely in fallback
+    $this->assertDatabaseMissing('categories', ['id' => $catId]);
+    $preservationNote = Note::find($noteId);
+    expect($preservationNote)->not->toBeNull()
+        ->and($preservationNote->category)->not->toBe('grand-invocations');
+});
+
+test('black-box: user exports scroll in markdown, html, and plain text formats with valid headers', function () {
+    $note = Note::factory()->create([
+        'title' => 'Legendary Expedition Log',
+        'category' => 'quest',
+        'content' => '<h2>Chapter 1: The Mountain Gate</h2><p>The gates swung wide open as dawn broke.</p>',
+        'word_count' => 15,
+        'xp' => 45,
+    ]);
+
+    // 1. Markdown Export
+    $mdRes = $this->get("/api/notes/{$note->id}/export/md");
+    $mdRes->assertOk()
+        ->assertHeader('Content-Type', 'text/markdown; charset=UTF-8')
+        ->assertHeader('Content-Disposition', 'attachment; filename="legendary-expedition-log.md"')
+        ->assertSee('# Legendary Expedition Log')
+        ->assertSee('## Chapter 1: The Mountain Gate');
+
+    // 2. HTML Export
+    $htmlRes = $this->get("/api/notes/{$note->id}/export/html");
+    $htmlRes->assertOk()
+        ->assertHeader('Content-Type', 'text/html; charset=UTF-8')
+        ->assertHeader('Content-Disposition', 'attachment; filename="legendary-expedition-log.html"')
+        ->assertSee('<!DOCTYPE html>', false)
+        ->assertSee('<h1>Legendary Expedition Log</h1>', false);
+
+    // 3. Plain Text Export
+    $txtRes = $this->get("/api/notes/{$note->id}/export/txt");
+    $txtRes->assertOk()
+        ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
+        ->assertHeader('Content-Disposition', 'attachment; filename="legendary-expedition-log.txt"')
+        ->assertSee('TITLE: Legendary Expedition Log')
+        ->assertSee('The gates swung wide open as dawn broke.');
 });

@@ -2,7 +2,9 @@
 
 use App\Models\Note;
 use App\Models\NoteChunk;
+use App\Models\User;
 use App\Services\NoteChunkService;
+use App\Services\NoteContentSanitizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
@@ -308,4 +310,53 @@ test('white-box: backend automatically chunks text and assigns unique chunk_uid 
             ->and($chunk->byte_size)->toBeGreaterThan(0)
             ->and($chunk->checksum)->not->toBeNull();
     }
+});
+
+test('white-box: chunk service reorders chunks using chunk_uid strings', function () {
+    $service = new NoteChunkService;
+    $para = str_repeat('Matrix partition shard data. ', 40);
+    $note = Note::factory()->create([
+        'content' => "<h2>Shard One</h2><p>{$para}</p><h2>Shard Two</h2><p>{$para}</p>",
+    ]);
+    $service->syncChunks($note, $note->content);
+
+    $chunks = $note->chunks()->orderBy('chunk_index', 'asc')->get();
+    expect($chunks->count())->toBeGreaterThan(1);
+
+    // Pass chunk_uid strings instead of integer IDs
+    $reversedUids = $chunks->pluck('chunk_uid')->reverse()->values()->all();
+    $reordered = $service->reorderChunks($note, $reversedUids);
+
+    expect($reordered->first()->chunk_uid)->toBe($reversedUids[0])
+        ->and($reordered->last()->chunk_uid)->toBe($reversedUids[count($reversedUids) - 1]);
+});
+
+test('white-box: content sanitizer eliminates malicious XSS vectors while preserving allowed rich markup', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+
+    $dirtyHtml = '<h2>Title</h2><script>alert("hack")</script><p onclick="steal()">Safe text <img src="https://example.com/art.png" onerror="alert(1)"></p><iframe src="evil.com"></iframe><table class="retro-table"><tr><td>Data</td></tr></table>';
+    $cleanHtml = $sanitizer->sanitize($dirtyHtml);
+
+    expect($cleanHtml)->not->toContain('<script>')
+        ->and($cleanHtml)->not->toContain('alert(')
+        ->and($cleanHtml)->not->toContain('onclick')
+        ->and($cleanHtml)->not->toContain('onerror')
+        ->and($cleanHtml)->not->toContain('<iframe>')
+        ->and($cleanHtml)->toContain('<h2>Title</h2>')
+        ->and($cleanHtml)->toContain('Safe text')
+        ->and($cleanHtml)->toContain('<table class="retro-table">')
+        ->and($cleanHtml)->toContain('https://example.com/art.png');
+});
+
+test('white-box: category controller generates random slug on empty or non-ascii string', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->postJson(route('api.categories.store'), [
+        'name' => '??? !!! ###',
+        'color' => 'blue',
+    ]);
+
+    $response->assertCreated();
+    $slug = $response->json('data.slug');
+    expect($slug)->toStartWith('cat_');
 });
