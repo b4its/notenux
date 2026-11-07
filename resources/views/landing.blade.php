@@ -7,6 +7,10 @@
 
     <title>{{ config('app.name', 'Notenux') }} - Retro Gamified Notes Studio & Memory Shard Matrix</title>
 
+    <!-- App Favicon & Touch Icon -->
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo/icon_dark.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo/icon_dark.png') }}">
+
     <!-- Font Awesome 6 Free CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -37,15 +41,16 @@
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
 
             <!-- Brand Logo -->
-            <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2 group transition-transform active:translate-y-0.5 shrink-0 min-w-0">
-                <i class="fa-solid fa-gamepad text-xl sm:text-3xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform shrink-0"></i>
-                <div class="min-w-0">
-                    <div class="flex items-center gap-1 sm:gap-1.5">
-                        <span class="font-pixel text-xs sm:text-lg text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
-                        <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 sm:px-1.5 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden xs:inline-block">v3.0</span>
-                    </div>
-                    <p class="text-[9px] font-mono text-slate-500 dark:text-slate-400 hidden md:block truncate">Retro Gamified Note Studio</p>
-                </div>
+            <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2.5 group transition-transform active:translate-y-0.5 shrink-0 min-w-0" title="Notenux Studio">
+                <!-- Adaptive Horizontal Logo -->
+                <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.png') }}"
+                     alt="Notenux Studio"
+                     class="h-7 sm:h-9 w-auto object-contain hidden dark:block transition-transform duration-200 group-hover:scale-105">
+                <img src="{{ asset('assets/logo/light/icon_horizontal_light.png') }}"
+                     alt="Notenux Studio"
+                     class="h-7 sm:h-9 w-auto object-contain block dark:hidden transition-transform duration-200 group-hover:scale-105">
+                <span class="sr-only">NOTENUX</span>
+                <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 sm:px-1.5 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden xs:inline-block">v3.0</span>
             </a>
 
             <!-- Navigation Links (Desktop) -->
@@ -140,6 +145,21 @@
             <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-blue-500/10 dark:bg-cyan-500/10 blur-3xl pointer-events-none rounded-full"></div>
 
             <div class="max-w-5xl mx-auto text-center space-y-6 relative z-10">
+
+                <!-- Hero Portrait Logo Emblem -->
+                <div class="flex justify-center mb-1">
+                    <div class="relative group">
+                        <div class="absolute -inset-1.5 bg-gradient-to-r from-blue-600 via-cyan-400 to-indigo-600 rounded-3xl blur-md opacity-35 group-hover:opacity-60 transition duration-500"></div>
+                        <div class="relative p-2 rounded-2xl bg-[var(--bg-surface)] border-2 border-black dark:border-blue-700 shadow-[5px_5px_0px_#000]">
+                            <img src="{{ asset('assets/logo/dark/icon_vertical_dark.png') }}"
+                                 alt="Notenux Studio Portrait Emblem"
+                                 class="w-24 sm:w-28 md:w-32 h-auto object-contain hidden dark:block transition-transform duration-300 group-hover:scale-105">
+                            <img src="{{ asset('assets/logo/light/icon_vertical_light.png') }}"
+                                 alt="Notenux Studio Portrait Emblem"
+                                 class="w-24 sm:w-28 md:w-32 h-auto object-contain block dark:hidden transition-transform duration-300 group-hover:scale-105">
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Badge -->
                 <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border-2 border-black dark:border-cyan-400/50 bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-cyan-300 font-pixel text-[10px] tracking-wider shadow-[3px_3px_0px_#000]">
@@ -581,7 +601,8 @@ Ketuk tombol template di atas atau ketik apa saja di sini!</textarea>
     <footer class="w-full bg-[var(--bg-surface)] border-t-2 border-black dark:border-blue-900 py-6 px-4 sm:px-6 font-mono text-xs">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-2">
-                <i class="fa-solid fa-gamepad text-blue-600 dark:text-cyan-400 text-lg"></i>
+                <img src="{{ asset('assets/logo/dark/icon_dark.png') }}" alt="Notenux Icon" class="w-5 h-5 object-contain hidden dark:inline-block">
+                <img src="{{ asset('assets/logo/light/icon_light.png') }}" alt="Notenux Icon" class="w-5 h-5 object-contain inline-block dark:hidden">
                 <span class="font-pixel text-[11px] text-blue-600 dark:text-cyan-400">NOTENUX STUDIO</span>
                 <span class="text-slate-400">&bull;</span>
                 <span class="text-slate-500 dark:text-slate-400">&copy; {{ date('Y') }} All Rights Reserved</span>

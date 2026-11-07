@@ -7,6 +7,10 @@
 
     <title>{{ config('app.name', 'Notenux') }} - Retro Gamified Notes Studio</title>
 
+    <!-- App Favicon & Touch Icon -->
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo/icon_dark.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo/icon_dark.png') }}">
+
     <!-- Font Awesome 6 Free CDN for all icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -212,15 +216,16 @@
                 </button>
 
                 <!-- Logo & Brand Badge -->
-                <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2 group transition-transform active:translate-y-0.5 shrink-0" title="Kembali ke Landing Page">
-                    <i class="fa-solid fa-gamepad text-lg sm:text-2xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform shrink-0"></i>
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-1 sm:gap-1.5">
-                            <span class="font-pixel text-xs sm:text-sm text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
-                            <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden sm:inline-block">STUDIO v3.0</span>
-                        </div>
-                        <p class="text-[10px] font-mono opacity-60 hidden md:block truncate">Retro Gamified Markdown Studio</p>
-                    </div>
+                <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2.5 group transition-transform active:translate-y-0.5 shrink-0" title="Kembali ke Landing Page">
+                    <!-- Adaptive Horizontal Logo -->
+                    <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.png') }}"
+                         alt="Notenux Studio"
+                         class="h-7 sm:h-8 w-auto object-contain hidden dark:block transition-transform duration-200 group-hover:scale-105">
+                    <img src="{{ asset('assets/logo/light/icon_horizontal_light.png') }}"
+                         alt="Notenux Studio"
+                         class="h-7 sm:h-8 w-auto object-contain block dark:hidden transition-transform duration-200 group-hover:scale-105">
+                    <span class="sr-only">NOTENUX</span>
+                    <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden sm:inline-block">STUDIO v3.0</span>
                 </a>
             </div>
 
@@ -292,9 +297,13 @@
                class="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-64 max-w-[85vw] shrink-0 h-full bg-[var(--bg-surface)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
 
             <div class="p-3 border-b-2 border-black/10 dark:border-white/10 flex items-center justify-between lg:hidden">
-                <span class="font-pixel text-[11px] text-blue-500">
-                    <i class="fa-solid fa-compass mr-1"></i> NAVIGATION
-                </span>
+                <div class="flex items-center gap-2">
+                    <img src="{{ asset('assets/logo/dark/icon_dark.png') }}" alt="Notenux Icon" class="w-5 h-5 object-contain hidden dark:inline-block">
+                    <img src="{{ asset('assets/logo/light/icon_light.png') }}" alt="Notenux Icon" class="w-5 h-5 object-contain inline-block dark:hidden">
+                    <span class="font-pixel text-[11px] text-blue-500">
+                        NAVIGATION
+                    </span>
+                </div>
                 <button id="close-mobile-nav-btn" class="arcade-btn bg-red-600 text-white text-xs px-2 py-1 rounded">
                     <i class="fa-solid fa-xmark mr-1"></i> CLOSE
                 </button>
@@ -1376,9 +1385,9 @@
             <div class="p-4 space-y-3 font-mono text-xs">
                 <input type="hidden" id="quick-delete-cat-id">
                 <p>Are you sure you want to dismantle category <span id="quick-delete-cat-name-badge" class="font-bold text-rose-500"></span>?</p>
-                <div class="p-2.5 bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded text-amber-900 dark:text-amber-200 text-[11px]">
-                    <i class="fa-solid fa-shield-heart text-amber-500 mr-1"></i>
-                    <strong>Safe preservation:</strong> Any scrolls currently assigned to this category will NOT be deleted. They will automatically be preserved in another category (or General Notes).
+                <div class="p-2.5 bg-rose-100 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 rounded text-rose-900 dark:text-rose-200 text-[11px]">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 mr-1"></i>
+                    <strong>Peringatan / Warning:</strong> Semua scroll dan catatan yang terhubung dengan kategori ini akan otomatis ikut terhapus secara permanen.
                 </div>
             </div>
 

@@ -7,6 +7,10 @@
 
     <title>{{ config('app.name', 'Notenux') }} - Personalize Categories Guild</title>
 
+    <!-- App Favicon & Touch Icon -->
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo/icon_dark.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo/icon_dark.png') }}">
+
     <!-- Font Awesome 6 Free CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -42,7 +46,13 @@
                 </a>
 
                 <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                    <i class="fa-solid fa-tags text-base sm:text-xl text-blue-600 dark:text-cyan-400 shrink-0"></i>
+                    <!-- Adaptive Horizontal Logo -->
+                    <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.png') }}"
+                         alt="Notenux Studio"
+                         class="h-6 sm:h-7 w-auto object-contain hidden dark:block transition-transform hover:scale-105">
+                    <img src="{{ asset('assets/logo/light/icon_horizontal_light.png') }}"
+                         alt="Notenux Studio"
+                         class="h-6 sm:h-7 w-auto object-contain block dark:hidden transition-transform hover:scale-105">
                     <div class="min-w-0">
                         <div class="flex items-center gap-1 sm:gap-1.5">
                             <span class="font-pixel text-xs sm:text-sm text-blue-600 dark:text-cyan-400 tracking-wider truncate">CATEGORY GUILD</span>
@@ -450,9 +460,9 @@
 
             <div class="p-4 space-y-3 font-mono text-xs">
                 <p>Are you sure you want to dismantle category <span id="delete-category-name-badge" class="font-bold text-rose-500"></span>?</p>
-                <div class="p-2.5 bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded text-amber-900 dark:text-amber-200 text-[11px]">
-                    <i class="fa-solid fa-shield-heart text-amber-500 mr-1"></i>
-                    <strong>Safe preservation:</strong> Any existing scrolls in this category will NOT be deleted. They will automatically be preserved in <strong>General Notes</strong>.
+                <div class="p-2.5 bg-rose-100 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 rounded text-rose-900 dark:text-rose-200 text-[11px]">
+                    <i class="fa-solid fa-triangle-exclamation text-rose-500 mr-1"></i>
+                    <strong>Peringatan / Warning:</strong> Semua catatan atau scroll yang terhubung dengan kategori ini akan otomatis ikut terhapus secara permanen.
                 </div>
             </div>
 

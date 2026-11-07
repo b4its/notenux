@@ -7,6 +7,10 @@
 
     <title>Daftar Scribe Baru - {{ config('app.name', 'Notenux') }}</title>
 
+    <!-- App Favicon & Touch Icon -->
+    <link rel="icon" type="image/png" href="{{ asset('assets/logo/icon_dark.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo/icon_dark.png') }}">
+
     <!-- Font Awesome 6 Free CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -36,11 +40,15 @@
     <header class="w-full bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-3 sm:px-6 py-2.5 sm:py-3 z-30">
         <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
             <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2 group transition-transform active:translate-y-0.5 shrink-0 min-w-0">
-                <i class="fa-solid fa-gamepad text-xl sm:text-2xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform shrink-0"></i>
-                <div class="flex items-center gap-1 sm:gap-1.5 min-w-0">
-                    <span class="font-pixel text-xs sm:text-base text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
-                    <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1.5 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden xs:inline-block">REGISTER</span>
-                </div>
+                <!-- Adaptive Horizontal Logo -->
+                <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.png') }}"
+                     alt="Notenux Studio"
+                     class="h-7 sm:h-8 w-auto object-contain hidden dark:block transition-transform group-hover:scale-105">
+                <img src="{{ asset('assets/logo/light/icon_horizontal_light.png') }}"
+                     alt="Notenux Studio"
+                     class="h-7 sm:h-8 w-auto object-contain block dark:hidden transition-transform group-hover:scale-105">
+                <span class="sr-only">NOTENUX</span>
+                <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1.5 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden xs:inline-block">REGISTER</span>
             </a>
 
             <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
@@ -79,9 +87,14 @@
             <div class="arcade-card p-6 sm:p-8 rounded-xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[6px_6px_0px_#000] space-y-6">
 
                 <!-- Header Title -->
-                <div class="text-center space-y-1.5">
-                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-emerald-600 text-white border-2 border-black shadow-[2px_2px_0px_#000] mb-1">
-                        <i class="fa-solid fa-scroll text-xl"></i>
+                <div class="text-center space-y-2">
+                    <div class="flex justify-center mb-1">
+                        <img src="{{ asset('assets/logo/dark/icon_vertical_dark.png') }}"
+                             alt="Notenux Scribe"
+                             class="w-16 sm:w-20 h-auto object-contain hidden dark:block mx-auto drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                        <img src="{{ asset('assets/logo/light/icon_vertical_light.png') }}"
+                             alt="Notenux Scribe"
+                             class="w-16 sm:w-20 h-auto object-contain block dark:hidden mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                     </div>
                     <h1 class="font-pixel text-sm sm:text-base text-blue-950 dark:text-cyan-300 tracking-wider">REGISTER SCRIBE</h1>
                     <p class="text-xs font-mono text-slate-600 dark:text-slate-400">Daftarkan identitas untuk mengakses Studio Notenux</p>

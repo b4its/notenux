@@ -53,3 +53,14 @@ test('main cta links directly to studio route', function () {
     $response->assertOk()
         ->assertSee(route('studio'), false);
 });
+
+test('landing page and studio render horizontal, vertical, and icon logos with dark/light orientation', function () {
+    $response = $this->get(route('landing'));
+
+    $response->assertOk()
+        ->assertSee('assets/logo/dark/icon_horizontal_dark.png')
+        ->assertSee('assets/logo/light/icon_horizontal_light.png')
+        ->assertSee('assets/logo/dark/icon_vertical_dark.png')
+        ->assertSee('assets/logo/light/icon_vertical_light.png')
+        ->assertSee('assets/logo/dark/icon_dark.png');
+});

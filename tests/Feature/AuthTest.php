@@ -138,3 +138,15 @@ test('authenticated user can logout and session is cleared', function () {
     $this->assertGuest();
     $response->assertRedirect(route('landing'));
 });
+
+test('auth pages render horizontal and portrait logos with adaptive themes', function () {
+    $responseLogin = $this->get(route('login'));
+    $responseLogin->assertOk()
+        ->assertSee('assets/logo/dark/icon_horizontal_dark.png')
+        ->assertSee('assets/logo/dark/icon_vertical_dark.png');
+
+    $responseRegister = $this->get(route('register'));
+    $responseRegister->assertOk()
+        ->assertSee('assets/logo/dark/icon_horizontal_dark.png')
+        ->assertSee('assets/logo/dark/icon_vertical_dark.png');
+});
