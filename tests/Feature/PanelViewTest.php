@@ -65,3 +65,16 @@ test('it supports responsive mobile dual-sidebar drawers and theme attributes', 
         ->assertSee('mobile-explorer-toggle-btn')
         ->assertSee('sidebar-overlay');
 });
+
+test('it renders symmetrical collapsed sidebar structure with centered avatars, level badges, and category tooltips', function () {
+    $response = $this->get(route('panel'));
+
+    $response->assertOk()
+        ->assertSee('player-profile-section')
+        ->assertSee('player-status-card')
+        ->assertSee('player-avatar-box')
+        ->assertSee('collapsed-level-badge')
+        ->assertSee('primary-nav-links')
+        ->assertSee('collapsed-cat-header')
+        ->assertSee('title="All Scrolls"', false);
+});

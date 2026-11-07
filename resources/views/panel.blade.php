@@ -18,12 +18,135 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
-        /* Primary Nav Sidebar Collapse */
+        /* Primary Nav Sidebar Collapse (Symmetric Icon Rail) */
         #primary-nav-sidebar.collapsed {
-            width: 72px;
+            width: 72px !important;
+            min-width: 72px !important;
+            max-width: 72px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
         }
+
         #primary-nav-sidebar.collapsed .nav-text-label,
         #primary-nav-sidebar.collapsed .nav-hide-on-collapse {
+            display: none !important;
+        }
+
+        /* Symmetric Player Profile Card in Collapsed State */
+        #primary-nav-sidebar.collapsed .player-profile-section {
+            padding: 0.75rem 0.25rem !important;
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+
+        #primary-nav-sidebar.collapsed .player-status-card {
+            padding: 0 !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            width: auto !important;
+            margin: 0 auto !important;
+        }
+
+        #primary-nav-sidebar.collapsed .player-avatar-row {
+            margin-bottom: 0 !important;
+            gap: 0 !important;
+            justify-content: center !important;
+        }
+
+        #primary-nav-sidebar.collapsed .player-avatar-box {
+            width: 44px !important;
+            height: 44px !important;
+            margin: 0 auto !important;
+            border-radius: 10px !important;
+        }
+
+        #primary-nav-sidebar.collapsed .collapsed-level-badge {
+            display: block !important;
+        }
+
+        /* Symmetric Navigation Links in Collapsed State */
+        #primary-nav-sidebar.collapsed .primary-nav-links {
+            padding: 0.75rem 0.25rem !important;
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 0.35rem !important;
+        }
+
+        #primary-nav-sidebar.collapsed .collapsed-cat-header {
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+            margin: 0.25rem 0 !important;
+        }
+
+        #primary-nav-sidebar.collapsed #sidebar-categories-list {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 0.35rem !important;
+        }
+
+        #primary-nav-sidebar.collapsed .nav-category-item {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        #primary-nav-sidebar.collapsed .nav-category-link {
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            max-width: 44px !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 auto !important;
+            gap: 0 !important;
+            border-radius: 10px !important;
+            border-width: 2px !important;
+            transition: all 0.15s ease-in-out !important;
+        }
+
+        #primary-nav-sidebar.collapsed .nav-category-link i {
+            width: auto !important;
+            font-size: 1.1rem !important;
+            text-align: center !important;
+            margin: 0 !important;
+            display: inline-block !important;
+            line-height: 1 !important;
+        }
+
+        #primary-nav-sidebar.collapsed .nav-category-link.bg-blue-600 {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            border-color: #000000 !important;
+            box-shadow: 2px 2px 0px #000000 !important;
+        }
+
+        #primary-nav-sidebar.collapsed .nav-category-link:not(.bg-blue-600) {
+            border-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+        #primary-nav-sidebar.collapsed .nav-category-link:not(.bg-blue-600):hover {
+            border-color: rgba(0, 0, 0, 0.3) !important;
+            background-color: var(--bg-surface-alt) !important;
+            transform: scale(1.05);
+        }
+
+        #primary-nav-sidebar.collapsed .sidebar-edit-category-btn,
+        #primary-nav-sidebar.collapsed .sidebar-delete-category-btn {
             display: none !important;
         }
 
@@ -164,12 +287,16 @@
             </div>
 
             <!-- Player Gamification Status Card -->
-            <div class="p-3 border-b-2 border-black/10 dark:border-white/10">
-                <div class="arcade-card p-2.5 rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/40 shadow-[2px_2px_0px_#000]">
-                    <div class="flex items-center gap-2.5 mb-2">
+            <div class="player-profile-section p-3 border-b-2 border-black/10 dark:border-white/10">
+                <div class="arcade-card player-status-card p-2.5 rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/40 shadow-[2px_2px_0px_#000]">
+                    <div class="player-avatar-row flex items-center gap-2.5 mb-2">
                         <!-- Pixel Wizard Avatar with FA icon -->
-                        <div class="w-9 h-9 rounded border-2 border-black bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#000]">
+                        <div class="player-avatar-box w-9 h-9 rounded border-2 border-black bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#000] relative"
+                             title="{{ $stats['rank_title'] ?? 'Novice Scribe' }} (LV.{{ $stats['level'] ?? 1 }})">
                             <i class="fa-solid fa-hat-wizard text-sm"></i>
+                            <span class="collapsed-level-badge hidden font-pixel text-[8px] bg-amber-400 text-black px-1 rounded border border-black absolute -bottom-1 -right-1 shadow-[1px_1px_0px_#000]">
+                                LV.{{ $stats['level'] ?? 1 }}
+                            </span>
                         </div>
                         <div class="min-w-0 flex-1 nav-text-label">
                             <div class="flex items-center justify-between gap-1">
@@ -197,7 +324,7 @@
             </div>
 
             <!-- Primary Nav Links -->
-            <nav class="flex-1 overflow-y-auto p-3 space-y-1.5 font-mono text-xs">
+            <nav class="primary-nav-links flex-1 overflow-y-auto p-3 space-y-1.5 font-mono text-xs">
                 <div class="flex items-center justify-between mb-1 px-2 nav-text-label">
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Grimoire Categories</span>
                     <a href="{{ route('categories.index') }}"
@@ -207,8 +334,17 @@
                     </a>
                 </div>
 
+                <div class="collapsed-cat-header hidden my-1 justify-center">
+                    <a href="{{ route('categories.index') }}"
+                       class="arcade-btn w-9 h-9 rounded-lg bg-surface hover:bg-cyan-200 dark:hover:bg-blue-900 border border-black/30 dark:border-blue-700 flex items-center justify-center text-cyan-600 dark:text-cyan-400 text-xs shadow-[1px_1px_0px_#000]"
+                       title="Personalize & Forge Categories">
+                        <i class="fa-solid fa-folder-plus text-xs"></i>
+                    </a>
+                </div>
+
                 <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors bg-blue-600 text-white"
-                   data-category="all">
+                   data-category="all"
+                   title="All Scrolls">
                     <i class="fa-solid fa-book-journal-whills text-sm w-4 text-center"></i>
                     <span class="nav-text-label font-bold">All Scrolls</span>
                 </a>
@@ -219,7 +355,8 @@
                             <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
                                  data-category="{{ $category->slug }}">
                                 <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
-                                   data-category="{{ $category->slug }}">
+                                   data-category="{{ $category->slug }}"
+                                   title="{{ $category->name }}">
                                     <i class="{{ $category->icon }} text-sm w-4 text-center shrink-0"></i>
                                     <span class="nav-text-label font-bold truncate">{{ $category->name }}</span>
                                 </a>
@@ -243,7 +380,8 @@
                         <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
                              data-category="quest">
                             <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
-                               data-category="quest">
+                               data-category="quest"
+                               title="Quests">
                                 <i class="fa-solid fa-khanda text-amber-500 text-sm w-4 text-center shrink-0"></i>
                                 <span class="nav-text-label font-bold">Quests</span>
                             </a>
@@ -251,7 +389,8 @@
                         <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
                              data-category="spellbook">
                             <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
-                               data-category="spellbook">
+                               data-category="spellbook"
+                               title="Spellbooks">
                                 <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-sm w-4 text-center shrink-0"></i>
                                 <span class="nav-text-label font-bold">Spellbooks</span>
                             </a>
@@ -259,7 +398,8 @@
                         <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
                              data-category="strategy">
                             <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
-                               data-category="strategy">
+                               data-category="strategy"
+                               title="Boss Raids">
                                 <i class="fa-solid fa-shield-halved text-rose-500 text-sm w-4 text-center shrink-0"></i>
                                 <span class="nav-text-label font-bold">Boss Raids</span>
                             </a>
@@ -267,7 +407,8 @@
                         <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
                              data-category="lore">
                             <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
-                               data-category="lore">
+                               data-category="lore"
+                               title="Ancient Lore">
                                 <i class="fa-solid fa-scroll text-cyan-400 text-sm w-4 text-center shrink-0"></i>
                                 <span class="nav-text-label font-bold">Ancient Lore</span>
                             </a>

@@ -3105,7 +3105,8 @@ class NotenuxPanel {
                 <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
                      data-category="${cat.slug}">
                     <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate ${this.activeCategory === cat.slug ? 'bg-blue-600 text-white font-bold' : ''}"
-                       data-category="${cat.slug}">
+                       data-category="${cat.slug}"
+                       title="${this.escapeHtml(cat.name)}">
                         <i class="${cat.icon || 'fa-solid fa-folder'} text-sm w-4 text-center shrink-0"></i>
                         <span class="nav-text-label font-bold truncate">${this.escapeHtml(cat.name)}</span>
                     </a>
@@ -3423,6 +3424,8 @@ class NotenuxPanel {
             if (response.ok && data.status === 'success') {
                 const s = data.data;
                 if (this.dom.playerLevelBadge) this.dom.playerLevelBadge.textContent = `LV.${s.level}`;
+                const collapsedBadge = document.querySelector('.collapsed-level-badge');
+                if (collapsedBadge) collapsedBadge.textContent = `LV.${s.level}`;
                 if (this.dom.playerRankTitle) {
                     this.dom.playerRankTitle.innerHTML = `<i class="fa-solid ${s.rank_badge} text-yellow-400 mr-1.5"></i> ${s.rank_title}`;
                 }
