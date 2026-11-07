@@ -106,32 +106,39 @@ class CategoryController extends Controller
     {
         $user = $this->resolveUser($request);
 
-        if ($category->is_system) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Ancient system categories cannot be modified.',
-                ], 403);
-            }
-
-            return redirect()->route('categories.index')
-                ->with('status', 'error')
-                ->with('message', 'Ancient system categories cannot be modified.');
-        }
-
-        if ($category->user_id !== $user->id) {
+        if ($category->user_id !== null && $category->user_id !== $user->id) {
             abort(403, 'Unauthorized access to category.');
         }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:64'],
+            'slug' => ['nullable', 'string', 'max:64', 'regex:/^[a-zA-Z0-9_-]+$/'],
             'icon' => ['nullable', 'string', 'max:64'],
             'color' => ['nullable', 'string', 'max:32'],
             'description' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $oldSlug = $category->slug;
+        $newSlug = ! empty($validated['slug'])
+            ? Str::slug($validated['slug'])
+            : $category->slug;
+
+        if ($newSlug !== $oldSlug) {
+            $conflict = Category::where('slug', $newSlug)
+                ->where('id', '!=', $category->id)
+                ->exists();
+
+            if ($conflict) {
+                $newSlug = $newSlug.'-'.strtolower(Str::random(4));
+            }
+
+            // Safely cascade slug change to all existing notes
+            Note::where('category', $oldSlug)->update(['category' => $newSlug]);
+        }
+
         $category->update([
             'name' => trim($validated['name']),
+            'slug' => $newSlug,
             'icon' => $validated['icon'] ?? $category->icon,
             'color' => $validated['color'] ?? $category->color,
             'description' => $validated['description'] ?? $category->description,
@@ -157,41 +164,44 @@ class CategoryController extends Controller
     {
         $user = $this->resolveUser($request);
 
-        if ($category->is_system) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Cannot dismantle core system categories.',
-                ], 403);
-            }
-
-            return redirect()->route('categories.index')
-                ->with('status', 'error')
-                ->with('message', 'Cannot dismantle core system categories.');
-        }
-
-        if ($category->user_id !== $user->id) {
+        if ($category->user_id !== null && $category->user_id !== $user->id) {
             abort(403, 'Unauthorized access to category.');
         }
 
         $name = $category->name;
         $slug = $category->slug;
 
-        // Safely migrate existing scrolls in this category to 'general'
-        Note::where('category', $slug)->update(['category' => 'general']);
+        // Determine safe fallback category for existing notes
+        // Prefer 'general' if it's not the category being deleted, or another available category
+        $fallback = Category::where('id', '!=', $category->id)
+            ->where('slug', '!=', $slug)
+            ->orderByRaw("slug = 'general' DESC")
+            ->first();
+
+        $fallbackSlug = $fallback?->slug ?? 'general';
+        $fallbackName = $fallback?->name ?? 'General Notes';
+
+        // Safely migrate existing scrolls in this category to fallback
+        Note::where('category', $slug)->update(['category' => $fallbackSlug]);
 
         $category->delete();
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'status' => 'success',
-                'message' => "Category '{$name}' banished. All associated scrolls were preserved in General Notes.",
+                'message' => "Category '{$name}' banished. All associated scrolls were preserved in {$fallbackName}.",
+                'data' => [
+                    'deleted_id' => $category->id,
+                    'deleted_slug' => $slug,
+                    'fallback_slug' => $fallbackSlug,
+                    'fallback_name' => $fallbackName,
+                ],
             ]);
         }
 
         return redirect()->route('categories.index')
             ->with('status', 'success')
-            ->with('message', "Category '{$name}' banished. Associated scrolls were preserved in General Notes.");
+            ->with('message', "Category '{$name}' banished. Associated scrolls were preserved in {$fallbackName}.");
     }
 
     /**

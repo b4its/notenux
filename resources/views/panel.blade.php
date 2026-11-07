@@ -50,7 +50,7 @@
         }
     </style>
 </head>
-<body class="retro-crt-screen bg-[var(--bg-main)] text-[var(--text-main)] min-h-screen font-sans flex flex-col antialiased selection:bg-blue-600 selection:text-white overflow-hidden">
+<body class="retro-crt-screen bg-[var(--bg-main)] text-[var(--text-main)] h-screen h-dvh font-sans flex flex-col antialiased selection:bg-blue-600 selection:text-white overflow-hidden">
 
     <!-- Top-Right Retro Notification Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
@@ -142,7 +142,7 @@
     </header>
 
     <!-- Main Multi-Sidebar Workspace Container -->
-    <div class="flex-1 flex overflow-hidden relative">
+    <div class="flex-1 flex overflow-hidden relative min-h-0">
 
         <!-- Mobile Backdrop Overlay -->
         <div id="sidebar-overlay"
@@ -152,7 +152,7 @@
         <!-- SIDEBAR 1: PRIMARY NAVIGATION & PLAYER PROFILE SIDEBAR -->
         <!-- ============================================================================== -->
         <aside id="primary-nav-sidebar"
-               class="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-64 shrink-0 bg-[var(--bg-surface)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0">
+               class="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-64 shrink-0 h-full bg-[var(--bg-surface)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
 
             <div class="p-3 border-b-2 border-black/10 dark:border-white/10 flex items-center justify-between lg:hidden">
                 <span class="font-pixel text-[11px] text-blue-500">
@@ -213,39 +213,67 @@
                     <span class="nav-text-label font-bold">All Scrolls</span>
                 </a>
 
-                @if(isset($categories) && $categories->isNotEmpty())
-                    @foreach($categories as $category)
-                        <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                           data-category="{{ $category->slug }}">
-                            <i class="{{ $category->icon }} text-sm w-4 text-center"></i>
-                            <span class="nav-text-label font-bold truncate">{{ $category->name }}</span>
-                        </a>
-                    @endforeach
-                @else
-                    <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                       data-category="quest">
-                        <i class="fa-solid fa-khanda text-amber-500 text-sm w-4 text-center"></i>
-                        <span class="nav-text-label font-bold">Quests</span>
-                    </a>
-
-                    <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                       data-category="spellbook">
-                        <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-sm w-4 text-center"></i>
-                        <span class="nav-text-label font-bold">Spellbooks</span>
-                    </a>
-
-                    <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                       data-category="strategy">
-                        <i class="fa-solid fa-shield-halved text-rose-500 text-sm w-4 text-center"></i>
-                        <span class="nav-text-label font-bold">Boss Raids</span>
-                    </a>
-
-                    <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                       data-category="lore">
-                        <i class="fa-solid fa-scroll text-cyan-400 text-sm w-4 text-center"></i>
-                        <span class="nav-text-label font-bold">Ancient Lore</span>
-                    </a>
-                @endif
+                <div id="sidebar-categories-list" class="space-y-1">
+                    @if(isset($categories) && $categories->isNotEmpty())
+                        @foreach($categories as $category)
+                            <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
+                                 data-category="{{ $category->slug }}">
+                                <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
+                                   data-category="{{ $category->slug }}">
+                                    <i class="{{ $category->icon }} text-sm w-4 text-center shrink-0"></i>
+                                    <span class="nav-text-label font-bold truncate">{{ $category->name }}</span>
+                                </a>
+                                <div class="hidden group-hover:flex items-center gap-1 shrink-0">
+                                    <button type="button"
+                                            class="sidebar-edit-category-btn text-[10px] text-cyan-600 dark:text-cyan-400 hover:scale-110 transition-transform p-1"
+                                            data-slug="{{ $category->slug }}"
+                                            title="Edit Category">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="sidebar-delete-category-btn text-[10px] text-rose-500 hover:scale-110 transition-transform p-1"
+                                            data-slug="{{ $category->slug }}"
+                                            title="Delete Category">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
+                             data-category="quest">
+                            <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
+                               data-category="quest">
+                                <i class="fa-solid fa-khanda text-amber-500 text-sm w-4 text-center shrink-0"></i>
+                                <span class="nav-text-label font-bold">Quests</span>
+                            </a>
+                        </div>
+                        <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
+                             data-category="spellbook">
+                            <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
+                               data-category="spellbook">
+                                <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-sm w-4 text-center shrink-0"></i>
+                                <span class="nav-text-label font-bold">Spellbooks</span>
+                            </a>
+                        </div>
+                        <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
+                             data-category="strategy">
+                            <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
+                               data-category="strategy">
+                                <i class="fa-solid fa-shield-halved text-rose-500 text-sm w-4 text-center shrink-0"></i>
+                                <span class="nav-text-label font-bold">Boss Raids</span>
+                            </a>
+                        </div>
+                        <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
+                             data-category="lore">
+                            <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
+                               data-category="lore">
+                                <i class="fa-solid fa-scroll text-cyan-400 text-sm w-4 text-center shrink-0"></i>
+                                <span class="nav-text-label font-bold">Ancient Lore</span>
+                            </a>
+                        </div>
+                    @endif
+                </div>
             </nav>
 
             <!-- Bottom Primary Nav Meta -->
@@ -259,7 +287,7 @@
         <!-- SIDEBAR 2: SCROLL / NOTES EXPLORER SIDEBAR (Dedicated Inner Sidebar) -->
         <!-- ============================================================================== -->
         <aside id="notes-explorer-sidebar"
-               class="fixed inset-y-0 left-0 lg:left-auto z-40 lg:static lg:z-auto w-80 shrink-0 bg-[var(--bg-surface-alt)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0">
+               class="fixed inset-y-0 left-0 lg:left-auto z-40 lg:static lg:z-auto w-80 shrink-0 h-full bg-[var(--bg-surface-alt)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
 
             <div class="p-3.5 flex-1 flex flex-col overflow-hidden">
                 <!-- Explorer Header -->
@@ -363,13 +391,13 @@
                 <div class="arcade-card p-3 sm:p-4 rounded-xl flex flex-col gap-2.5 shadow-[4px_4px_0px_#000]">
                     <!-- Tier 1: Category Badge & Core Action Command Deck -->
                     <div class="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-black/10 dark:border-white/10">
-                        <!-- Category Selector -->
+                        <!-- Category Selector & Quick Actions -->
                         <div class="flex items-center gap-1.5 bg-surface-alt px-2.5 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
                             <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs"></i>
                             <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer">
                                 @if(isset($categories) && $categories->isNotEmpty())
                                     @foreach($categories as $category)
-                                        <option value="{{ $category->slug }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
+                                        <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
                                     @endforeach
                                 @else
                                     <option value="quest">[QUEST] Quest Log</option>
@@ -380,6 +408,28 @@
                                     <option value="general">[GENERAL] General Note</option>
                                 @endif
                             </select>
+
+                            <!-- Quick Category Controls: Edit, Delete, Forge -->
+                            <div class="flex items-center gap-1 pl-1.5 border-l border-black/20 dark:border-blue-800">
+                                <button type="button"
+                                        id="quick-edit-category-btn"
+                                        class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-blue-900 text-cyan-600 dark:text-cyan-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
+                                        title="Edit Selected Category">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button type="button"
+                                        id="quick-delete-category-btn"
+                                        class="arcade-btn bg-surface hover:bg-rose-200 dark:hover:bg-rose-950 text-rose-500 dark:text-rose-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
+                                        title="Delete Selected Category">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                                <button type="button"
+                                        id="quick-forge-category-btn"
+                                        class="arcade-btn bg-surface hover:bg-emerald-200 dark:hover:bg-emerald-950 text-emerald-600 dark:text-emerald-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
+                                        title="Forge New Category">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Action Buttons -->
@@ -708,7 +758,7 @@
                 </div>
 
                 <!-- Find & Replace Bar -->
-                <div id="find-replace-bar" class="hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono">
+                <div id="find-replace-bar" class="shrink-0 hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono">
                     <div class="flex items-center gap-2 flex-wrap">
                         <div class="flex items-center gap-1 bg-surface px-2 py-1 rounded border border-black/30">
                             <i class="fa-solid fa-magnifying-glass text-cyan-400"></i>
@@ -730,13 +780,13 @@
                 </div>
 
                 <!-- Zoomable Editable Content Area (The Core Canvas) -->
-                <div class="arcade-card flex-1 p-4 sm:p-6 rounded-xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000]">
-                    <div id="editor-zoom-wrapper" class="zoom-canvas-container">
+                <div class="arcade-card flex-1 min-h-0 p-4 sm:p-6 rounded-xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000] bg-[var(--bg-surface)]">
+                    <div id="editor-zoom-wrapper" class="zoom-canvas-container min-h-full flex flex-col">
                         <!-- Rich Editable Canvas -->
                         <div id="editor-content"
                              contenteditable="true"
                              spellcheck="false"
-                             class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none"
+                             class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none min-h-[350px] flex-1"
                              style="font-family: 'Press Start 2P', monospace; font-size: 16px;">
                             {!! $activeNote->content ?? '<h2>Mission Briefing: Act I</h2><p>Begin scribing your thoughts...</p>' !!}
                         </div>
@@ -1020,6 +1070,158 @@
                     <span>YES, BANISH SCROLL</span>
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- QUICK EDIT CATEGORY MODAL -->
+    <!-- ============================================================================== -->
+    <div id="quick-edit-category-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-md bg-[var(--bg-surface)] rounded-xl border-4 border-cyan-500 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden">
+            <div class="p-3.5 bg-blue-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-lg text-cyan-300"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">EDIT CATEGORY</h3>
+                </div>
+                <button type="button" id="close-quick-edit-cat-btn" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="quick-edit-category-form" class="p-4 space-y-3 font-mono text-xs">
+                <input type="hidden" id="quick-edit-cat-id">
+                <div>
+                    <label class="block font-bold mb-1">Category Name <span class="text-rose-500">*</span></label>
+                    <input type="text" id="quick-edit-cat-name" required class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Slug / Identifier</label>
+                    <input type="text" id="quick-edit-cat-slug" placeholder="Auto-maintained if unchanged" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">Color Palette</label>
+                        <select id="quick-edit-cat-color" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
+                            <option value="cyan">Neon Cyan</option>
+                            <option value="blue">Arcade Blue</option>
+                            <option value="emerald">Emerald Glow</option>
+                            <option value="amber">Pixel Gold</option>
+                            <option value="rose">Crimson Red</option>
+                            <option value="purple">Arcane Purple</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Icon (Font Awesome)</label>
+                        <input type="text" id="quick-edit-cat-icon" placeholder="fa-solid fa-..." class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Description (Optional)</label>
+                    <textarea id="quick-edit-cat-desc" rows="2" placeholder="Brief category description..." class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none resize-y"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2 border-t border-black/10">
+                    <button type="button" id="cancel-quick-edit-cat-btn" class="arcade-btn bg-surface px-3 py-1.5 rounded text-xs">Cancel</button>
+                    <button type="submit" class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-1.5 rounded text-xs font-bold">
+                        <i class="fa-solid fa-check mr-1"></i> SAVE CHANGES
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- QUICK DELETE CATEGORY CONFIRMATION MODAL -->
+    <!-- ============================================================================== -->
+    <div id="quick-delete-category-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-md bg-[var(--bg-surface)] rounded-xl border-4 border-rose-600 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden">
+            <div class="p-3.5 bg-rose-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-lg text-yellow-300"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">BANISH CATEGORY</h3>
+                </div>
+                <button type="button" id="close-quick-delete-cat-btn" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-4 space-y-3 font-mono text-xs">
+                <input type="hidden" id="quick-delete-cat-id">
+                <p>Are you sure you want to dismantle category <span id="quick-delete-cat-name-badge" class="font-bold text-rose-500"></span>?</p>
+                <div class="p-2.5 bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded text-amber-900 dark:text-amber-200 text-[11px]">
+                    <i class="fa-solid fa-shield-heart text-amber-500 mr-1"></i>
+                    <strong>Safe preservation:</strong> Any scrolls currently assigned to this category will NOT be deleted. They will automatically be preserved in another category (or General Notes).
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-black/10 bg-surface-alt flex justify-end gap-2 font-mono text-xs">
+                <button type="button" id="cancel-quick-delete-cat-btn" class="arcade-btn bg-surface px-3 py-1.5 rounded">Cancel</button>
+                <button type="button" id="confirm-quick-delete-cat-btn" class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-4 py-1.5 rounded font-bold">
+                    <i class="fa-solid fa-trash mr-1"></i> YES, BANISH CATEGORY
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- QUICK FORGE CATEGORY MODAL -->
+    <!-- ============================================================================== -->
+    <div id="quick-forge-category-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-md bg-[var(--bg-surface)] rounded-xl border-4 border-emerald-500 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden">
+            <div class="p-3.5 bg-emerald-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-wand-sparkles text-lg text-emerald-200"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">FORGE NEW CATEGORY</h3>
+                </div>
+                <button type="button" id="close-quick-forge-cat-btn" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="quick-forge-category-form" class="p-4 space-y-3 font-mono text-xs">
+                <div>
+                    <label class="block font-bold mb-1">Category Name <span class="text-rose-500">*</span></label>
+                    <input type="text" id="quick-forge-cat-name" required placeholder="e.g. Alchemy, Boss Tactics" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none focus:border-emerald-400">
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Slug / Identifier (Optional)</label>
+                    <input type="text" id="quick-forge-cat-slug" placeholder="Auto-generated if empty" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none focus:border-emerald-400">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">Color Palette</label>
+                        <select id="quick-forge-cat-color" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
+                            <option value="cyan">Neon Cyan</option>
+                            <option value="blue">Arcade Blue</option>
+                            <option value="emerald" selected>Emerald Glow</option>
+                            <option value="amber">Pixel Gold</option>
+                            <option value="rose">Crimson Red</option>
+                            <option value="purple">Arcane Purple</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Icon (Font Awesome)</label>
+                        <input type="text" id="quick-forge-cat-icon" value="fa-solid fa-folder" placeholder="fa-solid fa-folder" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Description (Optional)</label>
+                    <textarea id="quick-forge-cat-desc" rows="2" placeholder="Brief description of this category..." class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none resize-y"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2 border-t border-black/10">
+                    <button type="button" id="cancel-quick-forge-cat-btn" class="arcade-btn bg-surface px-3 py-1.5 rounded text-xs">Cancel</button>
+                    <button type="submit" class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded text-xs font-bold">
+                        <i class="fa-solid fa-hammer mr-1"></i> FORGE CATEGORY
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

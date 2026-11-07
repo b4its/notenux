@@ -328,27 +328,23 @@
                                         <i class="fa-solid fa-scroll text-[10px] mr-1"></i> {{ $cat->notes_count ?? 0 }} scrolls
                                     </span>
 
-                                    @if (!$cat->is_system)
-                                        <div class="flex items-center gap-1.5">
-                                            <!-- Edit Trigger -->
-                                            <button type="button"
-                                                    onclick="openEditCategoryModal({{ json_encode($cat) }})"
-                                                    class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/60 px-2 py-0.5 rounded text-[10px] font-bold"
-                                                    title="Edit Category">
-                                                <i class="fa-solid fa-pen-to-square"></i>
-                                            </button>
+                                    <div class="flex items-center gap-1.5">
+                                        <!-- Edit Trigger -->
+                                        <button type="button"
+                                                onclick="openEditCategoryModal({{ json_encode($cat) }})"
+                                                class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/60 px-2 py-0.5 rounded text-[10px] font-bold"
+                                                title="Edit Category">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
 
-                                            <!-- Delete Trigger -->
-                                            <button type="button"
-                                                    onclick="openDeleteCategoryModal({{ json_encode($cat) }})"
-                                                    class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-2 py-0.5 rounded text-[10px] font-bold"
-                                                    title="Delete Category">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    @else
-                                        <span class="text-[10px] opacity-60 italic">Core category</span>
-                                    @endif
+                                        <!-- Delete Trigger -->
+                                        <button type="button"
+                                                onclick="openDeleteCategoryModal({{ json_encode($cat) }})"
+                                                class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-2 py-0.5 rounded text-[10px] font-bold"
+                                                title="Delete Category">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
@@ -380,6 +376,11 @@
                 <div>
                     <label class="block font-bold mb-1">Category Name</label>
                     <input type="text" id="edit-name-input" name="name" required class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Slug / Identifier</label>
+                    <input type="text" id="edit-slug-input" name="slug" placeholder="Auto-maintained if unchanged" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
                 </div>
 
                 <div>
@@ -510,6 +511,8 @@
 
             form.action = `/categories/${category.id}`;
             document.getElementById('edit-name-input').value = category.name || '';
+            const slugInput = document.getElementById('edit-slug-input');
+            if (slugInput) slugInput.value = category.slug || '';
             document.getElementById('edit-color-select').value = category.color || 'cyan';
             document.getElementById('edit-icon-input').value = category.icon || 'fa-solid fa-folder';
             document.getElementById('edit-description-input').value = category.description || '';

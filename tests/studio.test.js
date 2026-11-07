@@ -120,3 +120,83 @@ test('white-box: stale save metadata does not undo pin or favorite toggles', asy
     assert.equal(panel.activeNote.is_pinned, true);
     assert.equal(panel.activeNote.is_favorite, true);
 });
+
+test('white-box: RetroSearchableSelect wraps native select, provides search filtering and dispatches change', () => {
+    let changeFired = false;
+    const listeners = new Map();
+    const mockSelect = {
+        className: 'w-full',
+        dataset: {},
+        value: 'opt1',
+        options: [
+            { value: 'opt1', textContent: 'Quest Log' },
+            { value: 'opt2', textContent: 'Ancient Lore' },
+            { value: 'opt3', textContent: 'Boss Tactics' },
+        ],
+        querySelector(selector) {
+            const val = selector.match(/value="([^"]+)"/)?.[1];
+            return this.options.find(o => o.value === val);
+        },
+        classList: { add() {}, remove() {}, contains: () => false },
+        parentNode: {
+            insertBefore(newNode) { this.inserted = newNode; }
+        },
+        addEventListener(event, fn) {
+            listeners.set(event, fn);
+        },
+        dispatchEvent(event) {
+            if (event.type === 'change') changeFired = true;
+            listeners.get(event.type)?.(event);
+        }
+    };
+
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: (tag) => {
+                const el = {
+                    tagName: tag,
+                    className: '',
+                    innerHTML: '',
+                    children: [],
+                    dataset: {},
+                    classList: {
+                        add(c) { this.classes = this.classes || new Set(); this.classes.add(c); },
+                        remove(c) { this.classes = this.classes || new Set(); this.classes.delete(c); },
+                        contains(c) { return Boolean(this.classes?.has(c)); },
+                        toggle(c, state) { if (state) this.add(c); else this.remove(c); }
+                    },
+                    appendChild(child) { this.children.push(child); return child; },
+                    querySelector(sel) {
+                        if (sel === '.retro-select-label') return { textContent: '' };
+                        if (sel === '.fa-chevron-down') return { classList: this.classList };
+                        if (sel === '.retro-select-search-input') return { value: '', focus() {}, addEventListener() {} };
+                        if (sel === '.retro-select-options-list') return { innerHTML: '', appendChild() {} };
+                        if (sel === '.retro-select-no-results') return { classList: this.classList };
+                        return null;
+                    },
+                    addEventListener() {},
+                    focus() {}
+                };
+                return el;
+            },
+            querySelectorAll: () => [],
+            addEventListener: () => {}
+        },
+        MutationObserver: class { observe() {} disconnect() {} },
+        HTMLSelectElement: class {},
+        Event: class { constructor(type) { this.type = type; } },
+        setTimeout: (fn) => fn(),
+        clearTimeout: () => {}
+    });
+
+    vm.runInContext(source + '\nglobalThis.RetroSearchableSelect = RetroSearchableSelect;', context);
+    const SelectClass = context.RetroSearchableSelect;
+    assert.equal(typeof SelectClass, 'function');
+
+    const instance = new SelectClass(mockSelect);
+    assert.equal(mockSelect.dataset.retroSelectInit, 'true');
+    instance.selectValue('opt2');
+    assert.equal(mockSelect.value, 'opt2');
+    assert.equal(changeFired, true);
+});

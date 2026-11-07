@@ -379,6 +379,250 @@ class MarkdownEngine {
     }
 }
 
+class RetroSearchableSelect {
+    /**
+     * @param {HTMLSelectElement} select
+     */
+    constructor(select) {
+        if (!select || select.dataset.retroSelectInit) return;
+        this.select = select;
+        this.select.dataset.retroSelectInit = 'true';
+        this.isOpen = false;
+        this.highlightIndex = -1;
+        this.filteredOptions = [];
+
+        this.init();
+    }
+
+    init() {
+        this.select.classList.add('retro-native-select-hidden');
+
+        this.container = document.createElement('div');
+        this.container.className = 'retro-select-container relative inline-block';
+        if (this.select.className.includes('w-full')) {
+            this.container.classList.add('w-full');
+        }
+
+        this.select.parentNode.insertBefore(this.container, this.select);
+        this.container.appendChild(this.select);
+
+        this.trigger = document.createElement('button');
+        this.trigger.type = 'button';
+        this.trigger.className = 'retro-select-trigger arcade-btn';
+        if (this.select.className.includes('w-full')) {
+            this.trigger.classList.add('w-full');
+        }
+        this.trigger.innerHTML = `
+            <span class="retro-select-label truncate"></span>
+            <i class="fa-solid fa-chevron-down text-[9px] opacity-70 ml-1.5 transition-transform duration-150"></i>
+        `;
+        this.labelEl = this.trigger.querySelector('.retro-select-label');
+        this.chevronEl = this.trigger.querySelector('.fa-chevron-down');
+        this.container.appendChild(this.trigger);
+
+        this.dropdown = document.createElement('div');
+        this.dropdown.className = 'retro-select-dropdown hidden absolute z-50';
+        this.dropdown.innerHTML = `
+            <div class="retro-select-search-box">
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-magnifying-glass absolute left-2 text-[10px] text-slate-400"></i>
+                    <input type="text"
+                           placeholder="Search..."
+                           autocomplete="off"
+                           class="retro-select-search-input" />
+                </div>
+            </div>
+            <div class="retro-select-options-list"></div>
+            <div class="retro-select-no-results hidden">No matches found</div>
+        `;
+        this.searchInput = this.dropdown.querySelector('.retro-select-search-input');
+        this.optionsList = this.dropdown.querySelector('.retro-select-options-list');
+        this.noResultsEl = this.dropdown.querySelector('.retro-select-no-results');
+        this.container.appendChild(this.dropdown);
+
+        this.refreshOptions();
+        this.bindEvents();
+
+        this.observer = new MutationObserver(() => this.refreshOptions());
+        this.observer.observe(this.select, { childList: true, subtree: true });
+
+        const instance = this;
+        const originalDescriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+        if (originalDescriptor) {
+            Object.defineProperty(this.select, 'value', {
+                get() {
+                    return originalDescriptor.get.call(this);
+                },
+                set(val) {
+                    originalDescriptor.set.call(this, val);
+                    instance.syncFromNative();
+                },
+                configurable: true
+            });
+        }
+    }
+
+    refreshOptions() {
+        this.syncFromNative();
+        this.renderOptions(this.searchInput?.value || '');
+    }
+
+    renderOptions(filterText = '') {
+        const query = filterText.trim().toLowerCase();
+        this.optionsList.innerHTML = '';
+        this.filteredOptions = [];
+
+        Array.from(this.select.options).forEach((opt) => {
+            const text = opt.textContent;
+            const matches = !query || text.toLowerCase().includes(query);
+            if (!matches) return;
+
+            const isSelected = opt.value === this.select.value;
+            const item = document.createElement('div');
+            item.className = `retro-select-option-item ${isSelected ? 'selected' : ''}`;
+            item.dataset.value = opt.value;
+            item.innerHTML = `
+                <span class="truncate">${this.escapeHtml(text)}</span>
+                ${isSelected ? '<i class="fa-solid fa-check text-[10px] text-cyan-500"></i>' : ''}
+            `;
+
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selectValue(opt.value);
+            });
+
+            this.optionsList.appendChild(item);
+            this.filteredOptions.push({ element: item, value: opt.value, text });
+        });
+
+        if (this.filteredOptions.length === 0) {
+            this.noResultsEl.classList.remove('hidden');
+        } else {
+            this.noResultsEl.classList.add('hidden');
+        }
+
+        this.highlightIndex = -1;
+    }
+
+    selectValue(value) {
+        if (this.select.value !== value) {
+            this.select.value = value;
+            this.select.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        this.syncFromNative();
+        this.close();
+        this.trigger?.focus?.();
+    }
+
+    syncFromNative() {
+        const selectedOption = this.select.querySelector(`option[value="${this.select.value}"]`) || this.select.options[this.select.selectedIndex];
+        if (this.labelEl && selectedOption) {
+            this.labelEl.textContent = selectedOption.textContent;
+        }
+        if (this.isOpen) {
+            this.renderOptions(this.searchInput?.value || '');
+        }
+    }
+
+    open() {
+        document.querySelectorAll('.retro-select-dropdown:not(.hidden)').forEach(d => {
+            if (d !== this.dropdown) d.classList.add('hidden');
+        });
+
+        this.isOpen = true;
+        this.dropdown.classList.remove('hidden');
+        this.chevronEl.classList.add('rotate-180');
+        this.searchInput.value = '';
+        this.renderOptions('');
+        setTimeout(() => this.searchInput.focus(), 50);
+    }
+
+    close() {
+        this.isOpen = false;
+        this.dropdown.classList.add('hidden');
+        this.chevronEl.classList.remove('rotate-180');
+        this.highlightIndex = -1;
+    }
+
+    toggle() {
+        if (this.isOpen) this.close();
+        else this.open();
+    }
+
+    bindEvents() {
+        this.trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggle();
+        });
+
+        this.searchInput.addEventListener('input', () => {
+            this.renderOptions(this.searchInput.value);
+        });
+
+        this.searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.moveHighlight(1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.moveHighlight(-1);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (this.highlightIndex >= 0 && this.filteredOptions[this.highlightIndex]) {
+                    this.selectValue(this.filteredOptions[this.highlightIndex].value);
+                } else if (this.filteredOptions.length > 0) {
+                    this.selectValue(this.filteredOptions[0].value);
+                }
+            } else if (e.key === 'Escape') {
+                this.close();
+                this.trigger?.focus?.();
+            }
+        });
+
+        this.select.addEventListener('change', () => {
+            this.syncFromNative();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.close();
+            }
+        });
+    }
+
+    moveHighlight(direction) {
+        if (this.filteredOptions.length === 0) return;
+        this.highlightIndex += direction;
+        if (this.highlightIndex < 0) this.highlightIndex = 0;
+        if (this.highlightIndex >= this.filteredOptions.length) this.highlightIndex = this.filteredOptions.length - 1;
+
+        this.filteredOptions.forEach((opt, idx) => {
+            opt.element.classList.toggle('highlighted', idx === this.highlightIndex);
+            if (idx === this.highlightIndex) {
+                opt.element.scrollIntoView({ block: 'nearest' });
+            }
+        });
+    }
+
+    escapeHtml(str) {
+        return (str || '').replace(/[&<>"']/g, m => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[m]));
+    }
+
+    static initAll(root = document) {
+        root.querySelectorAll('select').forEach(select => {
+            if (!select.dataset.retroSelectInit && !select.classList.contains('no-retro-select')) {
+                new RetroSearchableSelect(select);
+            }
+        });
+    }
+}
+
 class NotenuxPanel {
     constructor() {
         this.audio = new RetroAudio();
@@ -425,6 +669,16 @@ class NotenuxPanel {
 
             noteTitleInput: document.getElementById('note-title-input'),
             noteCategorySelect: document.getElementById('note-category-select'),
+            quickEditCategoryBtn: document.getElementById('quick-edit-category-btn'),
+            quickDeleteCategoryBtn: document.getElementById('quick-delete-category-btn'),
+            quickForgeCategoryBtn: document.getElementById('quick-forge-category-btn'),
+            quickEditCategoryModal: document.getElementById('quick-edit-category-modal'),
+            quickDeleteCategoryModal: document.getElementById('quick-delete-category-modal'),
+            quickForgeCategoryModal: document.getElementById('quick-forge-category-modal'),
+            quickEditCategoryForm: document.getElementById('quick-edit-category-form'),
+            quickForgeCategoryForm: document.getElementById('quick-forge-category-form'),
+            sidebarCategoriesList: document.getElementById('sidebar-categories-list'),
+            categoryFilterPillsRow: document.getElementById('category-filter-pills-row'),
             editorArea: document.getElementById('editor-content'),
             markdownRawEditor: document.getElementById('markdown-raw-editor'),
             editorZoomWrapper: document.getElementById('editor-zoom-wrapper'),
@@ -635,7 +889,7 @@ class NotenuxPanel {
             document.documentElement.classList.remove('dark');
             document.documentElement.setAttribute('data-theme', 'light');
             if (this.dom.themeToggleBtn) {
-                this.dom.themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun text-amber-500 mr-1.5"></i> <span class="hidden sm:inline">DAY</span>';
+                this.dom.themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun text-amber-800 mr-1.5"></i> <span class="hidden sm:inline">DAY</span>';
             }
         }
         localStorage.setItem('notenux_theme', theme);
@@ -1347,6 +1601,70 @@ class NotenuxPanel {
             this.updateActiveNoteInList();
             this.scheduleAutoSave();
             this.toast.show(`Scroll moved to category "${e.target.value.toUpperCase()}"`, 'info', 'Category');
+        });
+
+        // Quick Category Management Actions
+        this.dom.quickForgeCategoryBtn?.addEventListener('click', () => {
+            this.openQuickForgeCategoryModal();
+        });
+
+        this.dom.quickEditCategoryBtn?.addEventListener('click', () => {
+            this.openQuickEditCategoryModal();
+        });
+
+        this.dom.quickDeleteCategoryBtn?.addEventListener('click', () => {
+            this.openQuickDeleteCategoryModal();
+        });
+
+        // Close quick category modals
+        document.getElementById('close-quick-edit-cat-btn')?.addEventListener('click', () => this.closeQuickCategoryModals());
+        document.getElementById('cancel-quick-edit-cat-btn')?.addEventListener('click', () => this.closeQuickCategoryModals());
+        document.getElementById('close-quick-delete-cat-btn')?.addEventListener('click', () => this.closeQuickCategoryModals());
+        document.getElementById('cancel-quick-delete-cat-btn')?.addEventListener('click', () => this.closeQuickCategoryModals());
+        document.getElementById('close-quick-forge-cat-btn')?.addEventListener('click', () => this.closeQuickCategoryModals());
+        document.getElementById('cancel-quick-forge-cat-btn')?.addEventListener('click', () => this.closeQuickCategoryModals());
+
+        // Backdrop click for quick category modals
+        [this.dom.quickEditCategoryModal, this.dom.quickDeleteCategoryModal, this.dom.quickForgeCategoryModal].forEach(modal => {
+            modal?.addEventListener('click', (e) => {
+                if (e.target === modal) this.closeQuickCategoryModals();
+            });
+        });
+
+        // Quick Forge Form submit
+        this.dom.quickForgeCategoryForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.submitQuickForgeCategory();
+        });
+
+        // Quick Edit Form submit
+        this.dom.quickEditCategoryForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.submitQuickEditCategory();
+        });
+
+        // Quick Delete confirm button
+        document.getElementById('confirm-quick-delete-cat-btn')?.addEventListener('click', () => {
+            this.confirmQuickDeleteCategory();
+        });
+
+        // Sidebar category action delegation (Edit & Delete)
+        this.dom.sidebarCategoriesList?.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.sidebar-edit-category-btn');
+            if (editBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.openQuickEditCategoryModal(editBtn.dataset.slug);
+                return;
+            }
+
+            const deleteBtn = e.target.closest('.sidebar-delete-category-btn');
+            if (deleteBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.openQuickDeleteCategoryModal(deleteBtn.dataset.slug);
+                return;
+            }
         });
 
         this.dom.editorArea?.addEventListener('input', () => {
@@ -2302,23 +2620,25 @@ class NotenuxPanel {
     updatePinButtonUI() {
         if (!this.dom.pinNoteBtn || !this.activeNote) return;
         if (this.activeNote.is_pinned) {
-            this.dom.pinNoteBtn.innerHTML = '<i class="fa-solid fa-thumbtack text-black mr-1.5"></i> <span class="hidden sm:inline">PINNED</span>';
-            this.dom.pinNoteBtn.classList.add('bg-amber-400', 'text-black');
-            this.dom.pinNoteBtn.classList.remove('bg-blue-600', 'text-white');
+            this.dom.pinNoteBtn.innerHTML = '<i class="fa-solid fa-thumbtack text-black"></i>';
+            this.dom.pinNoteBtn.classList.add('bg-amber-400', 'text-black', 'border-black');
+            this.dom.pinNoteBtn.classList.remove('bg-surface', 'text-slate-700', 'dark:text-slate-300', 'bg-blue-600', 'text-white');
+            this.dom.pinNoteBtn.title = 'Unpin Scroll';
         } else {
-            this.dom.pinNoteBtn.innerHTML = '<i class="fa-solid fa-thumbtack text-white mr-1.5"></i> <span class="hidden sm:inline">PIN</span>';
-            this.dom.pinNoteBtn.classList.remove('bg-amber-400', 'text-black');
-            this.dom.pinNoteBtn.classList.add('bg-blue-600', 'text-white');
+            this.dom.pinNoteBtn.innerHTML = '<i class="fa-solid fa-thumbtack text-slate-600 dark:text-slate-300"></i>';
+            this.dom.pinNoteBtn.classList.remove('bg-amber-400', 'text-black', 'bg-blue-600', 'text-white');
+            this.dom.pinNoteBtn.classList.add('bg-surface', 'text-slate-700', 'dark:text-slate-300');
+            this.dom.pinNoteBtn.title = 'Pin Scroll to Top';
         }
     }
 
     updateFavoriteButtonUI() {
         if (!this.dom.favoriteNoteBtn || !this.activeNote) return;
         if (this.activeNote.is_favorite) {
-            this.dom.favoriteNoteBtn.innerHTML = '<i class="fa-solid fa-star text-amber-400"></i>';
+            this.dom.favoriteNoteBtn.innerHTML = '<i class="fa-solid fa-star text-amber-500"></i>';
             this.dom.favoriteNoteBtn.title = 'Remove Favorite';
         } else {
-            this.dom.favoriteNoteBtn.innerHTML = '<i class="fa-regular fa-star text-amber-400"></i>';
+            this.dom.favoriteNoteBtn.innerHTML = '<i class="fa-regular fa-star text-amber-500"></i>';
             this.dom.favoriteNoteBtn.title = 'Add to Favorites';
         }
     }
@@ -2392,13 +2712,16 @@ class NotenuxPanel {
             const isActive = this.activeNote && this.activeNote.id === note.id;
             const categoryBadge = this.getCategoryBadge(note.category);
             const chunkCount = note.chunks ? note.chunks.length : (note.chunks_count || 1);
+            const badgeClasses = isActive
+                ? 'bg-black/30 text-white border-white/50'
+                : categoryBadge.classes;
 
             return `
                 <div data-note-id="${note.id}"
                      class="note-list-card cursor-pointer p-3 rounded-lg border-2 transition-all mb-2 select-none
                             ${isActive
                                 ? 'bg-blue-600 text-white border-black dark:border-cyan-400 shadow-[3px_3px_0px_#000]'
-                                : 'bg-surface hover:bg-blue-100/50 dark:hover:bg-blue-900/30 border-blue-300 dark:border-blue-900/60 shadow-[2px_2px_0px_rgba(0,0,0,0.2)]'
+                                : 'bg-surface hover:bg-slate-100 dark:hover:bg-blue-900/40 border-black/20 dark:border-blue-900/60 shadow-[2px_2px_0px_rgba(0,0,0,0.15)] text-main'
                             }">
                     <div class="flex items-center justify-between gap-1 mb-1">
                         <div class="flex items-center gap-1.5 overflow-hidden">
@@ -2408,13 +2731,13 @@ class NotenuxPanel {
                                 ${this.escapeHtml(note.title)}
                             </h4>
                         </div>
-                        <span class="text-[10px] font-mono shrink-0 px-1.5 py-0.5 rounded border border-black/40 flex items-center gap-1 ${categoryBadge.classes}">
+                        <span class="text-[10px] font-mono shrink-0 px-1.5 py-0.5 rounded border border-black/30 flex items-center gap-1 ${badgeClasses}">
                             <i class="${categoryBadge.icon}"></i>
                             ${categoryBadge.label}
                         </span>
                     </div>
 
-                    <div class="flex items-center justify-between text-[11px] opacity-80 font-mono mt-2 pt-1 border-t border-black/10 dark:border-white/10">
+                    <div class="flex items-center justify-between text-[11px] font-mono mt-2 pt-1 border-t ${isActive ? 'border-white/20 text-blue-100' : 'border-black/10 dark:border-white/10 text-slate-500 dark:text-slate-400'}">
                         <span><i class="fa-solid fa-cubes text-[10px] mr-1"></i>${chunkCount} chunks</span>
                         <span>Lv.${note.level || 1} • ${note.word_count || 0}w</span>
                     </div>
@@ -2442,37 +2765,369 @@ class NotenuxPanel {
     }
 
     getCategoryBadge(category) {
+        const colorMap = {
+            amber: 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+            purple: 'bg-purple-100 text-purple-900 dark:bg-purple-950/70 dark:text-purple-300 border-purple-300 dark:border-purple-800',
+            rose: 'bg-rose-100 text-rose-900 dark:bg-rose-950/70 dark:text-rose-300 border-rose-300 dark:border-rose-800',
+            cyan: 'bg-cyan-100 text-cyan-900 dark:bg-cyan-950/70 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800',
+            emerald: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
+            blue: 'bg-blue-100 text-blue-900 dark:bg-blue-950/70 dark:text-blue-300 border-blue-300 dark:border-blue-800',
+            gray: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700',
+        };
+
         const found = this.categories?.find(c => c.slug === category);
         if (found) {
-            const colorMap = {
-                amber: 'bg-amber-500/30 text-amber-900 dark:text-amber-300',
-                purple: 'bg-purple-500/30 text-purple-900 dark:text-purple-300',
-                rose: 'bg-rose-500/30 text-rose-900 dark:text-rose-300',
-                cyan: 'bg-cyan-500/30 text-cyan-900 dark:text-cyan-300',
-                emerald: 'bg-emerald-500/30 text-emerald-900 dark:text-emerald-300',
-                blue: 'bg-blue-500/30 text-blue-900 dark:text-blue-300',
-                gray: 'bg-gray-500/30 text-gray-900 dark:text-gray-300',
-            };
             return {
                 label: (found.name || found.slug).toUpperCase(),
                 icon: found.icon || 'fa-solid fa-folder',
-                classes: colorMap[found.color] || 'bg-cyan-500/30 text-cyan-900 dark:text-cyan-300',
+                classes: colorMap[found.color] || colorMap.cyan,
             };
         }
 
         switch (category) {
             case 'quest':
-                return { label: 'QUEST', icon: 'fa-solid fa-khanda', classes: 'bg-amber-500/30 text-amber-900 dark:text-amber-300' };
+                return { label: 'QUEST', icon: 'fa-solid fa-khanda', classes: colorMap.amber };
             case 'spellbook':
-                return { label: 'SPELL', icon: 'fa-solid fa-wand-magic-sparkles', classes: 'bg-purple-500/30 text-purple-900 dark:text-purple-300' };
+                return { label: 'SPELL', icon: 'fa-solid fa-wand-magic-sparkles', classes: colorMap.purple };
             case 'strategy':
-                return { label: 'RAID', icon: 'fa-solid fa-shield-halved', classes: 'bg-rose-500/30 text-rose-900 dark:text-rose-300' };
+                return { label: 'RAID', icon: 'fa-solid fa-shield-halved', classes: colorMap.rose };
             case 'lore':
-                return { label: 'LORE', icon: 'fa-solid fa-scroll', classes: 'bg-blue-500/30 text-blue-900 dark:text-blue-300' };
+                return { label: 'LORE', icon: 'fa-solid fa-scroll', classes: colorMap.cyan };
             case 'archive':
-                return { label: 'ARCHIVE', icon: 'fa-solid fa-box-archive', classes: 'bg-amber-500/30 text-amber-900 dark:text-amber-300' };
+                return { label: 'ARCHIVE', icon: 'fa-solid fa-box-archive', classes: colorMap.amber };
             default:
-                return { label: (category || 'NOTE').toUpperCase(), icon: 'fa-solid fa-book-journal-whills', classes: 'bg-gray-500/30 text-gray-900 dark:text-gray-300' };
+                return { label: (category || 'NOTE').toUpperCase(), icon: 'fa-solid fa-book-journal-whills', classes: colorMap.gray };
+        }
+    }
+
+    /* ---------------- CATEGORY FORGE & MANAGEMENT ---------------- */
+    closeQuickCategoryModals() {
+        this.dom.quickEditCategoryModal?.classList.add('hidden');
+        this.dom.quickDeleteCategoryModal?.classList.add('hidden');
+        this.dom.quickForgeCategoryModal?.classList.add('hidden');
+    }
+
+    openQuickForgeCategoryModal() {
+        this.closeQuickCategoryModals();
+        if (this.dom.quickForgeCategoryForm) {
+            this.dom.quickForgeCategoryForm.reset();
+        }
+        this.dom.quickForgeCategoryModal?.classList.remove('hidden');
+        document.getElementById('quick-forge-cat-name')?.focus();
+    }
+
+    async submitQuickForgeCategory() {
+        const name = document.getElementById('quick-forge-cat-name')?.value?.trim();
+        const slug = document.getElementById('quick-forge-cat-slug')?.value?.trim();
+        const color = document.getElementById('quick-forge-cat-color')?.value || 'emerald';
+        const icon = document.getElementById('quick-forge-cat-icon')?.value?.trim() || 'fa-solid fa-folder';
+        const description = document.getElementById('quick-forge-cat-desc')?.value?.trim();
+
+        if (!name) {
+            this.toast.show('Nama kategori wajib diisi.', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/categories', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, slug, color, icon, description }),
+            });
+
+            const data = await response.json();
+            if (response.ok && data.data) {
+                const newCat = data.data;
+                this.categories.push(newCat);
+                if (this.activeNote) {
+                    this.activeNote.category = newCat.slug;
+                    this.saveActiveNote(true);
+                }
+                this.syncCategoriesDOM();
+                this.renderNotesList();
+                this.closeQuickCategoryModals();
+                this.audio.playPowerup();
+                this.toast.show(`Category "${newCat.name}" forged successfully!`, 'success', 'Category Created');
+            } else {
+                const errorMsg = data.message || 'Gagal membuat kategori.';
+                this.toast.show(errorMsg, 'danger', 'Forge Failed');
+            }
+        } catch (e) {
+            this.toast.show('Network error during category creation.', 'danger');
+        }
+    }
+
+    openQuickEditCategoryModal(slug = null) {
+        this.closeQuickCategoryModals();
+        const targetSlug = slug || this.dom.noteCategorySelect?.value || this.activeNote?.category || 'quest';
+        const category = this.categories.find(c => c.slug === targetSlug) || {
+            id: null,
+            name: targetSlug.toUpperCase(),
+            slug: targetSlug,
+            color: 'cyan',
+            icon: 'fa-solid fa-folder',
+            description: '',
+        };
+
+        const idEl = document.getElementById('quick-edit-cat-id');
+        const nameEl = document.getElementById('quick-edit-cat-name');
+        const slugEl = document.getElementById('quick-edit-cat-slug');
+        const colorEl = document.getElementById('quick-edit-cat-color');
+        const iconEl = document.getElementById('quick-edit-cat-icon');
+        const descEl = document.getElementById('quick-edit-cat-desc');
+
+        if (idEl) idEl.value = category.id || '';
+        if (nameEl) nameEl.value = category.name || '';
+        if (slugEl) slugEl.value = category.slug || '';
+        if (colorEl) colorEl.value = category.color || 'cyan';
+        if (iconEl) iconEl.value = category.icon || 'fa-solid fa-folder';
+        if (descEl) descEl.value = category.description || '';
+
+        this.dom.quickEditCategoryModal?.classList.remove('hidden');
+        nameEl?.focus();
+    }
+
+    async submitQuickEditCategory() {
+        const id = document.getElementById('quick-edit-cat-id')?.value;
+        const name = document.getElementById('quick-edit-cat-name')?.value?.trim();
+        const slug = document.getElementById('quick-edit-cat-slug')?.value?.trim();
+        const color = document.getElementById('quick-edit-cat-color')?.value || 'cyan';
+        const icon = document.getElementById('quick-edit-cat-icon')?.value?.trim() || 'fa-solid fa-folder';
+        const description = document.getElementById('quick-edit-cat-desc')?.value?.trim();
+
+        if (!id) {
+            this.toast.show('Category identifier missing.', 'warning');
+            return;
+        }
+
+        if (!name) {
+            this.toast.show('Nama kategori wajib diisi.', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/categories/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, slug, color, icon, description }),
+            });
+
+            const data = await response.json();
+            if (response.ok && data.data) {
+                const updatedCat = data.data;
+                const idx = this.categories.findIndex(c => c.id === updatedCat.id);
+                const oldSlug = idx !== -1 ? this.categories[idx].slug : null;
+
+                if (idx !== -1) {
+                    this.categories[idx] = updatedCat;
+                }
+
+                // If slug changed, cascade to existing notes in memory
+                if (oldSlug && oldSlug !== updatedCat.slug) {
+                    this.notes.forEach(note => {
+                        if (note.category === oldSlug) {
+                            note.category = updatedCat.slug;
+                        }
+                    });
+                    if (this.activeNote && this.activeNote.category === oldSlug) {
+                        this.activeNote.category = updatedCat.slug;
+                    }
+                    if (this.activeCategory === oldSlug) {
+                        this.activeCategory = updatedCat.slug;
+                    }
+                }
+
+                this.syncCategoriesDOM();
+                this.renderNotesList();
+                this.closeQuickCategoryModals();
+                this.audio.playBlip();
+                this.toast.show(`Category "${updatedCat.name}" updated successfully!`, 'success', 'Category Saved');
+            } else {
+                const errorMsg = data.message || 'Gagal memperbarui kategori.';
+                this.toast.show(errorMsg, 'danger', 'Update Failed');
+            }
+        } catch (e) {
+            this.toast.show('Network error during category update.', 'danger');
+        }
+    }
+
+    openQuickDeleteCategoryModal(slug = null) {
+        this.closeQuickCategoryModals();
+        const targetSlug = slug || this.dom.noteCategorySelect?.value || this.activeNote?.category || 'quest';
+        const category = this.categories.find(c => c.slug === targetSlug);
+
+        if (!category) {
+            this.toast.show('Kategori tidak ditemukan.', 'warning');
+            return;
+        }
+
+        if (this.categories.length <= 1) {
+            this.toast.show('Tidak dapat menghapus kategori terakhir. Harus menyisakan minimal satu kategori.', 'warning');
+            return;
+        }
+
+        const idEl = document.getElementById('quick-delete-cat-id');
+        const badgeEl = document.getElementById('quick-delete-cat-name-badge');
+
+        if (idEl) idEl.value = category.id;
+        if (badgeEl) badgeEl.textContent = `"${category.name}"`;
+
+        this.dom.quickDeleteCategoryModal?.classList.remove('hidden');
+    }
+
+    async confirmQuickDeleteCategory() {
+        const id = document.getElementById('quick-delete-cat-id')?.value;
+        if (!id) return;
+
+        const category = this.categories.find(c => String(c.id) === String(id));
+        const deletedSlug = category?.slug;
+        const deletedName = category?.name || 'Category';
+
+        this.closeQuickCategoryModals();
+        this.audio.playDelete();
+
+        try {
+            const response = await fetch(`/api/categories/${id}`, {
+                method: 'DELETE',
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                const fallbackSlug = data.data?.fallback_slug || 'general';
+                const fallbackName = data.data?.fallback_name || 'General Notes';
+
+                // Remove from in-memory categories
+                this.categories = this.categories.filter(c => String(c.id) !== String(id));
+
+                // Reassign affected notes in memory
+                if (deletedSlug) {
+                    this.notes.forEach(note => {
+                        if (note.category === deletedSlug) {
+                            note.category = fallbackSlug;
+                        }
+                    });
+
+                    if (this.activeNote && this.activeNote.category === deletedSlug) {
+                        this.activeNote.category = fallbackSlug;
+                    }
+
+                    if (this.activeCategory === deletedSlug) {
+                        this.activeCategory = 'all';
+                    }
+                }
+
+                this.syncCategoriesDOM();
+                this.renderNotesList();
+                this.toast.show(`Category "${deletedName}" banished. Scrolls migrated to ${fallbackName}.`, 'success', 'Category Banished');
+            } else {
+                const errorMsg = data.message || 'Gagal menghapus kategori.';
+                this.toast.show(errorMsg, 'danger', 'Delete Failed');
+            }
+        } catch (e) {
+            this.toast.show('Network error during category deletion.', 'danger');
+        }
+    }
+
+    syncCategoriesDOM() {
+        // Sync note category dropdown options
+        if (this.dom.noteCategorySelect) {
+            const currentVal = this.activeNote?.category || this.dom.noteCategorySelect.value;
+            this.dom.noteCategorySelect.innerHTML = this.categories.map(cat =>
+                `<option value="${cat.slug}" data-id="${cat.id}">[${(cat.slug || '').toUpperCase()}] ${this.escapeHtml(cat.name)}</option>`
+            ).join('');
+            if (currentVal && this.categories.some(c => c.slug === currentVal)) {
+                this.dom.noteCategorySelect.value = currentVal;
+            } else if (this.categories.length > 0) {
+                this.dom.noteCategorySelect.value = this.categories[0].slug;
+                if (this.activeNote) {
+                    this.activeNote.category = this.categories[0].slug;
+                }
+            }
+        }
+
+        // Sync import category dropdown options
+        if (this.dom.importCategorySelect) {
+            this.dom.importCategorySelect.innerHTML = this.categories.map(cat =>
+                `<option value="${cat.slug}">${this.escapeHtml(cat.name)}</option>`
+            ).join('');
+        }
+
+        // Sync filter pills row
+        if (this.dom.categoryFilterPillsRow) {
+            let pillsHtml = `
+                <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 ${this.activeCategory === 'all' ? 'bg-blue-600 text-white active-category' : 'bg-surface'} whitespace-nowrap shadow-[1px_1px_0px_#000]"
+                        data-category="all">
+                    ALL
+                </button>
+            `;
+
+            this.categories.forEach(cat => {
+                const isActive = this.activeCategory === cat.slug;
+                pillsHtml += `
+                    <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 ${isActive ? 'bg-blue-600 text-white active-category' : 'bg-surface hover:bg-blue-200 dark:hover:bg-blue-900'} whitespace-nowrap shadow-[1px_1px_0px_#000]"
+                            data-category="${cat.slug}">
+                        <i class="${cat.icon || 'fa-solid fa-folder'} mr-1"></i>${this.escapeHtml((cat.name || cat.slug).slice(0, 10).toUpperCase())}
+                    </button>
+                `;
+            });
+
+            this.dom.categoryFilterPillsRow.innerHTML = pillsHtml;
+
+            // Re-bind pills
+            this.dom.categoryFilterPillsRow.querySelectorAll('.category-filter-btn').forEach(pill => {
+                pill.addEventListener('click', () => {
+                    this.audio.playBlip();
+                    this.setCategory(pill.dataset.category || 'all');
+                });
+            });
+            this.dom.categoryPills = document.querySelectorAll('.category-filter-btn');
+        }
+
+        // Sync left sidebar list
+        if (this.dom.sidebarCategoriesList) {
+            this.dom.sidebarCategoriesList.innerHTML = this.categories.map(cat => `
+                <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
+                     data-category="${cat.slug}">
+                    <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate ${this.activeCategory === cat.slug ? 'bg-blue-600 text-white font-bold' : ''}"
+                       data-category="${cat.slug}">
+                        <i class="${cat.icon || 'fa-solid fa-folder'} text-sm w-4 text-center shrink-0"></i>
+                        <span class="nav-text-label font-bold truncate">${this.escapeHtml(cat.name)}</span>
+                    </a>
+                    <div class="hidden group-hover:flex items-center gap-1 shrink-0">
+                        <button type="button"
+                                class="sidebar-edit-category-btn text-[10px] text-cyan-600 dark:text-cyan-400 hover:scale-110 transition-transform p-1"
+                                data-slug="${cat.slug}"
+                                title="Edit Category">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button"
+                                class="sidebar-delete-category-btn text-[10px] text-rose-500 hover:scale-110 transition-transform p-1"
+                                data-slug="${cat.slug}"
+                                title="Delete Category">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Re-bind sidebar links
+            this.dom.sidebarCategoriesList.querySelectorAll('.nav-category-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.audio.playBlip();
+                    this.setCategory(link.dataset.category || 'all');
+                    if (window.innerWidth < 1024) {
+                        this.dom.primaryNavSidebar?.classList.add('-translate-x-full');
+                        this.dom.notesExplorerSidebar?.classList.remove('-translate-x-full');
+                        this.updateMobileOverlay();
+                    }
+                });
+            });
+            this.dom.navCategoryLinks = document.querySelectorAll('.nav-category-link');
         }
     }
 
@@ -2779,4 +3434,7 @@ class NotenuxPanel {
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.notenux = new NotenuxPanel();
+    RetroSearchableSelect.initAll();
 });
+
+window.RetroSearchableSelect = RetroSearchableSelect;

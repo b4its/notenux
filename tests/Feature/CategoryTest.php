@@ -160,25 +160,103 @@ test('a user can update their personalized category', function () {
     ]);
 });
 
-test('system categories cannot be modified or dismantled', function () {
+test('system and default categories can be modified and dismantled with safe preservation', function () {
     $this->seed(CategorySeeder::class);
     $user = User::factory()->create();
-    $systemCat = Category::where('is_system', true)->firstOrFail();
+    $systemCat = Category::where('slug', 'quest')->firstOrFail();
 
-    // Attempt update
-    $resUpdate = $this->actingAs($user)->putJson(route('api.categories.update', $systemCat), [
-        'name' => 'Hacked System Category',
+    Note::factory()->create([
+        'title' => 'Ancient Quest Scroll',
+        'category' => 'quest',
     ]);
-    $resUpdate->assertStatus(403);
 
-    // Attempt delete
-    $resDelete = $this->actingAs($user)->deleteJson(route('api.categories.destroy', $systemCat));
-    $resDelete->assertStatus(403);
+    // Update system category
+    $resUpdate = $this->actingAs($user)->putJson(route('api.categories.update', $systemCat), [
+        'name' => 'Legendary Quests',
+        'slug' => 'legendary-quests',
+        'color' => 'emerald',
+    ]);
+    $resUpdate->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.name', 'Legendary Quests')
+        ->assertJsonPath('data.slug', 'legendary-quests');
 
     $this->assertDatabaseHas('categories', [
         'id' => $systemCat->id,
-        'is_system' => true,
+        'name' => 'Legendary Quests',
+        'slug' => 'legendary-quests',
     ]);
+
+    // Check that existing notes had their category slug updated
+    $this->assertDatabaseHas('notes', [
+        'title' => 'Ancient Quest Scroll',
+        'category' => 'legendary-quests',
+    ]);
+
+    // Delete category
+    $resDelete = $this->actingAs($user)->deleteJson(route('api.categories.destroy', $systemCat));
+    $resDelete->assertOk()
+        ->assertJsonPath('status', 'success');
+
+    $this->assertDatabaseMissing('categories', [
+        'id' => $systemCat->id,
+    ]);
+
+    // Notes reassigned to safe fallback
+    $this->assertDatabaseHas('notes', [
+        'title' => 'Ancient Quest Scroll',
+        'category' => 'general',
+    ]);
+});
+
+test('deleting the general category safely reassigns notes to another remaining category', function () {
+    $this->seed(CategorySeeder::class);
+    $user = User::factory()->create();
+    $generalCat = Category::where('slug', 'general')->firstOrFail();
+
+    $note = Note::factory()->create([
+        'title' => 'Miscellaneous Journal',
+        'category' => 'general',
+    ]);
+
+    $resDelete = $this->actingAs($user)->deleteJson(route('api.categories.destroy', $generalCat));
+    $resDelete->assertOk()
+        ->assertJsonPath('status', 'success');
+
+    $this->assertDatabaseMissing('categories', [
+        'id' => $generalCat->id,
+    ]);
+
+    $note->refresh();
+    expect($note->category)->not->toBe('general');
+    expect(Category::where('slug', $note->category)->exists())->toBeTrue();
+});
+
+test('studio panel view renders quick edit, delete, and forge controls for category selector', function () {
+    $this->seed(CategorySeeder::class);
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('panel'));
+
+    $response->assertOk()
+        ->assertSee('quick-edit-category-btn')
+        ->assertSee('quick-delete-category-btn')
+        ->assertSee('quick-forge-category-btn')
+        ->assertSee('quick-edit-category-modal')
+        ->assertSee('quick-delete-category-modal')
+        ->assertSee('quick-forge-category-modal');
+});
+
+test('category guild page renders edit and delete controls for all categories without core lock', function () {
+    $this->seed(CategorySeeder::class);
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('categories.index'));
+
+    $response->assertOk()
+        ->assertDontSee('Core category')
+        ->assertSee('openEditCategoryModal')
+        ->assertSee('openDeleteCategoryModal');
 });
 
 test('a user cannot update or delete another users category', function () {
