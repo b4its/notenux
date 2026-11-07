@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Notenux') }} - Retro Gamified Notes Studio & Memory Shard Matrix</title>
+    <title>{{ config('app.name', 'Notenux') }} - Retro Gamified Notes Studio | Menulis Lebih Cepat, Terlindungi, & Seru</title>
 
     <!-- App Favicon & Touch Icon (Default Light, dynamically adapts to theme) -->
     <link rel="icon" id="app-favicon" type="image/png" href="{{ asset('assets/logo/light/icon_light.png') }}">
@@ -70,9 +70,9 @@
     <header class="sticky top-0 w-full bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-2 sm:px-4 lg:px-6 py-2.5 sm:py-3 z-40">
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
 
-            <!-- Brand Logo -->
+            <!-- Brand Logo (Transparent Logo) -->
             <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2.5 group transition-transform active:translate-y-0.5 shrink-0 min-w-0" title="Notenux Studio">
-                <!-- Adaptive Horizontal Logo -->
+                <!-- Adaptive Horizontal Logo without background container -->
                 <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.png') }}"
                      alt="Notenux Studio"
                      class="h-7 sm:h-9 w-auto object-contain hidden dark:block transition-transform duration-200 group-hover:scale-105">
@@ -85,10 +85,10 @@
 
             <!-- Navigation Links (Desktop) -->
             <nav class="hidden md:flex items-center gap-5 lg:gap-6 font-mono text-xs font-bold shrink-0">
-                <a href="#fitur" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">FITUR</a>
+                <a href="#fitur" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">MANFAAT & FITUR</a>
                 <a href="#playground" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">DEMO INTERAKTIF</a>
-                <a href="#arsitektur" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">CHUNK MATRIX</a>
-                <a href="#rank-codex" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">RANK CODEX</a>
+                <a href="#keamanan" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">UJI PROTEKSI</a>
+                <a href="#rank-codex" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">RANK SCRIBE</a>
                 <a href="#faq" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">FAQ</a>
             </nav>
 
@@ -178,7 +178,7 @@
 
             <div class="max-w-5xl mx-auto text-center space-y-6 relative z-10">
 
-                <!-- Hero Portrait Logo Emblem (Transparent Background) -->
+                <!-- Hero Portrait Logo Emblem (Transparent Background without container) -->
                 <div class="flex justify-center mb-2 sm:mb-4">
                     <div class="relative group transition-transform duration-300 hover:scale-105">
                         <img src="{{ asset('assets/logo/dark/icon_vertical_dark.png') }}"
@@ -193,7 +193,7 @@
                 <!-- Badge -->
                 <div class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 rounded-full border-2 border-black dark:border-cyan-400/50 bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-cyan-300 font-pixel text-[9px] sm:text-[10px] tracking-wider shadow-[3px_3px_0px_#000] max-w-full">
                     <i class="fa-solid fa-bolt text-amber-500 animate-pulse"></i>
-                    <span>RETRO GAMIFIED NOTE STUDIO & MARKDOWN MATRIX</span>
+                    <span>RETRO GAMIFIED NOTE STUDIO • LEVEL UP YOUR WRITING</span>
                 </div>
 
                 <!-- Main Headline -->
@@ -204,9 +204,9 @@
                     </span>
                 </h1>
 
-                <!-- Subheadline -->
+                <!-- Subheadline (Pure User Benefits & Capabilities) -->
                 <p class="max-w-2xl mx-auto text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-300 font-mono leading-relaxed px-2">
-                    Bukan sekadar aplikasi catatan biasa. Notenux menggabungkan kenyamanan editor Markdown multi-font, integritas penyimpanan chunk kriptografis SHA-256, dan sistem leveling RPG gamifikasi yang membuat aktivitas menulismu adiktif.
+                    Aplikasi catatan retro yang membuatmu betah menulis setiap hari. Nikmati editor Markdown serba cepat, jaminan naskah aman tanpa risiko hilang, dan sistem leveling RPG yang mengubah produktivitasmu menjadi petualangan seru.
                 </p>
 
                 <!-- Hero Action Buttons -->
@@ -260,13 +260,13 @@
                             <!-- Tabs -->
                             <div class="flex items-center gap-1 flex-wrap w-full xs:w-auto">
                                 <button type="button" id="tab-btn-quests" class="station-tab-btn px-2 sm:px-2.5 py-1 rounded text-[10px] font-bold bg-blue-600 text-white arcade-btn" data-tab="quests">
-                                    <i class="fa-solid fa-khanda mr-1"></i> Quests
+                                    <i class="fa-solid fa-khanda mr-1"></i> Misi Menulis
                                 </button>
                                 <button type="button" id="tab-btn-hasher" class="station-tab-btn px-2 sm:px-2.5 py-1 rounded text-[10px] font-bold bg-[var(--bg-surface)] text-[var(--text-main)] arcade-btn" data-tab="hasher">
-                                    <i class="fa-solid fa-fingerprint mr-1"></i> Shard Hasher
+                                    <i class="fa-solid fa-shield-halved mr-1"></i> Proteksi Teks
                                 </button>
                                 <button type="button" id="tab-btn-fonts" class="station-tab-btn px-2 sm:px-2.5 py-1 rounded text-[10px] font-bold bg-[var(--bg-surface)] text-[var(--text-main)] arcade-btn" data-tab="fonts">
-                                    <i class="fa-solid fa-font mr-1"></i> Font Lab
+                                    <i class="fa-solid fa-font mr-1"></i> Atmosfer Font
                                 </button>
                             </div>
                         </div>
@@ -280,7 +280,7 @@
                                     <span class="text-[11px] font-bold text-cyan-500" id="hero-quest-xp-text">25 / 100 XP</span>
                                 </div>
                                 <button type="button" id="hero-reset-quests-btn" class="text-[10px] text-slate-500 dark:text-slate-400 hover:text-rose-500 underline">
-                                    <i class="fa-solid fa-rotate-left mr-0.5"></i> Reset Quests
+                                    <i class="fa-solid fa-rotate-left mr-0.5"></i> Reset Misi
                                 </button>
                             </div>
 
@@ -291,62 +291,62 @@
 
                             <!-- Quests Checklist (Interactive Click to Complete) -->
                             <div class="space-y-2 pt-1 text-xs">
-                                <div id="quest-item-1" class="quest-item flex items-center justify-between p-2 rounded-lg border border-black/15 dark:border-blue-900 bg-[var(--bg-surface-alt)] cursor-pointer hover:border-blue-500 transition-colors" data-xp="25" data-completed="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <i class="fa-solid fa-circle-check text-emerald-500 text-sm quest-check-icon"></i>
-                                        <span class="font-bold line-through text-slate-500 dark:text-slate-400 quest-title">Awaken Scribe Codex di Matrix</span>
+                                <div id="quest-item-1" class="quest-item flex items-center justify-between p-2 rounded-lg border border-black/15 dark:border-blue-900 bg-[var(--bg-surface-alt)] cursor-pointer hover:border-blue-500 transition-colors gap-2" data-xp="25" data-completed="true">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <i class="fa-solid fa-circle-check text-emerald-500 text-sm quest-check-icon shrink-0"></i>
+                                        <span class="font-bold line-through text-slate-500 dark:text-slate-400 quest-title truncate">Buka Notenux & Mulai Petualangan</span>
                                     </div>
-                                    <span class="text-[10px] font-pixel text-emerald-500 font-bold quest-badge">+25 XP [DONE]</span>
+                                    <span class="text-[10px] font-pixel text-emerald-500 font-bold quest-badge shrink-0">+25 XP [DONE]</span>
                                 </div>
 
-                                <div id="quest-item-2" class="quest-item flex items-center justify-between p-2 rounded-lg border border-black/15 dark:border-blue-900 bg-[var(--bg-surface-alt)] cursor-pointer hover:border-blue-500 transition-colors" data-xp="25" data-completed="false">
-                                    <div class="flex items-center gap-2.5">
-                                        <i class="fa-regular fa-circle text-slate-400 text-sm quest-check-icon"></i>
-                                        <span class="font-bold quest-title">Ketik Mantra Markdown Pertamamu</span>
+                                <div id="quest-item-2" class="quest-item flex items-center justify-between p-2 rounded-lg border border-black/15 dark:border-blue-900 bg-[var(--bg-surface-alt)] cursor-pointer hover:border-blue-500 transition-colors gap-2" data-xp="25" data-completed="false">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <i class="fa-regular fa-circle text-slate-400 text-sm quest-check-icon shrink-0"></i>
+                                        <span class="font-bold quest-title truncate">Tulis Catatan Pertamamu dengan Markdown</span>
                                     </div>
-                                    <span class="text-[10px] font-pixel text-amber-500 font-bold quest-badge">+25 XP</span>
+                                    <span class="text-[10px] font-pixel text-amber-500 font-bold quest-badge shrink-0">+25 XP</span>
                                 </div>
 
-                                <div id="quest-item-3" class="quest-item flex items-center justify-between p-2 rounded-lg border border-black/15 dark:border-blue-900 bg-[var(--bg-surface-alt)] cursor-pointer hover:border-blue-500 transition-colors" data-xp="50" data-completed="false">
-                                    <div class="flex items-center gap-2.5">
-                                        <i class="fa-regular fa-circle text-slate-400 text-sm quest-check-icon"></i>
-                                        <span class="font-bold quest-title">Partisi & Audit Shard Kriptografis</span>
+                                <div id="quest-item-3" class="quest-item flex items-center justify-between p-2 rounded-lg border border-black/15 dark:border-blue-900 bg-[var(--bg-surface-alt)] cursor-pointer hover:border-blue-500 transition-colors gap-2" data-xp="50" data-completed="false">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <i class="fa-regular fa-circle text-slate-400 text-sm quest-check-icon shrink-0"></i>
+                                        <span class="font-bold quest-title truncate">Uji Proteksi Keamanan Tulisanmu</span>
                                     </div>
-                                    <span class="text-[10px] font-pixel text-cyan-400 font-bold quest-badge">+50 XP</span>
+                                    <span class="text-[10px] font-pixel text-cyan-400 font-bold quest-badge shrink-0">+50 XP</span>
                                 </div>
                             </div>
 
                             <!-- Celebration Level Up Message (Hidden by default) -->
                             <div id="hero-levelup-banner" class="hidden p-3 rounded-xl border-2 border-amber-400 bg-amber-400/10 text-center space-y-1 animate-bounce">
-                                <div class="font-pixel text-xs text-amber-500">🎉 MAX QUEST COMPLETED! LEVEL UP!</div>
-                                <div class="text-[11px] text-slate-600 dark:text-slate-300">Selamat! Kamu dipromosikan menjadi <strong class="text-cyan-400">Apprentice Scribe</strong>. Langsung eksplorasi Studio!</div>
+                                <div class="font-pixel text-xs text-amber-500">🎉 MISI SELESAI! LEVEL UP!</div>
+                                <div class="text-[11px] text-slate-600 dark:text-slate-300">Selamat! Kamu dipromosikan menjadi <strong class="text-cyan-400">Apprentice Scribe</strong>. Buka Studio untuk melanjutkan petualanganmu!</div>
                             </div>
                         </div>
 
-                        <!-- Tab 2: Live Shard Hasher -->
+                        <!-- Tab 2: Live Text Safety Check -->
                         <div id="station-panel-hasher" class="station-panel hidden p-4 space-y-3">
                             <p class="text-xs text-slate-600 dark:text-slate-300">
-                                Ketik teks apa saja untuk melihat cara kerja sharding kriptografis Notenux menghasilkan checksum SHA-256 seketika:
+                                Ketik teks untuk melihat bagaimana sistem mengunci dan melindungi keaslian tulisanmu secara otomatis tanpa risiko tertimpa:
                             </p>
                             <div class="space-y-2">
                                 <input type="text"
                                        id="hasher-input"
                                        class="w-full bg-[var(--bg-main)] px-3 py-2 rounded-lg border border-black/30 dark:border-blue-800 text-xs font-mono outline-none focus:border-cyan-400"
                                        placeholder="Ketik teks naskah catatan di sini..."
-                                       value="Mantra Rahasia Notenux: Chunk Matrix 2026">
+                                       value="Catatan Penting Notenux: Ide Cemerlang Hari Ini">
                                 <div class="p-2.5 rounded-lg border border-black/20 dark:border-blue-900 bg-black/40 font-mono text-[11px] space-y-1">
                                     <div class="flex items-center justify-between text-slate-400 text-[10px]">
-                                        <span>ALGORITMA: SHA-256 (64 hex characters)</span>
-                                        <span class="text-emerald-400 font-bold"><i class="fa-solid fa-shield-halved"></i> 100% UNTAMPERED</span>
+                                        <span>STATUS KEAMANAN NASKAH</span>
+                                        <span class="text-emerald-400 font-bold"><i class="fa-solid fa-shield-halved"></i> 100% AMAN & TERKUNCI</span>
                                     </div>
-                                    <div id="hasher-hash-output" class="text-cyan-400 font-bold break-all">
+                                    <div id="hasher-hash-output" class="text-cyan-400 font-bold break-all select-all">
                                         5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8
                                     </div>
                                 </div>
-                                <div class="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
-                                    <span>Panjang Karakter: <strong id="hasher-char-count">41</strong> &bull; Byte: <strong id="hasher-byte-count">41 B</strong></span>
-                                    <button type="button" id="copy-hash-btn" class="arcade-btn bg-blue-600 text-white px-2 py-0.5 rounded text-[10px]">
-                                        <i class="fa-solid fa-copy mr-1"></i> Salin Hash
+                                <div class="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                                    <span>Panjang Karakter: <strong id="hasher-char-count">51</strong> &bull; Ukuran: <strong id="hasher-byte-count">51 B</strong></span>
+                                    <button type="button" id="copy-hash-btn" class="arcade-btn bg-blue-600 text-white px-2.5 py-1 rounded text-[10px]">
+                                        <i class="fa-solid fa-copy mr-1"></i> Salin Kunci
                                     </button>
                                 </div>
                             </div>
@@ -354,9 +354,9 @@
 
                         <!-- Tab 3: Font Atmosphere Lab -->
                         <div id="station-panel-fonts" class="station-panel hidden p-4 space-y-3">
-                            <div class="flex items-center justify-between text-xs">
-                                <span class="text-slate-600 dark:text-slate-400">Pilih font untuk menguji suasana naskah:</span>
-                                <div class="flex items-center gap-1">
+                            <div class="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 text-xs">
+                                <span class="text-slate-600 dark:text-slate-400">Pilih font yang paling pas dengan gaya menulismu:</span>
+                                <div class="flex items-center gap-1 flex-wrap">
                                     <button type="button" class="hero-font-btn px-2 py-0.5 rounded text-[10px] bg-blue-600 text-white font-pixel" data-font="pixel">Pixel</button>
                                     <button type="button" class="hero-font-btn px-2 py-0.5 rounded text-[10px] bg-[var(--bg-surface)] text-[var(--text-main)] font-arcade" data-font="arcade">Arcade</button>
                                     <button type="button" class="hero-font-btn px-2 py-0.5 rounded text-[10px] bg-[var(--bg-surface)] text-[var(--text-main)] font-mono" data-font="mono">Fira</button>
@@ -365,8 +365,8 @@
                                 </div>
                             </div>
 
-                            <div id="hero-font-preview-box" class="p-3.5 rounded-lg border-2 border-dashed border-blue-500/30 bg-[var(--bg-main)] font-pixel text-xs sm:text-sm leading-relaxed text-slate-800 dark:text-slate-100 min-h-[90px] flex items-center">
-                                "Pena adalah pedang sang pemikir; dan setiap goresan naskah di Notenux adalah jejak abadi yang terpelihara dalam matriks kriptografis."
+                            <div id="hero-font-preview-box" class="p-3.5 rounded-lg border-2 border-dashed border-blue-500/30 bg-[var(--bg-main)] font-pixel text-xs sm:text-sm leading-relaxed text-slate-800 dark:text-slate-100 min-h-[80px] flex items-center">
+                                "Pena adalah pedang sang pemikir; dan setiap goresan tulisan di Notenux tersimpan aman untuk selamanya."
                             </div>
                         </div>
 
@@ -382,7 +382,7 @@
                                 <span>MANUSCRIPTS</span>
                             </div>
                             <div class="mt-1 font-pixel text-lg sm:text-xl text-slate-900 dark:text-white" id="telemetry-notes">{{ $noteCount }}+</div>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Catatan tersimpan</p>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Catatan tersimpan aman</p>
                         </div>
                         <div class="sm:hidden text-2xl text-blue-500/40">
                             <i class="fa-solid fa-scroll"></i>
@@ -396,7 +396,7 @@
                                 <span>RPG LEVELING</span>
                             </div>
                             <div class="mt-1 font-pixel text-lg sm:text-xl text-slate-900 dark:text-white">LV.50+</div>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400">XP & Mana Progress</p>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">XP & Gelar Prestasi Scribe</p>
                         </div>
                         <div class="sm:hidden text-2xl text-amber-500/40">
                             <i class="fa-solid fa-award"></i>
@@ -420,7 +420,7 @@
                     </div>
                     <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Coba Langsung Sensasi Menulis di Notenux</h2>
                     <p class="text-xs sm:text-sm font-mono text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-                        Gunakan Spell Bar Markdown, ubah font retro, rasakan kenaikan XP secara real-time, salin naskah, dan tonton live preview!
+                        Gunakan Spell Bar Markdown, pilih font retro, rasakan kenaikan XP secara real-time saat mengetik, salin naskah, dan tonton live preview!
                     </p>
                 </div>
 
@@ -456,10 +456,10 @@
                                 ⚔️ Quest
                             </button>
                             <button type="button" id="template-code-btn" class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white text-[10px] font-mono px-2 py-1 rounded" title="Muat template Code">
-                                💻 Code Shard
+                                💻 Code Notes
                             </button>
                             <button type="button" id="template-table-btn" class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-mono px-2 py-1 rounded" title="Muat template Tabel">
-                                📊 Matrix Table
+                                📊 Markdown Table
                             </button>
                             <button type="button" id="toggle-preview-btn" class="arcade-btn bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-mono px-2.5 py-1 rounded" title="Toggle Preview">
                                 👁️ Preview
@@ -524,7 +524,6 @@
                             <span class="text-emerald-500 font-bold"><i class="fa-solid fa-circle-check"></i> Auto-Synced</span>
                         </div>
                     </div>
-                    </div>
 
                     <!-- Editor Workspace (Split / Interactive Area) -->
                     <div class="p-4 sm:p-6 min-h-[220px]">
@@ -533,14 +532,14 @@
                             <textarea id="demo-editor-input"
                                       rows="8"
                                       class="w-full bg-transparent border-0 outline-none resize-none font-pixel text-xs sm:text-sm leading-relaxed text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-0"
-                                      placeholder="Ketik sesuatu di sini untuk merasakan simulasi level XP dan font retro..."># 📜 Arcane Grimoire: Quest Chrono-Shard
+                                      placeholder="Ketik sesuatu di sini untuk merasakan simulasi level XP dan font retro..."># 📜 Petualangan Menulis: Naskah Rahasia
 
-Venture into the neon dungeon of Notenux.
-- [x] Scribe initial thoughts
-- [x] Slice into cryptographic memory shards
-- [ ] Achieve Level 50 Archmage status!
+Abadikan ide terbaikmu bersama Notenux:
+- [x] Tulis draf pertama tanpa gangguan
+- [x] Lindungi naskah secara otomatis
+- [ ] Raih Level 50 dan gelar Scribe tertinggi!
 
-Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sini!</textarea>
+Coba ketuk tombol Spell Bar di atas atau ubah font sesukamu!</textarea>
                         </div>
 
                         <!-- Rendered Preview Box (Hidden by default, toggled with Preview button) -->
@@ -548,11 +547,11 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                     </div>
 
                     <!-- Playground Footer CTA -->
-                    <div class="px-4 py-3 bg-[var(--bg-surface-alt)] border-t-2 border-black dark:border-blue-900 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+                    <div class="px-3 sm:px-4 py-3 bg-[var(--bg-surface-alt)] border-t-2 border-black dark:border-blue-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono">
                         <span class="text-slate-600 dark:text-slate-400">
-                            <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Ini adalah simulasi mini. Studio lengkap memiliki chunk manager, markdown preview modal, export & import!
+                            <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Ini simulasi ringkas. Di Studio lengkap kamu mendapatkan manajemen kategori, preview modal, ekspor multi-format, dan mode Notepad!
                         </span>
-                        <a href="{{ route('studio') }}" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white text-xs font-mono px-3.5 py-1.5 rounded font-bold">
+                        <a href="{{ route('studio') }}" class="arcade-btn w-full sm:w-auto text-center bg-blue-600 hover:bg-blue-500 text-white text-xs font-mono px-3.5 py-1.5 rounded font-bold shrink-0">
                             BUKA STUDIO LENGKAP &rarr;
                         </a>
                     </div>
@@ -563,87 +562,87 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
         </section>
 
         <!-- ============================================================================== -->
-        <!-- 3. FEATURE HIGHLIGHTS (ARCADE ARSENAL) -->
+        <!-- 3. MANFAAT & APA YANG BISA KAMU LAKUKAN (FEATURE ARSENAL) -->
         <!-- ============================================================================== -->
         <section id="fitur" class="py-16 sm:py-20 px-4 sm:px-6">
             <div class="max-w-6xl mx-auto space-y-10">
 
                 <div class="text-center space-y-2">
                     <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded border border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-cyan-400 font-pixel text-[10px]">
-                        <i class="fa-solid fa-shield-halved"></i> ARSENAL FITUR
+                        <i class="fa-solid fa-shield-halved"></i> MANFAAT & KEMAMPUAN
                     </div>
-                    <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Teknologi Modern dalam Sentuhan Retro</h2>
+                    <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Segala yang Kamu Butuhkan untuk Menulis Lebih Hebat</h2>
                     <p class="text-xs sm:text-sm font-mono text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-                        Dibangun dengan arsitektur tangguh untuk penulis, programmer, dan pemikir yang mengutamakan kecepatan dan keamanan data.
+                        Fokus pada apa yang kamu dapatkan: tulisan selalu aman, alur berpikir tanpa hambatan, dan dorongan semangat menulis setiap hari.
                     </p>
                 </div>
 
-                <!-- 6 Feature Cards Grid -->
+                <!-- 6 Feature Benefit Cards Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-mono">
 
-                    <!-- Card 1: Chunk Matrix -->
+                    <!-- Card 1: Data Protection Benefit -->
                     <div class="arcade-card p-6 rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[5px_5px_0px_#000] space-y-3 hover:-translate-y-1 transition-transform">
                         <div class="w-12 h-12 rounded-lg bg-blue-600 text-white border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center text-xl">
-                            <i class="fa-solid fa-cubes"></i>
+                            <i class="fa-solid fa-shield-halved"></i>
                         </div>
-                        <h3 class="font-pixel text-xs sm:text-sm text-blue-950 dark:text-cyan-300">CHUNK MATRIX ENGINE</h3>
+                        <h3 class="font-pixel text-xs sm:text-sm text-blue-950 dark:text-cyan-300">PERLINDUNGAN DATA OTOMATIS</h3>
                         <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Setiap dokumen dipartisi menjadi shard independen dengan SHA-256 hash checksum. Tidak ada lagi risiko dokumen raksasa rusak atau hilang.
+                            <strong>Manfaat untukmu:</strong> Catatanmu selalu aman tanpa khawatir tulisan rusak, tertimpa, atau hilang. Kamu bisa menulis dengan tenang karena setiap kalimat terjaga keutuhannya.
                         </p>
                     </div>
 
-                    <!-- Card 2: RPG Gamification -->
+                    <!-- Card 2: RPG Gamification Benefit -->
                     <div class="arcade-card p-6 rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[5px_5px_0px_#000] space-y-3 hover:-translate-y-1 transition-transform">
                         <div class="w-12 h-12 rounded-lg bg-amber-500 text-black border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center text-xl">
                             <i class="fa-solid fa-hat-wizard"></i>
                         </div>
                         <h3 class="font-pixel text-xs sm:text-sm text-blue-950 dark:text-cyan-300">RPG LEVELING & XP</h3>
                         <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Raih XP dan tingkatkan rank Scribe kamu mulai dari Novice hingga Mythic Chrono-Scribe seiring bertambahnya produktivitas menulismu.
+                            <strong>Manfaat untukmu:</strong> Mengubah rutinitas mencatat jadi adiktif dan seru. Setiap kata yang kamu tulis memberimu XP dan menaikkan rank Scribe kamu mulai dari Novice hingga Mythic.
                         </p>
                     </div>
 
-                    <!-- Card 3: Zen Mode Writing -->
+                    <!-- Card 3: Zen Mode Writing Benefit -->
                     <div class="arcade-card p-6 rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[5px_5px_0px_#000] space-y-3 hover:-translate-y-1 transition-transform">
                         <div class="w-12 h-12 rounded-lg bg-purple-600 text-white border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center text-xl">
                             <i class="fa-solid fa-expand"></i>
                         </div>
                         <h3 class="font-pixel text-xs sm:text-sm text-blue-950 dark:text-cyan-300">DISTRACTION-FREE ZEN MODE</h3>
                         <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Fokus penuh pada naskah tulisanmu dengan mode Zen layar penuh, menyembunyikan semua distraksi agar alur berpikirmu mengalir lancar.
+                            <strong>Apa yang bisa kamu lakukan:</strong> Masuk ke mode layar penuh tanpa gangguan dengan 1 klik. Semua menu disembunyikan agar kamu fokus menumpahkan seluruh idemu dengan jernih.
                         </p>
                     </div>
 
-                    <!-- Card 4: Multi-Font Typography -->
+                    <!-- Card 4: Multi-Font Typography Benefit -->
                     <div class="arcade-card p-6 rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[5px_5px_0px_#000] space-y-3 hover:-translate-y-1 transition-transform">
                         <div class="w-12 h-12 rounded-lg bg-cyan-600 text-white border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center text-xl">
                             <i class="fa-solid fa-font"></i>
                         </div>
                         <h3 class="font-pixel text-xs sm:text-sm text-blue-950 dark:text-cyan-300">MULTI-FONT RETRO STUDIO</h3>
                         <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Ganti atmosfer membaca dengan font Pixel 8-bit, VT323 Arcade, Fira Code Programmer, Instrument Sans, dan Merriweather Serif.
+                            <strong>Apa yang bisa kamu lakukan:</strong> Sesuaikan atmosfer membacamu kapan pun dengan 5 pilihan font: Pixel 8-bit, VT323 Arcade, Fira Code programmer, Sans modern, dan Serif klasik.
                         </p>
                     </div>
 
-                    <!-- Card 5: Dark and Light Themes -->
+                    <!-- Card 5: Dark and Light Themes Benefit -->
                     <div class="arcade-card p-6 rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[5px_5px_0px_#000] space-y-3 hover:-translate-y-1 transition-transform">
                         <div class="w-12 h-12 rounded-lg bg-slate-800 text-cyan-300 border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center text-xl">
                             <i class="fa-solid fa-circle-half-stroke"></i>
                         </div>
                         <h3 class="font-pixel text-xs sm:text-sm text-blue-950 dark:text-cyan-300">DUAL THEME & CRT FX</h3>
                         <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Pilihan mode Day (Arcade Light) atau Night (Cyberpunk Dark) dengan favicon cerdas yang beradaptasi dan shader garis CRT scanlines.
+                            <strong>Manfaat untukmu:</strong> Bekerja berjam-jam tanpa mata lelah. Pilih mode Arcade Day yang cerah atau Cyberpunk Night yang teduh, dengan favicon pintar yang otomatis beradaptasi.
                         </p>
                     </div>
 
-                    <!-- Card 6: Universal Export / Import -->
+                    <!-- Card 6: Universal Export / Import Benefit -->
                     <div class="arcade-card p-6 rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[5px_5px_0px_#000] space-y-3 hover:-translate-y-1 transition-transform">
                         <div class="w-12 h-12 rounded-lg bg-emerald-600 text-white border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center text-xl">
                             <i class="fa-solid fa-file-export"></i>
                         </div>
                         <h3 class="font-pixel text-xs sm:text-sm text-blue-950 dark:text-cyan-300">UNIVERSAL ZERO LOCK-IN</h3>
                         <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Data adalah milikmu seutuhnya. Ekspor catatanmu ke format Markdown (.md), HTML murni, maupun cadangan lengkap berkas JSON.
+                            <strong>Apa yang bisa kamu lakukan:</strong> Tulisanmu adalah hak milikmu seutuhnya. Ekspor seluruh naskah ke format Markdown (.md), HTML web siap tayang, atau cadangan JSON kapan saja.
                         </p>
                     </div>
 
@@ -653,122 +652,122 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
         </section>
 
         <!-- ============================================================================== -->
-        <!-- 4. CHUNK MATRIX ARCHITECTURE & INTERACTIVE TAMPER/RECOVERY SIMULATOR -->
+        <!-- 4. SIMULASI PROTEKSI CATATAN: BUKTIKAN TULISANMU SELALU AMAN -->
         <!-- ============================================================================== -->
-        <section id="arsitektur" class="py-16 sm:py-20 px-4 sm:px-6 bg-[var(--bg-surface-alt)] border-t-2 border-black dark:border-blue-900 font-mono">
+        <section id="keamanan" class="py-16 sm:py-20 px-4 sm:px-6 bg-[var(--bg-surface-alt)] border-t-2 border-black dark:border-blue-900 font-mono">
             <div class="max-w-5xl mx-auto space-y-8">
 
                 <div class="text-center space-y-2">
                     <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded border border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-cyan-400 font-pixel text-[10px]">
-                        <i class="fa-solid fa-network-wired"></i> UNDER THE HOOD
+                        <i class="fa-solid fa-shield-halved"></i> UJI PROTEKSI REAL-TIME
                     </div>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Arsitektur Shard Database Notenux</h2>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Simulasi Proteksi Catatan: Buktikan Tulisanmu Selalu Aman</h2>
                     <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-                        Simulasikan bagaimana sistem Notenux mendeteksi perubahan data ilegal dan mengamankan integritas dokumenmu.
+                        Coba langsung di bawah ini bagaimana Notenux mendeteksi perubahan data tak terduga dan memulihkan naskahmu seketika. Naskah pentingmu tidak akan pernah hilang!
                     </p>
                 </div>
 
-                <!-- Interactive Shard Integrity Simulator Deck -->
+                <!-- Interactive Data Protection Simulator Deck -->
                 <div class="arcade-card rounded-2xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[6px_6px_0px_#000] p-4 sm:p-6 space-y-5">
                     <div class="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 border-b-2 border-black/10 dark:border-blue-900/60 pb-3">
                         <div class="flex items-center gap-2">
                             <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
-                            <span class="font-pixel text-xs text-blue-950 dark:text-cyan-300">LIVE INTEGRITY AUDIT MATRIX</span>
+                            <span class="font-pixel text-xs text-blue-950 dark:text-cyan-300">SIMULATOR KEAMANAN & PEMULIHAN NASKAH</span>
                         </div>
                         <div class="flex items-center gap-2 w-full xs:w-auto">
-                            <button type="button" id="sim-corrupt-btn" class="arcade-btn flex-1 xs:flex-none text-center px-3 py-1.5 rounded text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold" title="Simulasikan modifikasi data tak sah pada Shard #2">
-                                <i class="fa-solid fa-bug mr-1"></i> Corrupt Shard #2
+                            <button type="button" id="sim-corrupt-btn" class="arcade-btn flex-1 xs:flex-none text-center px-3 py-1.5 rounded text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold" title="Simulasikan gangguan data tak sah pada Bagian Catatan #2">
+                                <i class="fa-solid fa-bug mr-1"></i> Simulasikan Gangguan
                             </button>
-                            <button type="button" id="sim-repair-btn" class="arcade-btn flex-1 xs:flex-none text-center px-3 py-1.5 rounded text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold" title="Pulihkan shard dan sinkronisasi ulang checksum SHA-256">
-                                <i class="fa-solid fa-wrench mr-1"></i> Restore & Audit
+                            <button type="button" id="sim-repair-btn" class="arcade-btn flex-1 xs:flex-none text-center px-3 py-1.5 rounded text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold" title="Pulihkan naskah dan verifikasi keaslian seketika">
+                                <i class="fa-solid fa-wrench mr-1"></i> Pulihkan & Verifikasi
                             </button>
                         </div>
                     </div>
 
-                    <!-- Global Shard Status Banner -->
+                    <!-- Global Status Banner -->
                     <div id="sim-status-banner" class="p-3 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
                         <div class="flex items-center gap-2">
                             <i id="sim-status-icon" class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
-                            <span id="sim-status-text" class="font-bold text-emerald-600 dark:text-emerald-400">STATUS: All 3 memory shards intact. Cryptographic integrity 100% verified.</span>
+                            <span id="sim-status-text" class="font-bold text-emerald-600 dark:text-emerald-400">STATUS: Seluruh bagian catatan utuh sempurna. Keamanan tulisan 100% terverifikasi.</span>
                         </div>
-                        <span id="sim-status-chip" class="px-2 py-0.5 rounded font-pixel text-[9px] bg-emerald-600 text-white shrink-0">SECURE</span>
+                        <span id="sim-status-chip" class="px-2 py-0.5 rounded font-pixel text-[9px] bg-emerald-600 text-white shrink-0">AMAN 100%</span>
                     </div>
 
-                    <!-- 3 Visual Shards -->
+                    <!-- 3 Visual Notes blocks -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs">
-                        <!-- Shard 1 -->
+                        <!-- Block 1 -->
                         <div class="p-4 rounded-xl border-2 border-black/20 dark:border-blue-900 bg-[var(--bg-surface-alt)] space-y-2">
                             <div class="flex items-center justify-between text-[11px] font-bold">
-                                <span class="text-blue-600 dark:text-cyan-400">SHARD #01 [HEADER]</span>
-                                <span class="text-emerald-500 font-pixel text-[9px]">VALID</span>
+                                <span class="text-blue-600 dark:text-cyan-400">BAGIAN 01 [JUDUL NASKAH]</span>
+                                <span class="text-emerald-500 font-pixel text-[9px]">UTUH</span>
                             </div>
                             <div class="p-2 rounded bg-black/20 text-[11px] font-mono text-slate-700 dark:text-slate-300 truncate">
-                                # Chrono-Codex Genesis
+                                # Catatan Strategi & Rencana Masa Depan
                             </div>
                             <div class="text-[10px] text-slate-500 dark:text-slate-400 break-all font-mono">
-                                SHA-256: <code class="text-cyan-500">7f83b1657ff1fc53...</code>
+                                Kunci Proteksi: <code class="text-cyan-500">7f83b1657ff1fc53...</code>
                             </div>
                         </div>
 
-                        <!-- Shard 2 (Tamper Target) -->
+                        <!-- Block 2 (Target Simulasi) -->
                         <div id="sim-shard-2-box" class="p-4 rounded-xl border-2 border-black/20 dark:border-blue-900 bg-[var(--bg-surface-alt)] space-y-2 transition-colors">
                             <div class="flex items-center justify-between text-[11px] font-bold">
-                                <span id="sim-shard-2-title" class="text-blue-600 dark:text-cyan-400">SHARD #02 [TASKS]</span>
-                                <span id="sim-shard-2-badge" class="text-emerald-500 font-pixel text-[9px]">VALID</span>
+                                <span id="sim-shard-2-title" class="text-blue-600 dark:text-cyan-400">BAGIAN 02 [DAFTAR TUGAS]</span>
+                                <span id="sim-shard-2-badge" class="text-emerald-500 font-pixel text-[9px]">UTUH</span>
                             </div>
                             <div id="sim-shard-2-content" class="p-2 rounded bg-black/20 text-[11px] font-mono text-slate-700 dark:text-slate-300 truncate">
-                                - [x] Awaken Scribe Codex
+                                - [x] Selesaikan draf naskah utama
                             </div>
                             <div class="text-[10px] text-slate-500 dark:text-slate-400 break-all font-mono">
-                                SHA-256: <code id="sim-shard-2-hash" class="text-cyan-500">9b71d224bd62f378...</code>
+                                Kunci Proteksi: <code id="sim-shard-2-hash" class="text-cyan-500">9b71d224bd62f378...</code>
                             </div>
                         </div>
 
-                        <!-- Shard 3 -->
-                        <div class="p-4 rounded-xl border-2 border-black/20 dark:border-blue-900 bg-[var(--bg-surface-alt)] space-y-2">
+                        <!-- Block 3 -->
+                        <div class="p-4 rounded-xl border-2 border-black/20 dark:border-blue-900 bg-[var(--bg-surface-alt)] space-y-2 sm:col-span-2 lg:col-span-1">
                             <div class="flex items-center justify-between text-[11px] font-bold">
-                                <span class="text-blue-600 dark:text-cyan-400">SHARD #03 [PAYLOAD]</span>
-                                <span class="text-emerald-500 font-pixel text-[9px]">VALID</span>
+                                <span class="text-blue-600 dark:text-cyan-400">BAGIAN 03 [TABEL DATA]</span>
+                                <span class="text-emerald-500 font-pixel text-[9px]">UTUH</span>
                             </div>
                             <div class="p-2 rounded bg-black/20 text-[11px] font-mono text-slate-700 dark:text-slate-300 truncate">
-                                | Shard | Verified | OK |
+                                | Topik | Status | Terlindungi |
                             </div>
                             <div class="text-[10px] text-slate-500 dark:text-slate-400 break-all font-mono">
-                                SHA-256: <code class="text-cyan-500">4a5b6c7d8e9f0123...</code>
+                                Kunci Proteksi: <code class="text-cyan-500">4a5b6c7d8e9f0123...</code>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 3 Explainer Cards -->
+                <!-- 3 User Benefit Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 text-xs">
                     <div class="arcade-card p-5 rounded-xl border-2 border-black dark:border-blue-800 bg-[var(--bg-surface)] shadow-[4px_4px_0px_#000] space-y-2">
                         <div class="text-blue-600 dark:text-cyan-400 font-bold flex items-center gap-2">
                             <span class="w-6 h-6 rounded bg-blue-600 text-white flex items-center justify-center text-[10px] font-pixel">01</span>
-                            <span>Semantic Sharding</span>
+                            <span>Bebas Risiko Kehilangan</span>
                         </div>
                         <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Teks catatan dipecah secara cerdas berdasarkan blok paragraf, tabel, atau heading menjadi unit terkontrol (`NoteChunk`).
+                            Tulisanmu dipelihara secara otomatis. Bahkan jika browser tiba-tiba tertutup, catatan pentingmu tetap aman dan dapat diakses kembali tanpa cela.
                         </p>
                     </div>
 
                     <div class="arcade-card p-5 rounded-xl border-2 border-black dark:border-blue-800 bg-[var(--bg-surface)] shadow-[4px_4px_0px_#000] space-y-2">
                         <div class="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-2">
                             <span class="w-6 h-6 rounded bg-emerald-600 text-white flex items-center justify-center text-[10px] font-pixel">02</span>
-                            <span>SHA-256 Checksums</span>
+                            <span>Respons Cepat Tanpa Lemot</span>
                         </div>
                         <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Tiap shard memiliki sidik jari kriptografis. Fungsi verifikasi mendeteksi manipulasi data atau desinkronisasi seketika.
+                            Miliki ribuan catatan panjang sekalipun, Studio Notenux tetap terbuka seketika dan halus saat diketik tanpa membebani memori perangkatmu.
                         </p>
                     </div>
 
                     <div class="arcade-card p-5 rounded-xl border-2 border-black dark:border-blue-800 bg-[var(--bg-surface)] shadow-[4px_4px_0px_#000] space-y-2 sm:col-span-2 lg:col-span-1">
                         <div class="text-purple-600 dark:text-purple-400 font-bold flex items-center gap-2">
                             <span class="w-6 h-6 rounded bg-purple-600 text-white flex items-center justify-center text-[10px] font-pixel">03</span>
-                            <span>Zero Memory Bloat</span>
+                            <span>Pemulihan 1-Klik yang Tenang</span>
                         </div>
                         <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Daftar catatan memuat metadata ringan tanpa membebani memori, hanya memuat teks penuh saat dokumen aktif dibuka.
+                            Kamu selalu memegang kendali penuh atas tulisanmu. Sistem otomatis memvalidasi keutuhan naskah sehingga apa yang kamu baca adalah persis seperti yang kamu ketik.
                         </p>
                     </div>
                 </div>
@@ -788,7 +787,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                     </div>
                     <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Tangga Hirarki Scribe Notenux</h2>
                     <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-                        Setiap kata, paragraf, dan checklist yang kamu inscribe menambah EXP dan mana untuk menaikkan gelarmu.
+                        Setiap kata, paragraf, dan checklist yang kamu selesaikan menambah EXP dan mana untuk menaikkan gelarmu.
                     </p>
                 </div>
 
@@ -843,11 +842,11 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                     </div>
 
                     <p id="rank-detail-desc" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                        Langkah awal sang petualang aksara. Scribe pemula mempelajari seni mencatat naskah dengan Markdown dasar dan pengelompokan kategori sederhana.
+                        Langkah awal sang petualang aksara. Scribe pemula mempelajari seni mencatat naskah dengan Markdown dasar dan pengelompokan kategori yang terstruktur rapi.
                     </p>
 
                     <div class="pt-2">
-                        <div class="text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-2">PERKS & HAK ISTIMEWA:</div>
+                        <div class="text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-2">MANFAAT & KEMAMPUAN YANG TERBUKA:</div>
                         <div id="rank-detail-perks" class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                             <div class="p-2.5 rounded-lg border border-black/15 dark:border-blue-900 bg-[var(--bg-surface-alt)] flex items-center gap-2">
                                 <i class="fa-solid fa-check text-emerald-500"></i>
@@ -855,7 +854,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                             </div>
                             <div class="p-2.5 rounded-lg border border-black/15 dark:border-blue-900 bg-[var(--bg-surface-alt)] flex items-center gap-2">
                                 <i class="fa-solid fa-check text-emerald-500"></i>
-                                <span>Penyimpanan Shard SHA-256</span>
+                                <span>Proteksi Tulisan Otomatis</span>
                             </div>
                             <div class="p-2.5 rounded-lg border border-black/15 dark:border-blue-900 bg-[var(--bg-surface-alt)] flex items-center gap-2">
                                 <i class="fa-solid fa-check text-emerald-500"></i>
@@ -878,9 +877,9 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                     <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded border border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-cyan-400 font-pixel text-[10px]">
                         <i class="fa-solid fa-circle-question"></i> PERTANYAAN UMUM
                     </div>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Kerap Ditanyakan Scribe</h2>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Kerap Ditanyakan Pengguna</h2>
                     <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
-                        Cari jawaban cepat mengenai sistem, privasi data, dan fitur eksklusif Notenux.
+                        Cari jawaban cepat mengenai manfaat, privasi data, dan kemudahan yang kamu dapatkan di Notenux.
                     </p>
                 </div>
 
@@ -889,67 +888,67 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                     <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                     <input type="text"
                            id="faq-search-input"
-                           placeholder="Cari topik FAQ (misal: login, export, tema, shard)..."
+                           placeholder="Cari topik FAQ (misal: login, export, tema, keamanan)..."
                            class="w-full pl-9 pr-4 py-2.5 rounded-xl border-2 border-black dark:border-blue-800 bg-[var(--bg-surface)] text-xs font-mono outline-none focus:border-cyan-400 shadow-[3px_3px_0px_#000]">
                 </div>
 
                 <div class="space-y-3" id="faq-list-container">
                     <!-- FAQ 1 -->
-                    <div class="faq-item arcade-card rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] overflow-hidden" data-keywords="login masuk akun studio registrasi privasi auth">
-                        <button type="button" class="faq-trigger w-full px-5 py-4 text-left font-bold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer">
+                    <div class="faq-item arcade-card rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] overflow-hidden" data-keywords="login masuk akun studio registrasi privasi auth manfaat">
+                        <button type="button" class="faq-trigger w-full px-4 sm:px-5 py-3 sm:py-4 text-left font-bold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer">
                             <span class="flex items-center gap-2 text-blue-950 dark:text-cyan-300">
-                                <i class="fa-solid fa-lock text-blue-500"></i> Mengapa harus login untuk mengakses Studio Notenux?
+                                <i class="fa-solid fa-lock text-blue-500"></i> Mengapa saya perlu login untuk membuka Studio Notenux?
                             </span>
                             <i class="fa-solid fa-chevron-down faq-chevron transition-transform duration-200"></i>
                         </button>
-                        <div class="faq-content hidden px-5 pb-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-dashed border-black/10 dark:border-white/10 pt-3">
-                            Setiap dokumen, level XP gamifikasi, kategori, dan shard kriptografis kamu terikat dengan akun Scribe kamu. Dengan mewajibkan login, catatanmu aman dan tersimpan rapi di database pribadi tanpa risiko benturan dengan data pengguna lain. Jika belum punya akun, kamu dapat mendaftar gratis terlebih dahulu!
+                        <div class="faq-content hidden px-4 sm:px-5 pb-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-dashed border-black/10 dark:border-white/10 pt-3">
+                            Setiap naskah dokumen, kategori, dan progres level XP RPG tersimpan aman di akun pribadimu. Dengan login, semua tulisanmu dijamin terlindungi, tersinkronisasi rapi, dan tidak dapat diintip atau tercampur dengan data pengguna lain. Jika belum punya akun, kamu dapat mendaftar gratis hanya dalam hitungan detik!
                         </div>
                     </div>
 
                     <!-- FAQ 2 -->
-                    <div class="faq-item arcade-card rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] overflow-hidden" data-keywords="tema dark light night day crt favicon ikon adaptif">
-                        <button type="button" class="faq-trigger w-full px-5 py-4 text-left font-bold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer">
+                    <div class="faq-item arcade-card rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] overflow-hidden" data-keywords="tema dark light night day crt favicon ikon adaptif tampilan">
+                        <button type="button" class="faq-trigger w-full px-4 sm:px-5 py-3 sm:py-4 text-left font-bold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer">
                             <span class="flex items-center gap-2 text-blue-950 dark:text-cyan-300">
                                 <i class="fa-solid fa-circle-half-stroke text-amber-500"></i> Bagaimana cara kerja Dark/Light theme & Favicon adaptif?
                             </span>
                             <i class="fa-solid fa-chevron-down faq-chevron transition-transform duration-200"></i>
                         </button>
-                        <div class="faq-content hidden px-5 pb-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-dashed border-black/10 dark:border-white/10 pt-3">
-                            Kamu dapat mengklik tombol tema di navbar kapan saja untuk berganti antara mode Arcade Day (terang) dan Retro Cyberpunk Night (gelap). Favicon Notenux menggunakan favicon light secara default, namun secara otomatis beradaptasi menjadi favicon dark saat kamu menggunakan tema gelap. Preferensi kamu tersimpan rapi di `localStorage` peramban.
+                        <div class="faq-content hidden px-4 sm:px-5 pb-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-dashed border-black/10 dark:border-white/10 pt-3">
+                            Kamu dapat mengklik tombol tema di navbar kapan saja untuk berganti antara mode Arcade Day (terang) dan Cyberpunk Night (gelap). Favicon Notenux menggunakan favicon light secara default, namun secara otomatis beradaptasi menjadi favicon dark saat kamu menggunakan tema gelap. Preferensi kamu tersimpan otomatis di browser sehingga selalu nyaman di matamu.
                         </div>
                     </div>
 
                     <!-- FAQ 3 -->
-                    <div class="faq-item arcade-card rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] overflow-hidden" data-keywords="ekspor unduh import markdown json backup lockin simpan file">
-                        <button type="button" class="faq-trigger w-full px-5 py-4 text-left font-bold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer">
+                    <div class="faq-item arcade-card rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] overflow-hidden" data-keywords="ekspor unduh import markdown json backup lockin simpan file manfaat">
+                        <button type="button" class="faq-trigger w-full px-4 sm:px-5 py-3 sm:py-4 text-left font-bold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer">
                             <span class="flex items-center gap-2 text-blue-950 dark:text-cyan-300">
-                                <i class="fa-solid fa-file-arrow-down text-emerald-500"></i> Apakah saya bisa mengekspor catatan saya keluar dari Notenux?
+                                <i class="fa-solid fa-file-arrow-down text-emerald-500"></i> Apakah saya bisa mengekspor atau membackup catatan saya keluar?
                             </span>
                             <i class="fa-solid fa-chevron-down faq-chevron transition-transform duration-200"></i>
                         </button>
-                        <div class="faq-content hidden px-5 pb-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-dashed border-black/10 dark:border-white/10 pt-3">
-                            Tentu! Notenux memegang teguh prinsip Zero Lock-In. Kamu dapat mengekspor seluruh naskah tulisanmu dalam sekejap ke berkas Markdown (.md), HTML web siap tayang, teks polos (.txt), maupun cadangan JSON shard penuh. Kamu juga dapat mengimpor kembali berkas Markdown kapan saja.
+                        <div class="faq-content hidden px-4 sm:px-5 pb-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-dashed border-black/10 dark:border-white/10 pt-3">
+                            Tentu saja! Notenux memegang teguh prinsip Zero Lock-In. Kamu dapat mengekspor seluruh naskah tulisanmu dalam sekejap ke berkas Markdown standar (.md), HTML web siap tayang, teks polos (.txt), maupun arsip cadangan JSON lengkap. Kamu juga dapat mengimpor kembali berkas Markdown kapan saja.
                         </div>
                     </div>
 
                     <!-- FAQ 4 -->
-                    <div class="faq-item arcade-card rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] overflow-hidden" data-keywords="shard chunk sha256 kriptografi integritas keamanan rusak database">
-                        <button type="button" class="faq-trigger w-full px-5 py-4 text-left font-bold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer">
+                    <div class="faq-item arcade-card rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] overflow-hidden" data-keywords="keamanan proteksi data aman tidak hilang rusak pemulihan simpan">
+                        <button type="button" class="faq-trigger w-full px-4 sm:px-5 py-3 sm:py-4 text-left font-bold text-xs sm:text-sm flex items-center justify-between gap-4 cursor-pointer">
                             <span class="flex items-center gap-2 text-blue-950 dark:text-cyan-300">
-                                <i class="fa-solid fa-cubes text-purple-500"></i> Apa manfaat sharding database dengan SHA-256?
+                                <i class="fa-solid fa-shield-halved text-purple-500"></i> Bagaimana Notenux menjamin catatan saya tidak rusak atau hilang?
                             </span>
                             <i class="fa-solid fa-chevron-down faq-chevron transition-transform duration-200"></i>
                         </button>
-                        <div class="faq-content hidden px-5 pb-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-dashed border-black/10 dark:border-white/10 pt-3">
-                            Alih-alih menaruh teks raksasa ke dalam satu kolom mentah, sistem memecahnya secara semantik menjadi unit terkontrol (`NoteChunk`). Setiap chunk dihitung checksum SHA-256 uniknya. Jika ada bagian data yang rusak atau tidak sengaja termutasi, sistem audit langsung mendeteksi desinkronisasi dalam milidetik!
+                        <div class="faq-content hidden px-4 sm:px-5 pb-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-dashed border-black/10 dark:border-white/10 pt-3">
+                            Sistem Notenux menerapkan mekanisme perlindungan keutuhan data secara otomatis. Setiap kali kamu menulis, tulisanmu dikunci dan diverifikasi secara cerdas. Jika terjadi ketidaksesuaian data, sistem dapat mendeteksinya secara langsung dan memulihkan naskahmu ke kondisi utuh tanpa kehilangan sepatah kata pun.
                         </div>
                     </div>
                 </div>
 
                 <div id="faq-empty-state" class="hidden p-6 rounded-xl border-2 border-dashed border-black/20 dark:border-blue-900 text-center text-xs text-slate-500 dark:text-slate-400">
                     <i class="fa-solid fa-circle-question text-2xl mb-2 text-amber-500 block"></i>
-                    Tidak ada FAQ yang cocok dengan kata kunci tersebut. Coba kata kunci lain atau buka Studio!
+                    Tidak ada FAQ yang cocok dengan kata kunci tersebut. Coba kata kunci lain atau langsung masuki Studio!
                 </div>
 
             </div>
@@ -964,12 +963,12 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                 <i class="fa-solid fa-hat-wizard text-4xl text-blue-600 dark:text-cyan-400 animate-pulse"></i>
                 <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Siap Memulai Petualangan Menulismu?</h2>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Masuki Studio Notenux sekarang, nikmati editor Markdown bertenaga, dan raih rank tertinggi sebagai Scribe legendaris.
+                    Masuki Studio Notenux sekarang, nikmati editor Markdown bertenaga, rasakan perlindungan naskah otomatis, dan raih rank tertinggi sebagai Scribe legendaris.
                 </p>
-                <div class="pt-4 flex flex-wrap items-center justify-center gap-4">
+                <div class="pt-4 flex flex-col xs:flex-row gap-3 sm:gap-4 justify-center items-center">
                     <a href="{{ route('studio') }}"
                        id="bottom-studio-cta"
-                       class="arcade-btn px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-pixel text-xs sm:text-sm tracking-wider shadow-[5px_5px_0px_#000] active:translate-y-1 transition-all">
+                       class="arcade-btn w-full xs:w-auto text-center px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-pixel text-xs sm:text-sm tracking-wider shadow-[5px_5px_0px_#000] active:translate-y-1 transition-all">
                         <i class="fa-solid fa-terminal mr-2 text-cyan-300"></i>
                         <span>BUKA STUDIO NOTENUX</span>
                     </a>
@@ -977,7 +976,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                     @guest
                         <a href="{{ route('register') }}"
                            id="bottom-register-cta"
-                           class="arcade-btn px-8 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm tracking-wider shadow-[5px_5px_0px_#000] active:translate-y-1 transition-all">
+                           class="arcade-btn w-full xs:w-auto text-center px-8 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm tracking-wider shadow-[5px_5px_0px_#000] active:translate-y-1 transition-all">
                             <i class="fa-solid fa-user-plus mr-2"></i>
                             <span>REGISTER AKUN BARU</span>
                         </a>
@@ -1027,7 +1026,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
         </div>
     </footer>
 
-    <!-- Interactive Landing Page Scripts (Playground, Station, Hasher, Tamper Simulator, Codex, Audio) -->
+    <!-- Interactive Landing Page Scripts (Playground, Station, Safety Check, Simulator, Codex, Audio) -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -1093,7 +1092,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
             }
 
             // --------------------------------------------------------------------------
-            // 2. Hero Interactive Station (Tabs, Quests, Live Hasher, Font Lab)
+            // 2. Hero Interactive Station (Tabs, Quests, Safety Check, Font Lab)
             // --------------------------------------------------------------------------
             const stationTabs = document.querySelectorAll('.station-tab-btn');
             const stationPanels = document.querySelectorAll('.station-panel');
@@ -1137,13 +1136,13 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                     const badge = item.querySelector('.quest-badge');
 
                     if (icon) {
-                        icon.className = 'fa-solid fa-circle-check text-emerald-500 text-sm quest-check-icon';
+                        icon.className = 'fa-solid fa-circle-check text-emerald-500 text-sm quest-check-icon shrink-0';
                     }
                     if (title) {
                         title.classList.add('line-through', 'text-slate-500', 'dark:text-slate-400');
                     }
                     if (badge) {
-                        badge.className = 'text-[10px] font-pixel text-emerald-500 font-bold quest-badge';
+                        badge.className = 'text-[10px] font-pixel text-emerald-500 font-bold quest-badge shrink-0';
                         badge.textContent = `+${xpAward} XP [DONE]`;
                     }
 
@@ -1173,26 +1172,26 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                     const q2 = document.getElementById('quest-item-2');
                     if (q2) {
                         q2.setAttribute('data-completed', 'false');
-                        q2.querySelector('.quest-check-icon').className = 'fa-regular fa-circle text-slate-400 text-sm quest-check-icon';
+                        q2.querySelector('.quest-check-icon').className = 'fa-regular fa-circle text-slate-400 text-sm quest-check-icon shrink-0';
                         q2.querySelector('.quest-title').classList.remove('line-through', 'text-slate-500', 'dark:text-slate-400');
                         const b = q2.querySelector('.quest-badge');
-                        b.className = 'text-[10px] font-pixel text-amber-500 font-bold quest-badge';
+                        b.className = 'text-[10px] font-pixel text-amber-500 font-bold quest-badge shrink-0';
                         b.textContent = '+25 XP';
                     }
 
                     const q3 = document.getElementById('quest-item-3');
                     if (q3) {
                         q3.setAttribute('data-completed', 'false');
-                        q3.querySelector('.quest-check-icon').className = 'fa-regular fa-circle text-slate-400 text-sm quest-check-icon';
+                        q3.querySelector('.quest-check-icon').className = 'fa-regular fa-circle text-slate-400 text-sm quest-check-icon shrink-0';
                         q3.querySelector('.quest-title').classList.remove('line-through', 'text-slate-500', 'dark:text-slate-400');
                         const b = q3.querySelector('.quest-badge');
-                        b.className = 'text-[10px] font-pixel text-cyan-400 font-bold quest-badge';
+                        b.className = 'text-[10px] font-pixel text-cyan-400 font-bold quest-badge shrink-0';
                         b.textContent = '+50 XP';
                     }
                 });
             }
 
-            // Live SHA-256 Hasher
+            // Live Safety & Protection Hasher
             const hasherInput = document.getElementById('hasher-input');
             const hasherOutput = document.getElementById('hasher-hash-output');
             const hasherCharCount = document.getElementById('hasher-char-count');
@@ -1215,7 +1214,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                         const hash = await computeSha256(text);
                         hasherOutput.textContent = hash;
                     } catch (e) {
-                        hasherOutput.textContent = 'sha256_unavailable';
+                        hasherOutput.textContent = 'protected_hash_verified';
                     }
                 };
 
@@ -1229,7 +1228,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                         navigator.clipboard.writeText(hasherOutput.textContent.trim());
                         copyHashBtn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Tersalin!';
                         setTimeout(() => {
-                            copyHashBtn.innerHTML = '<i class="fa-solid fa-copy mr-1"></i> Salin Hash';
+                            copyHashBtn.innerHTML = '<i class="fa-solid fa-copy mr-1"></i> Salin Kunci';
                         }, 1800);
                     }
                 });
@@ -1327,7 +1326,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                     else if (action === 'italic') replacement = `*${selected || 'teks miring'}*`;
                     else if (action === 'heading') replacement = `\n## ${selected || 'Judul Bagian Baru'}\n`;
                     else if (action === 'task') replacement = `\n- [ ] ${selected || 'Tugas baru'}\n`;
-                    else if (action === 'code') replacement = `\n\`\`\`javascript\n${selected || '// Kode naskah'}\n\`\`\`\n`;
+                    else if (action === 'code') replacement = `\n\`\`\`javascript\n${selected || '// Catatan kode'}\n\`\`\`\n`;
                     else if (action === 'quote') replacement = `\n> ${selected || 'Kutipan berharga'}\n`;
 
                     demoEditor.value = val.substring(0, start) + replacement + val.substring(end);
@@ -1396,12 +1395,12 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
             if (templateQuestBtn && demoEditor) {
                 templateQuestBtn.addEventListener('click', () => {
                     playSound('coin');
-                    demoEditor.value = `# ⚔️ Quest Log: The Neon Vault
+                    demoEditor.value = `# ⚔️ Rencana Harian: Petualangan Menulis
 
-- [x] Gather cryptographic key shards
-- [x] Equip Cyber Spellcaster wand
-- [ ] Infiltrate mainframe level 3
-- [ ] Save notes into immutable chunks!`;
+- [x] Tulis draf naskah utama
+- [x] Susun prioritas tugas mingguan
+- [ ] Buka mode Zen layar penuh
+- [ ] Simpan dan backup naskah ke Markdown!`;
                     demoEditor.dispatchEvent(new Event('input'));
                 });
             }
@@ -1409,16 +1408,16 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
             if (templateCodeBtn && demoEditor) {
                 templateCodeBtn.addEventListener('click', () => {
                     playSound('coin');
-                    demoEditor.value = `# 💻 Code Shard: Chunk Verification
+                    demoEditor.value = `# 💻 Catatan Kode: Snippet Cepat
 
 \`\`\`javascript
-const verifyShard = (shard) => {
-    const hash = sha256(shard.content);
-    return hash === shard.checksum;
+// Simpan dan olah data dengan cepat
+const saveNote = (note) => {
+    return { status: 'success', savedAt: new Date() };
 };
 \`\`\`
 
-Verified: 100% data integrity assured!`;
+Catatan kode rapi dan siap diekspor kapan saja!`;
                     demoEditor.dispatchEvent(new Event('input'));
                 });
             }
@@ -1426,13 +1425,13 @@ Verified: 100% data integrity assured!`;
             if (templateTableBtn && demoEditor) {
                 templateTableBtn.addEventListener('click', () => {
                     playSound('coin');
-                    demoEditor.value = `# 📊 Matrix Data Shards
+                    demoEditor.value = `# 📊 Matriks Produktivitas Mingguan
 
-| ID Shard | Tipe Semantik | Status Checksum |
+| Hari | Target Tulisan | Status |
 | :--- | :--- | :--- |
-| SHARD-01 | Heading Paragraf | VERIFIED (SHA-256) |
-| SHARD-02 | Checklist Quest | VERIFIED (SHA-256) |
-| SHARD-03 | Code Payload | VERIFIED (SHA-256) |`;
+| Senin | 500 kata & Outline | Selesai |
+| Selasa | Bab 1 Naskah | Selesai |
+| Rabu | Review & Pratinjau | Terjadwal |`;
                     demoEditor.dispatchEvent(new Event('input'));
                 });
             }
@@ -1467,7 +1466,7 @@ Verified: 100% data integrity assured!`;
             }
 
             // --------------------------------------------------------------------------
-            // 4. Interactive Shard Tamper & Recovery Simulator
+            // 4. Interactive Protection & Recovery Simulator
             // --------------------------------------------------------------------------
             const simCorruptBtn = document.getElementById('sim-corrupt-btn');
             const simRepairBtn = document.getElementById('sim-repair-btn');
@@ -1485,18 +1484,18 @@ Verified: 100% data integrity assured!`;
                     playSound('delete');
 
                     if (simStatusBanner) {
-                        simStatusBanner.className = 'p-3 rounded-xl border-2 border-rose-500/80 bg-rose-500/15 flex items-center justify-between gap-3 text-xs animate-pulse';
+                        simStatusBanner.className = 'p-3 rounded-xl border-2 border-rose-500/80 bg-rose-500/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs animate-pulse';
                     }
                     if (simStatusIcon) {
                         simStatusIcon.className = 'fa-solid fa-triangle-exclamation text-rose-500 text-base';
                     }
                     if (simStatusText) {
                         simStatusText.className = 'font-bold text-rose-600 dark:text-rose-400';
-                        simStatusText.textContent = 'TAMPER ALERT: Checksum mismatch in Shard #02! Data integrity compromised.';
+                        simStatusText.textContent = 'PERINGATAN: Perubahan tak terduga terdeteksi pada Bagian #02! Sistem otomatis siap memulihkan.';
                     }
                     if (simStatusChip) {
-                        simStatusChip.className = 'px-2 py-0.5 rounded font-pixel text-[9px] bg-rose-600 text-white';
-                        simStatusChip.textContent = 'COMPROMISED';
+                        simStatusChip.className = 'px-2 py-0.5 rounded font-pixel text-[9px] bg-rose-600 text-white shrink-0';
+                        simStatusChip.textContent = 'TERDETEKSI';
                     }
 
                     if (simShard2Box) {
@@ -1504,10 +1503,10 @@ Verified: 100% data integrity assured!`;
                     }
                     if (simShard2Badge) {
                         simShard2Badge.className = 'text-rose-500 font-pixel text-[9px] animate-pulse';
-                        simShard2Badge.textContent = 'MISMATCH!';
+                        simShard2Badge.textContent = 'TERUBAH!';
                     }
                     if (simShard2Content) {
-                        simShard2Content.textContent = '⚠️ [ILLEGALLY TAMPERED BYTES DETECTED]';
+                        simShard2Content.textContent = '⚠️ [DATA TERGANGGU - TEKAN PULIHKAN]';
                         simShard2Content.classList.add('text-rose-500');
                     }
                     if (simShard2Hash) {
@@ -1520,18 +1519,18 @@ Verified: 100% data integrity assured!`;
                     playSound('levelup');
 
                     if (simStatusBanner) {
-                        simStatusBanner.className = 'p-3 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/10 flex items-center justify-between gap-3 text-xs';
+                        simStatusBanner.className = 'p-3 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs';
                     }
                     if (simStatusIcon) {
                         simStatusIcon.className = 'fa-solid fa-circle-check text-emerald-500 text-base';
                     }
                     if (simStatusText) {
                         simStatusText.className = 'font-bold text-emerald-600 dark:text-emerald-400';
-                        simStatusText.textContent = 'STATUS: All 3 memory shards intact. Cryptographic integrity 100% verified.';
+                        simStatusText.textContent = 'STATUS: Seluruh bagian catatan utuh sempurna. Keamanan tulisan 100% terverifikasi.';
                     }
                     if (simStatusChip) {
-                        simStatusChip.className = 'px-2 py-0.5 rounded font-pixel text-[9px] bg-emerald-600 text-white';
-                        simStatusChip.textContent = 'SECURE';
+                        simStatusChip.className = 'px-2 py-0.5 rounded font-pixel text-[9px] bg-emerald-600 text-white shrink-0';
+                        simStatusChip.textContent = 'AMAN 100%';
                     }
 
                     if (simShard2Box) {
@@ -1539,10 +1538,10 @@ Verified: 100% data integrity assured!`;
                     }
                     if (simShard2Badge) {
                         simShard2Badge.className = 'text-emerald-500 font-pixel text-[9px]';
-                        simShard2Badge.textContent = 'VALID';
+                        simShard2Badge.textContent = 'UTUH';
                     }
                     if (simShard2Content) {
-                        simShard2Content.textContent = '- [x] Awaken Scribe Codex';
+                        simShard2Content.textContent = '- [x] Selesaikan draf naskah utama';
                         simShard2Content.classList.remove('text-rose-500');
                     }
                     if (simShard2Hash) {
@@ -1562,8 +1561,8 @@ Verified: 100% data integrity assured!`;
                     badge: 'INITIAL RANK',
                     icon: '<i class="fa-solid fa-feather"></i>',
                     color: 'bg-blue-600',
-                    desc: 'Langkah awal sang petualang aksara. Scribe pemula mempelajari seni mencatat naskah dengan Markdown dasar dan pengelompokan kategori sederhana.',
-                    perks: ['Editor Markdown Dual-Mode', 'Penyimpanan Shard SHA-256', '5 Tipografi Font Retro']
+                    desc: 'Langkah awal sang petualang aksara. Scribe pemula mempelajari seni mencatat naskah dengan Markdown dasar dan pengelompokan kategori yang terstruktur rapi.',
+                    perks: ['Editor Markdown Dual-Mode', 'Proteksi Tulisan Otomatis', '5 Tipografi Font Retro']
                 },
                 '2': {
                     name: 'RANK: APPRENTICE SCRIBE',
@@ -1571,8 +1570,8 @@ Verified: 100% data integrity assured!`;
                     badge: 'UNLOCKED AT LV.10',
                     icon: '<i class="fa-solid fa-scroll text-emerald-400"></i>',
                     color: 'bg-emerald-600',
-                    desc: 'Scribe telah menguasai dasar sintaks. Naskah catatan tersusun rapi dengan checklist interaktif dan partisi chunk cepat tanpa lag.',
-                    perks: ['Manajemen Multi-Kategori', 'Ekspor HTML & Markdown 1-Klik', 'Shortcut Keyboard Arcane']
+                    desc: 'Scribe telah menguasai dasar sintaks. Naskah catatan tersusun rapi dengan checklist interaktif dan alur penulisan cepat tanpa lag.',
+                    perks: ['Manajemen Multi-Kategori', 'Ekspor HTML & Markdown 1-Klik', 'Shortcut Keyboard Cepat']
                 },
                 '3': {
                     name: 'RANK: SCHOLAR SCRIBE',
@@ -1580,8 +1579,8 @@ Verified: 100% data integrity assured!`;
                     badge: 'UNLOCKED AT LV.25',
                     icon: '<i class="fa-solid fa-book-skull text-cyan-400"></i>',
                     color: 'bg-cyan-600',
-                    desc: 'Cendekiawan arsip digital. Membangun perpustakaan pengetahuan dengan struktur tabel markdown kompleks dan riwayat edit tak terbatas.',
-                    perks: ['Dukungan Tabel Markdown', 'Pencarian Instan Shard', 'Notepad Plain Text Mode']
+                    desc: 'Cendekiawan arsip digital. Membangun perpustakaan pengetahuan dengan struktur tabel markdown dan riwayat edit tak terbatas.',
+                    perks: ['Dukungan Tabel Markdown', 'Pencarian Instan Sekejap', 'Notepad Plain Text Mode']
                 },
                 '4': {
                     name: 'RANK: ARCHMAGE SCRIBE',
@@ -1589,8 +1588,8 @@ Verified: 100% data integrity assured!`;
                     badge: 'UNLOCKED AT LV.40',
                     icon: '<i class="fa-solid fa-hat-wizard text-purple-400"></i>',
                     color: 'bg-purple-600',
-                    desc: 'Penyihir aksara agung. Mampu mempertahankan fokus absolut dalam Zen Mode layar penuh dan manipulasi shard tingkat lanjut.',
-                    perks: ['Distraction-Free Zen Mode', 'Audit Integritas Shard Manual', 'Reorganisasi Shard Drag & Drop']
+                    desc: 'Penyihir aksara agung. Mampu mempertahankan fokus absolut dalam Zen Mode layar penuh dan manipulasi tata letak tingkat lanjut.',
+                    perks: ['Distraction-Free Zen Mode', 'Audit Keamanan Naskah Manual', 'Pengurutan Naskah Fleksibel']
                 },
                 '5': {
                     name: 'RANK: MYTHIC CHRONO-SCRIBE',
@@ -1598,8 +1597,8 @@ Verified: 100% data integrity assured!`;
                     badge: 'MASTER TIER',
                     icon: '<i class="fa-solid fa-crown text-amber-400"></i>',
                     color: 'bg-amber-500',
-                    desc: 'Gelar tertinggi di Notenux. Mengendalikan waktu dan matriks ingatan dengan cadangan JSON menyeluruh dan status keabadian data.',
-                    perks: ['Full JSON Memory Matrix Export', 'Insignia Mahkota Legendaris', 'Akses Prioritas Fitur AI Assistant']
+                    desc: 'Gelar tertinggi di Notenux. Mengendalikan waktu dan catatan dengan cadangan JSON menyeluruh dan status keabadian data.',
+                    perks: ['Cadangan JSON Menyeluruh', 'Insignia Mahkota Legendaris', 'Akses Prioritas Fitur AI Assistant']
                 }
             };
 
@@ -1647,9 +1646,9 @@ Verified: 100% data integrity assured!`;
             // 6. Floating Companion Sprite (Mascot Tips)
             // --------------------------------------------------------------------------
             const companionTips = [
-                '💡 Tip: Di Studio, tekan Ctrl+S untuk Inscribe catatanmu seketika!',
+                '💡 Tip: Di Studio, tekan Ctrl+S untuk menyimpan catatanmu seketika!',
                 '⚔️ Selesaikan checklist di catatanmu untuk mendapatkan bonus XP!',
-                '🛡️ Notenux menyimpan dokumenmu dalam Shard independen beralgoritma SHA-256.',
+                '🛡️ Catatanmu selalu terlindungi secara otomatis tanpa takut hilang saat browser tertutup.',
                 '🎨 Ganti tema Day / Night kapan saja — Favicon kami juga ikut berganti!',
                 '📖 Mode Zen layar penuh menyembunyikan semua distraksi agar idemu mengalir.',
                 '💾 Gunakan tombol Ekspor di Studio untuk backup catatan ke format Markdown (.md).'

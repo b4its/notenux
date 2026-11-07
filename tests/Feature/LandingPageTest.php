@@ -19,8 +19,10 @@ test('landing page renders successfully for guests with interactive sections', f
         ->assertSee('theme-toggle-btn')
         ->assertSee('demo-editor-input')
         ->assertSee('demo-xp-bar')
-        ->assertSee('CHUNK MATRIX ENGINE')
+        ->assertSee('PERLINDUNGAN DATA OTOMATIS')
         ->assertSee('DISTRACTION-FREE ZEN MODE')
+        ->assertDontSee('CHUNK MATRIX ENGINE')
+        ->assertDontSee('Arsitektur Shard Database')
         ->assertSee('font-awesome', false);
 });
 
@@ -195,4 +197,22 @@ test('telemetry strip omits db shards and xss sanitized while keeping manuscript
         ->assertSee('RPG LEVELING')
         ->assertDontSee('DB SHARDS')
         ->assertDontSee('XSS SANITIZED');
+});
+
+test('landing page focuses on user benefits and capabilities without revealing internal architecture', function () {
+    $response = $this->get(route('landing'));
+
+    $response->assertOk()
+        ->assertSee('PERLINDUNGAN DATA OTOMATIS')
+        ->assertSee('Bebas Risiko Kehilangan')
+        ->assertSee('Respons Cepat Tanpa Lemot')
+        ->assertSee('Pemulihan 1-Klik yang Tenang')
+        ->assertSee('DISTRACTION-FREE ZEN MODE')
+        ->assertSee('MULTI-FONT RETRO STUDIO')
+        ->assertSee('DUAL THEME & CRT FX', false)
+        ->assertSee('UNIVERSAL ZERO LOCK-IN')
+        ->assertDontSee('CHUNK MATRIX ENGINE')
+        ->assertDontSee('Arsitektur Shard Database')
+        ->assertDontSee('Semantic Sharding')
+        ->assertDontSee('NoteChunk');
 });
