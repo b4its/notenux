@@ -15,6 +15,15 @@ class Note extends Model
     use HasFactory;
 
     /**
+     * The accessors to append to the model's array and JSON form.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'reading_time',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

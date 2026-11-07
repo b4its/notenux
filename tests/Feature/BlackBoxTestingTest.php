@@ -528,3 +528,123 @@ test('black-box: user audits note cryptographic integrity and discovers tampered
         ->assertJsonPath('data.is_valid', true)
         ->assertJsonPath('data.corrupted_chunks', 0);
 });
+
+test('black-box: user exports scroll in json format with complete note telemetry and chunks', function () {
+    $note = Note::factory()->create([
+        'title' => 'Ancient Shard Archive',
+        'category' => 'spellbook',
+        'content' => '<h2>Arcane Gateway</h2><p>Portal coordinates inscribed here.</p>',
+        'font_family' => 'mono',
+        'font_size' => '16px',
+        'theme_color' => 'blue',
+    ]);
+    app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    $response = $this->get("/api/notes/{$note->id}/export/json");
+
+    $response->assertOk()
+        ->assertHeader('Content-Type', 'application/json; charset=UTF-8')
+        ->assertHeader('Content-Disposition', 'attachment; filename="ancient-shard-archive.json"');
+
+    $data = $response->json();
+    expect($data['id'])->toBe($note->id)
+        ->and($data['uuid'])->toBe($note->uuid)
+        ->and($data['title'])->toBe('Ancient Shard Archive')
+        ->and($data['category'])->toBe('spellbook')
+        ->and($data['reading_time'])->toBe('1 min read')
+        ->and($data['chunks'])->not->toBeEmpty();
+
+    expect($data['chunks'][0])->toHaveKeys(['chunk_uid', 'checksum', 'byte_size', 'chunk_type', 'content']);
+});
+
+test('black-box: user exports rich scroll with tables, checklists, headings, and code to markdown format', function () {
+    $htmlContent = '<h1>Grimoire Act I</h1><h2>Subchapter</h2><table class="retro-table"><tr><th>Rune</th><th>Cost</th></tr><tr><td>Fire</td><td>10 MP</td></tr></table><ul class="task-list"><li><input type="checkbox" checked> Gather herbs</li><li><input type="checkbox"> Brew potion</li></ul><pre><code>function castSpell() { return true; }</code></pre><p>Normal text with <strong>bold</strong>, <em>italic</em>, <del>struck</del>, and <a href="https://notenux.dev">portal link</a>.</p>';
+
+    $note = Note::factory()->create([
+        'title' => 'Arcane Formulation',
+        'content' => $htmlContent,
+    ]);
+
+    $response = $this->get("/api/notes/{$note->id}/export/md");
+
+    $response->assertOk()
+        ->assertHeader('Content-Type', 'text/markdown; charset=UTF-8');
+
+    $body = $response->getContent();
+    expect($body)->toContain('# Grimoire Act I')
+        ->and($body)->toContain('## Subchapter')
+        ->and($body)->toContain('| Rune | Cost |')
+        ->and($body)->toContain('| Fire | 10 MP |')
+        ->and($body)->toContain('- [x] Gather herbs')
+        ->and($body)->toContain('- [ ] Brew potion')
+        ->and($body)->toContain("```\nfunction castSpell() { return true; }\n```")
+        ->and($body)->toContain('**bold**')
+        ->and($body)->toContain('*italic*')
+        ->and($body)->toContain('~~struck~~')
+        ->and($body)->toContain('[portal link](https://notenux.dev)');
+});
+
+test('black-box: user imports json backup and note is reconstructed with intact metadata and sanitized chunks', function () {
+    $backupPayload = json_encode([
+        'title' => 'Restored Citadel Map',
+        'category' => 'strategy',
+        'font_family' => 'arcade',
+        'font_size' => '18px',
+        'theme_color' => 'amber',
+        'content' => '<h2>Citadel Overview</h2><p>Safely restored from backup vault.</p><script>alert("xss")</script>',
+    ]);
+
+    $file = UploadedFile::fake()->createWithContent('backup.json', $backupPayload);
+
+    $response = $this->postJson('/api/notes/import', [
+        'file' => $file,
+    ]);
+
+    $response->assertStatus(201)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.title', 'Restored Citadel Map')
+        ->assertJsonPath('data.category', 'strategy')
+        ->assertJsonPath('data.font_family', 'arcade')
+        ->assertJsonPath('data.font_size', '18px')
+        ->assertJsonPath('data.theme_color', 'amber');
+
+    expect($response->json('data.content'))->not->toContain('<script>')
+        ->and($response->json('data.chunks'))->not->toBeEmpty();
+});
+
+test('black-box: user sorts scrolls by title_desc, created_desc, and created_asc', function () {
+    $noteOld = Note::factory()->create(['title' => 'Alpha Scroll', 'created_at' => now()->subDays(10), 'is_pinned' => false]);
+    $noteMid = Note::factory()->create(['title' => 'Beta Scroll', 'created_at' => now()->subDays(5), 'is_pinned' => false]);
+    $noteNew = Note::factory()->create(['title' => 'Gamma Scroll', 'created_at' => now(), 'is_pinned' => false]);
+
+    // Sort title_desc (Z to A)
+    $resTitleDesc = $this->getJson('/api/notes?sort=title_desc');
+    $resTitleDesc->assertOk();
+    $titles = array_column($resTitleDesc->json('data'), 'title');
+    expect($titles[0])->toBe('Gamma Scroll')
+        ->and($titles[2])->toBe('Alpha Scroll');
+
+    // Sort created_desc (Newest first)
+    $resCreatedDesc = $this->getJson('/api/notes?sort=created_desc');
+    $resCreatedDesc->assertOk();
+    $ids = array_column($resCreatedDesc->json('data'), 'id');
+    expect($ids[0])->toBe($noteNew->id)
+        ->and($ids[2])->toBe($noteOld->id);
+
+    // Sort created_asc (Oldest first)
+    $resCreatedAsc = $this->getJson('/api/notes?sort=created_asc');
+    $resCreatedAsc->assertOk();
+    $idsAsc = array_column($resCreatedAsc->json('data'), 'id');
+    expect($idsAsc[0])->toBe($noteOld->id)
+        ->and($idsAsc[2])->toBe($noteNew->id);
+});
+
+test('black-box: note index validates sort and filter query parameters', function () {
+    $response = $this->getJson('/api/notes?sort=unsupported_order');
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors(['sort']);
+
+    $response2 = $this->getJson('/api/notes?pinned_only=not_a_bool');
+    $response2->assertStatus(422)
+        ->assertJsonValidationErrors(['pinned_only']);
+});

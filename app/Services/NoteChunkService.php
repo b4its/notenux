@@ -329,11 +329,43 @@ class NoteChunkService
     }
 
     /**
-     * Imports raw Markdown or text content into a newly created Note with chunking.
+     * Imports raw Markdown, JSON backup, or text content into a newly created Note with chunking.
      */
     public function importMarkdown(string $rawMarkdown, ?string $filename = null, ?string $category = 'quest'): Note
     {
         return DB::transaction(function () use ($rawMarkdown, $filename, $category): Note {
+            $trimmed = trim($rawMarkdown);
+
+            // Intelligent JSON backup detection
+            if (str_starts_with($trimmed, '{') && str_ends_with($trimmed, '}')) {
+                $decoded = json_decode($trimmed, true);
+                if (is_array($decoded) && (isset($decoded['content']) || isset($decoded['title']))) {
+                    $jsonTitle = ! empty($decoded['title']) ? trim((string) $decoded['title']) : null;
+                    $jsonCategory = ! empty($decoded['category']) ? trim((string) $decoded['category']) : ($category ?: 'quest');
+                    $jsonFont = in_array($decoded['font_family'] ?? '', ['pixel', 'arcade', 'mono', 'sans', 'serif'], true) ? $decoded['font_family'] : 'pixel';
+                    $jsonFontSize = ! empty($decoded['font_size']) ? (string) $decoded['font_size'] : '16px';
+                    $jsonTheme = ! empty($decoded['theme_color']) ? (string) $decoded['theme_color'] : 'blue';
+                    $rawHtml = (string) ($decoded['content'] ?? '');
+
+                    $cleanHtml = app(NoteContentSanitizer::class)->sanitize($rawHtml);
+
+                    $title = $jsonTitle ?: ($filename ? ucwords(str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME))) : 'Imported Scroll '.now()->format('Y-m-d H:i'));
+
+                    $note = Note::create([
+                        'title' => Str::limit($title, 120, ''),
+                        'category' => $jsonCategory,
+                        'content' => '',
+                        'font_family' => $jsonFont,
+                        'font_size' => $jsonFontSize,
+                        'theme_color' => $jsonTheme,
+                    ]);
+
+                    $this->syncChunks($note, $cleanHtml);
+
+                    return $note->fresh();
+                }
+            }
+
             $title = null;
             if (preg_match('/^#\s+(.+)$/m', $rawMarkdown, $matches)) {
                 $title = trim($matches[1]);

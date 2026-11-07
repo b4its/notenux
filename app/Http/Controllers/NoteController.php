@@ -28,7 +28,13 @@ class NoteController extends Controller
      */
     public function index(Request $request): View|JsonResponse
     {
-        $request->validate(['q' => ['nullable', 'string', 'max:255'], 'category' => ['nullable', 'string', 'max:64'], 'sort' => ['nullable', 'string']]);
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'string', 'max:64'],
+            'sort' => ['nullable', 'string', 'in:updated_desc,updated_asc,created_desc,created_asc,title_asc,title_desc,word_count_desc,level_desc'],
+            'pinned_only' => ['nullable', 'boolean'],
+            'favorites_only' => ['nullable', 'boolean'],
+        ]);
         $query = Note::select([
             'id',
             'uuid',
@@ -73,6 +79,15 @@ class NoteController extends Controller
         switch ($sort) {
             case 'title_asc':
                 $query->orderBy('is_pinned', 'desc')->orderBy('title', 'asc');
+                break;
+            case 'title_desc':
+                $query->orderBy('is_pinned', 'desc')->orderBy('title', 'desc');
+                break;
+            case 'created_asc':
+                $query->orderBy('is_pinned', 'desc')->orderBy('created_at', 'asc');
+                break;
+            case 'created_desc':
+                $query->orderBy('is_pinned', 'desc')->orderBy('created_at', 'desc');
                 break;
             case 'word_count_desc':
                 $query->orderBy('is_pinned', 'desc')->orderBy('word_count', 'desc');
@@ -284,7 +299,7 @@ class NoteController extends Controller
     }
 
     /**
-     * Export note in Markdown (.md), Plain Text (.txt), or HTML (.html) format.
+     * Export note in Markdown (.md), Plain Text (.txt), HTML (.html), or JSON (.json) format.
      */
     public function export(Note $note, string $format = 'md'): Response
     {
@@ -318,24 +333,133 @@ class NoteController extends Controller
             ]);
         }
 
+        if ($format === 'json') {
+            $data = [
+                'id' => $note->id,
+                'uuid' => $note->uuid,
+                'title' => $note->title,
+                'category' => $note->category,
+                'content' => $note->content,
+                'font_family' => $note->font_family,
+                'font_size' => $note->font_size,
+                'theme_color' => $note->theme_color,
+                'word_count' => $note->word_count,
+                'char_count' => $note->char_count,
+                'reading_time' => $note->reading_time,
+                'level' => $note->level,
+                'xp' => $note->xp,
+                'is_pinned' => $note->is_pinned,
+                'is_favorite' => $note->is_favorite,
+                'created_at' => $note->created_at?->toIso8601String(),
+                'updated_at' => $note->updated_at?->toIso8601String(),
+                'chunks' => $note->chunks()->get()->map(fn ($chunk) => [
+                    'id' => $chunk->id,
+                    'chunk_uid' => $chunk->chunk_uid,
+                    'chunk_index' => $chunk->chunk_index,
+                    'chunk_type' => $chunk->chunk_type,
+                    'content' => $chunk->content,
+                    'byte_size' => $chunk->byte_size,
+                    'checksum' => $chunk->checksum,
+                    'metadata' => $chunk->metadata,
+                ])->values()->all(),
+            ];
+
+            return response((string) json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 200, [
+                'Content-Type' => 'application/json; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}.json\"",
+            ]);
+        }
+
         // Default Markdown (.md)
         $markdown = "# {$note->title}\n\n";
         $markdown .= "> Category: {$note->category} | Level: {$note->level} | Word Count: {$note->word_count}\n\n";
-
-        $content = (string) ($note->content ?? '');
-        $content = preg_replace('/<h2>(.*?)<\/h2>/i', "## $1\n", $content);
-        $content = preg_replace('/<h3>(.*?)<\/h3>/i', "### $1\n", $content);
-        $content = preg_replace('/<p>(.*?)<\/p>/i', "$1\n\n", $content);
-        $content = preg_replace('/<strong>(.*?)<\/strong>/i', '**$1**', $content);
-        $content = preg_replace('/<em>(.*?)<\/em>/i', '*$1*', $content);
-        $content = preg_replace('/<blockquote>(.*?)<\/blockquote>/i', "> $1\n\n", $content);
-        $content = strip_tags($content);
-        $markdown .= trim($content)."\n";
+        $markdown .= $this->convertToMarkdown((string) ($note->content ?? ''))."\n";
 
         return response($markdown, 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}.md\"",
         ]);
+    }
+
+    /**
+     * Convert rich HTML content to clean, readable Markdown syntax.
+     */
+    public function convertToMarkdown(string $html): string
+    {
+        if (trim($html) === '') {
+            return '';
+        }
+
+        $md = $html;
+
+        // Links
+        $md = preg_replace('/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/i', '[$2]($1)', $md);
+
+        // Images
+        $md = preg_replace_callback('/<img\b[^>]*>/i', function ($m) {
+            preg_match('/\bsrc="([^"]*)"/i', $m[0], $src);
+            preg_match('/\balt="([^"]*)"/i', $m[0], $alt);
+            $url = $src[1] ?? '';
+            $desc = $alt[1] ?? '';
+
+            return "![{$desc}]({$url})";
+        }, $md);
+
+        // Markdown Tables
+        $md = preg_replace_callback('/<table[^>]*>([\s\S]*?)<\/table>/i', function ($match) {
+            $tableContent = $match[1];
+            preg_match_all('/<tr[^>]*>[\s\S]*?<\/tr>/i', $tableContent, $trMatches);
+            $rows = [];
+            foreach ($trMatches[0] as $idx => $trHtml) {
+                preg_match_all('/<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/i', $trHtml, $cellMatches);
+                $cells = array_map(fn ($c) => trim(strip_tags($c)), $cellMatches[1]);
+                if (! empty($cells)) {
+                    $rows[] = '| '.implode(' | ', $cells).' |';
+                    if ($idx === 0) {
+                        $rows[] = '| '.implode(' | ', array_fill(0, count($cells), '---')).' |';
+                    }
+                }
+            }
+
+            return ! empty($rows) ? "\n\n".implode("\n", $rows)."\n\n" : '';
+        }, $md);
+
+        // Task / Checklist items
+        $md = preg_replace('/<li[^>]*>\s*<input[^>]*checked[^>]*>\s*([\s\S]*?)<\/li>/i', "- [x] $1\n", $md);
+        $md = preg_replace('/<li[^>]*>\s*<input[^>]*type="checkbox"[^>]*>\s*([\s\S]*?)<\/li>/i', "- [ ] $1\n", $md);
+
+        // Headings 1 through 6
+        for ($i = 6; $i >= 1; $i--) {
+            $prefix = str_repeat('#', $i);
+            $md = preg_replace("/<h{$i}\b[^>]*>([\s\S]*?)<\/h{$i}>/i", "\n\n{$prefix} $1\n\n", $md);
+        }
+
+        // Paragraphs & Blockquotes
+        $md = preg_replace('/<p\b[^>]*>([\s\S]*?)<\/p>/i', "$1\n\n", $md);
+        $md = preg_replace('/<blockquote\b[^>]*>([\s\S]*?)<\/blockquote>/i', "> $1\n\n", $md);
+
+        // Code blocks
+        $md = preg_replace('/<pre\b[^>]*>\s*<code\b[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/i', "```\n$1\n```\n\n", $md);
+        $md = preg_replace('/<code\b[^>]*>([\s\S]*?)<\/code>/i', '`$1`', $md);
+
+        // Inline formatting
+        $md = preg_replace('/<(?:strong|b)\b[^>]*>([\s\S]*?)<\/(?:strong|b)>/i', '**$1**', $md);
+        $md = preg_replace('/<(?:em|i)\b[^>]*>([\s\S]*?)<\/(?:em|i)>/i', '*$1*', $md);
+        $md = preg_replace('/<(?:del|s)\b[^>]*>([\s\S]*?)<\/(?:del|s)>/i', '~~$1~~', $md);
+
+        // Lists
+        $md = preg_replace('/<li\b[^>]*>([\s\S]*?)<\/li>/i', "- $1\n", $md);
+        $md = preg_replace('/<\/?(?:ul|ol)\b[^>]*>/i', "\n", $md);
+
+        // Dividers & Breaks
+        $md = preg_replace('/<hr\b[^>]*>/i', "\n---\n\n", $md);
+        $md = preg_replace('/<br\b[^>]*>/i', "\n", $md);
+
+        $md = strip_tags($md);
+        $md = html_entity_decode($md, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $md = preg_replace("/\n{3,}/", "\n\n", $md);
+
+        return trim($md);
     }
 
     /**
@@ -537,6 +661,8 @@ class NoteController extends Controller
             'rank_badge' => $rankInfo['badge'],
             'mana' => $rankInfo['mana'],
             'progress_percent' => max(5, $percent),
+            'progress_xp' => $progressXP,
+            'needed_xp' => $neededXP,
             'next_level_xp' => $nextLevelXP,
         ];
     }

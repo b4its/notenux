@@ -570,3 +570,70 @@ test('white-box: RetroSearchableSelect positions dropdown with fixed coordinates
     assert.equal(instance.isOpen, true);
     assert.equal(second.isOpen, false);
 });
+
+test('white-box: MarkdownEngine parses h4, h5, and h6 markdown headings', () => {
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({
+                querySelectorAll: () => [],
+                attributes: [],
+                innerHTML: '',
+                content: {
+                    querySelectorAll: () => []
+                }
+            }),
+            addEventListener() {},
+            querySelector() { return null; },
+        }
+    });
+    vm.runInContext(source + '\nglobalThis.MarkdownEngine = MarkdownEngine;', context);
+    const html = context.MarkdownEngine.parse('#### Fourth Heading\n\n##### Fifth Heading\n\n###### Sixth Heading');
+    assert.ok(html.includes('<h4>Fourth Heading</h4>'));
+    assert.ok(html.includes('<h5>Fifth Heading</h5>'));
+    assert.ok(html.includes('<h6>Sixth Heading</h6>'));
+});
+
+test('white-box: renderNotesList sorts by title_desc, created_desc, and created_asc', () => {
+    const { panel, context } = harness(() => Promise.resolve({ ok: true }));
+    delete panel.renderNotesList;
+    panel.categories = [];
+    panel.notes = [
+        { id: 1, title: 'B Scroll', category: 'quest', created_at: '2026-01-01T00:00:00Z', is_pinned: false },
+        { id: 2, title: 'A Scroll', category: 'quest', created_at: '2026-01-03T00:00:00Z', is_pinned: false },
+        { id: 3, title: 'C Scroll', category: 'quest', created_at: '2026-01-02T00:00:00Z', is_pinned: false },
+    ];
+    let renderedHtml = '';
+    panel.dom.notesList = {
+        set innerHTML(val) { renderedHtml = val; },
+        get innerHTML() { return renderedHtml; },
+        querySelectorAll: () => []
+    };
+    panel.activeCategory = 'all';
+    panel.searchQuery = '';
+
+    // Sort title_desc (C, B, A)
+    panel.currentSort = 'title_desc';
+    panel.renderNotesList();
+    const cIndex = renderedHtml.indexOf('C Scroll');
+    const bIndex = renderedHtml.indexOf('B Scroll');
+    const aIndex = renderedHtml.indexOf('A Scroll');
+    assert.ok(cIndex !== -1 && bIndex !== -1 && aIndex !== -1, 'All titles rendered');
+    assert.ok(cIndex < bIndex && bIndex < aIndex, 'title_desc orders Z to A');
+
+    // Sort created_desc (A [Jan 3], C [Jan 2], B [Jan 1])
+    panel.currentSort = 'created_desc';
+    panel.renderNotesList();
+    const aCreated = renderedHtml.indexOf('A Scroll');
+    const cCreated = renderedHtml.indexOf('C Scroll');
+    const bCreated = renderedHtml.indexOf('B Scroll');
+    assert.ok(aCreated < cCreated && cCreated < bCreated, 'created_desc orders newest first');
+
+    // Sort created_asc (B [Jan 1], C [Jan 2], A [Jan 3])
+    panel.currentSort = 'created_asc';
+    panel.renderNotesList();
+    const bAsc = renderedHtml.indexOf('B Scroll');
+    const cAsc = renderedHtml.indexOf('C Scroll');
+    const aAsc = renderedHtml.indexOf('A Scroll');
+    assert.ok(bAsc < cAsc && cAsc < aAsc, 'created_asc orders oldest first');
+});

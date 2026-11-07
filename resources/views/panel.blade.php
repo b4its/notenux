@@ -474,7 +474,10 @@
                     <select id="sort-notes-select" class="bg-white dark:bg-black/50 border border-black/40 rounded px-1.5 py-0.5 text-[10px] font-mono focus:outline-none focus:border-cyan-400">
                         <option value="updated_desc">Recently Updated</option>
                         <option value="updated_asc">Oldest First</option>
+                        <option value="created_desc">Newest Inscribed</option>
+                        <option value="created_asc">Oldest Inscribed</option>
                         <option value="title_asc">Title A-Z</option>
+                        <option value="title_desc">Title Z-A</option>
                         <option value="word_count_desc">Word Count</option>
                         <option value="level_desc">Level / XP</option>
                     </select>
@@ -614,12 +617,18 @@
                                         <button data-export-format="txt" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
                                             <i class="fa-solid fa-file-lines text-amber-600 dark:text-amber-400"></i> Text (.txt)
                                         </button>
+                                        <button data-export-format="json" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                            <i class="fa-solid fa-file-code text-cyan-600 dark:text-cyan-400"></i> JSON Backup (.json)
+                                        </button>
                                         <div class="border-t border-black/20 my-1"></div>
                                         <button id="copy-markdown-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
                                             <i class="fa-solid fa-copy text-blue-600 dark:text-cyan-400"></i> Copy Markdown
                                         </button>
                                         <button id="copy-html-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
                                             <i class="fa-solid fa-code text-emerald-600 dark:text-emerald-400"></i> Copy HTML
+                                        </button>
+                                        <button id="copy-json-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                            <i class="fa-solid fa-cube text-purple-600 dark:text-purple-400"></i> Copy JSON
                                         </button>
                                     </div>
                                 </div>
@@ -1052,8 +1061,8 @@
             </div>
             <div class="p-4 space-y-3 font-mono text-xs">
                 <div>
-                    <label class="block font-bold mb-1"><i class="fa-solid fa-file-arrow-up mr-1 text-emerald-500"></i> Upload Markdown / Text File (.md, .txt)</label>
-                    <input type="file" id="import-file-input" accept=".md,.markdown,.txt" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs cursor-pointer">
+                    <label class="block font-bold mb-1"><i class="fa-solid fa-file-arrow-up mr-1 text-emerald-500"></i> Upload Markdown / Text / JSON File (.md, .txt, .json)</label>
+                    <input type="file" id="import-file-input" accept=".md,.markdown,.txt,.json" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs cursor-pointer">
                 </div>
                 <div class="text-center font-bold text-gray-400 text-[10px]">--- OR PASTE RAW MARKDOWN CONTENT ---</div>
                 <div>

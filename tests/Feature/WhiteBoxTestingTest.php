@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NoteController;
 use App\Models\Note;
 use App\Models\NoteChunk;
 use App\Models\User;
@@ -386,4 +387,84 @@ test('white-box: chunk service reassembles empty and single chunk notes seamless
     $service->syncChunks($singleNote, $singleNote->content);
     expect($singleNote->chunks()->count())->toBe(1)
         ->and($service->reassemble($singleNote))->toBe('<p>Lone shard text.</p>');
+});
+
+test('white-box: note model appends reading_time to array and json serialization', function () {
+    $note = Note::factory()->create(['word_count' => 360]);
+
+    $array = $note->toArray();
+    expect($array)->toHaveKey('reading_time')
+        ->and($array['reading_time'])->toBe('2 min read');
+
+    $json = json_decode((string) json_encode($note), true);
+    expect($json)->toHaveKey('reading_time')
+        ->and($json['reading_time'])->toBe('2 min read');
+});
+
+test('white-box: note controller convertToMarkdown handles comprehensive html structures', function () {
+    $controller = app(NoteController::class);
+
+    $html = '<h3>Subtitle</h3><table class="retro-table"><tr><th>Stat</th><th>Value</th></tr><tr><td>STR</td><td>18</td></tr></table>'
+        .'<ul class="task-list"><li><input type="checkbox" checked> Done task</li><li><input type="checkbox"> Open task</li></ul>'
+        .'<pre><code>$x = 42;</code></pre>'
+        .'<p>Inline <code>code</code> and <a href="https://example.com">Link</a> and <hr></p>';
+
+    $md = $controller->convertToMarkdown($html);
+
+    expect($md)->toContain('### Subtitle')
+        ->and($md)->toContain('| Stat | Value |')
+        ->and($md)->toContain('| STR | 18 |')
+        ->and($md)->toContain('- [x] Done task')
+        ->and($md)->toContain('- [ ] Open task')
+        ->and($md)->toContain("```\n\$x = 42;\n```")
+        ->and($md)->toContain('`code`')
+        ->and($md)->toContain('[Link](https://example.com)')
+        ->and($md)->toContain('---');
+});
+
+test('white-box: note chunk service importMarkdown safely handles json backup with malicious scripts', function () {
+    $service = new NoteChunkService;
+
+    $jsonBackup = json_encode([
+        'title' => 'Vault Secrets',
+        'category' => 'spellbook',
+        'content' => '<h2>Secret Formulas</h2><p>Safe content</p><script>alert("hacked")</script><iframe src="malicious.html"></iframe>',
+    ]);
+
+    $note = $service->importMarkdown($jsonBackup);
+
+    expect($note->title)->toBe('Vault Secrets')
+        ->and($note->category)->toBe('spellbook')
+        ->and($note->content)->not->toContain('<script>')
+        ->and($note->content)->not->toContain('<iframe>')
+        ->and($note->content)->toContain('Secret Formulas')
+        ->and($note->chunks()->count())->toBeGreaterThan(0);
+});
+
+test('white-box: player stats calculation returns complete progress metrics across endpoints', function () {
+    Note::factory()->create(['word_count' => 150, 'xp' => 300]);
+
+    $response = $this->getJson(route('api.stats'));
+    $response->assertOk()
+        ->assertJsonStructure([
+            'status',
+            'data' => [
+                'total_notes',
+                'total_words',
+                'total_chunks',
+                'total_xp',
+                'level',
+                'progress_percent',
+                'progress_xp',
+                'needed_xp',
+                'next_level_xp',
+                'rank_title',
+                'rank_badge',
+                'mana',
+            ],
+        ]);
+
+    $data = $response->json('data');
+    expect($data['needed_xp'])->toBe(150)
+        ->and($data['next_level_xp'])->toBeGreaterThan($data['total_xp']);
 });

@@ -267,6 +267,9 @@ class MarkdownEngine {
         });
 
         // Headers
+        html = html.replace(/^###### (.*$)/gim, '<h6>$1</h6>');
+        html = html.replace(/^##### (.*$)/gim, '<h5>$1</h5>');
+        html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
         html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
         html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
         html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
@@ -779,6 +782,7 @@ class NotenuxPanel {
             exportMenu: document.getElementById('export-menu'),
             copyMarkdownBtn: document.getElementById('copy-markdown-btn'),
             copyHtmlBtn: document.getElementById('copy-html-btn'),
+            copyJsonBtn: document.getElementById('copy-json-btn'),
             zenModeBtn: document.getElementById('zen-mode-btn'),
             archiveNoteBtn: document.getElementById('archive-note-btn'),
             deleteNoteBtn: document.getElementById('delete-note-btn'),
@@ -1852,6 +1856,33 @@ class NotenuxPanel {
             this.dom.exportMenu?.classList.add('hidden');
         });
 
+        this.dom.copyJsonBtn?.addEventListener('click', () => {
+            if (!this.activeNote) return;
+            this.audio.playCoin();
+            const data = {
+                id: this.activeNote.id,
+                uuid: this.activeNote.uuid,
+                title: this.activeNote.title,
+                category: this.activeNote.category,
+                content: this.dom.editorArea?.innerHTML || this.activeNote.content || '',
+                font_family: this.activeNote.font_family,
+                font_size: this.activeNote.font_size,
+                theme_color: this.activeNote.theme_color,
+                word_count: this.activeNote.word_count,
+                char_count: this.activeNote.char_count,
+                reading_time: this.activeNote.reading_time,
+                level: this.activeNote.level,
+                xp: this.activeNote.xp,
+                chunks: this.activeNote.chunks || [],
+            };
+            const jsonText = JSON.stringify(data, null, 2);
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(jsonText);
+                this.toast.show('Scroll JSON copied to clipboard!', 'success', 'JSON Copied', 'fa-solid fa-cube text-purple-400');
+            }
+            this.dom.exportMenu?.classList.add('hidden');
+        });
+
         this.dom.zenModeBtn?.addEventListener('click', () => {
             this.toggleZenMode();
         });
@@ -2809,10 +2840,16 @@ class NotenuxPanel {
             switch (this.currentSort) {
                 case 'title_asc':
                     return a.title.localeCompare(b.title);
+                case 'title_desc':
+                    return b.title.localeCompare(a.title);
                 case 'word_count_desc':
                     return (b.word_count || 0) - (a.word_count || 0);
                 case 'level_desc':
                     return (b.level || 1) - (a.level || 1);
+                case 'created_desc':
+                    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                case 'created_asc':
+                    return new Date(a.created_at || 0) - new Date(b.created_at || 0);
                 case 'updated_asc':
                     return new Date(a.updated_at || 0) - new Date(b.updated_at || 0);
                 case 'updated_desc':
