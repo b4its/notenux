@@ -198,8 +198,13 @@
 
             <!-- Primary Nav Links -->
             <nav class="flex-1 overflow-y-auto p-3 space-y-1.5 font-mono text-xs">
-                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 px-2 nav-text-label">
-                    Grimoire Categories
+                <div class="flex items-center justify-between mb-1 px-2 nav-text-label">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Grimoire Categories</span>
+                    <a href="{{ route('categories.index') }}"
+                       class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-blue-900 px-1.5 py-0.5 rounded text-[9px] font-bold text-cyan-600 dark:text-cyan-400"
+                       title="Personalize and manage categories">
+                        <i class="fa-solid fa-plus text-[8px] mr-0.5"></i> CUSTOM
+                    </a>
                 </div>
 
                 <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors bg-blue-600 text-white"
@@ -208,29 +213,39 @@
                     <span class="nav-text-label font-bold">All Scrolls</span>
                 </a>
 
-                <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                   data-category="quest">
-                    <i class="fa-solid fa-khanda text-amber-500 text-sm w-4 text-center"></i>
-                    <span class="nav-text-label font-bold">Quests</span>
-                </a>
+                @if(isset($categories) && $categories->isNotEmpty())
+                    @foreach($categories as $category)
+                        <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                           data-category="{{ $category->slug }}">
+                            <i class="{{ $category->icon }} text-sm w-4 text-center"></i>
+                            <span class="nav-text-label font-bold truncate">{{ $category->name }}</span>
+                        </a>
+                    @endforeach
+                @else
+                    <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                       data-category="quest">
+                        <i class="fa-solid fa-khanda text-amber-500 text-sm w-4 text-center"></i>
+                        <span class="nav-text-label font-bold">Quests</span>
+                    </a>
 
-                <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                   data-category="spellbook">
-                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-sm w-4 text-center"></i>
-                    <span class="nav-text-label font-bold">Spellbooks</span>
-                </a>
+                    <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                       data-category="spellbook">
+                        <i class="fa-solid fa-wand-magic-sparkles text-purple-400 text-sm w-4 text-center"></i>
+                        <span class="nav-text-label font-bold">Spellbooks</span>
+                    </a>
 
-                <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                   data-category="strategy">
-                    <i class="fa-solid fa-shield-halved text-rose-500 text-sm w-4 text-center"></i>
-                    <span class="nav-text-label font-bold">Boss Raids</span>
-                </a>
+                    <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                       data-category="strategy">
+                        <i class="fa-solid fa-shield-halved text-rose-500 text-sm w-4 text-center"></i>
+                        <span class="nav-text-label font-bold">Boss Raids</span>
+                    </a>
 
-                <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                   data-category="lore">
-                    <i class="fa-solid fa-scroll text-cyan-400 text-sm w-4 text-center"></i>
-                    <span class="nav-text-label font-bold">Ancient Lore</span>
-                </a>
+                    <a href="#" class="nav-category-link flex items-center gap-2.5 px-3 py-2 rounded-lg border border-transparent hover:border-black/30 dark:hover:border-cyan-400/40 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                       data-category="lore">
+                        <i class="fa-solid fa-scroll text-cyan-400 text-sm w-4 text-center"></i>
+                        <span class="nav-text-label font-bold">Ancient Lore</span>
+                    </a>
+                @endif
             </nav>
 
             <!-- Bottom Primary Nav Meta -->
@@ -297,27 +312,36 @@
                 </div>
 
                 <!-- Category Filter Pills -->
-                <div class="flex items-center gap-1 overflow-x-auto pb-2 mb-2 text-[11px] font-mono scrollbar-none">
+                <div class="flex items-center gap-1 overflow-x-auto pb-2 mb-2 text-[11px] font-mono scrollbar-none" id="category-filter-pills-row">
                     <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-blue-600 text-white active-category whitespace-nowrap shadow-[1px_1px_0px_#000]"
                             data-category="all">
                         ALL
                     </button>
-                    <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
-                            data-category="quest">
-                        <i class="fa-solid fa-khanda text-amber-500 mr-1"></i>QUESTS
-                    </button>
-                    <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
-                            data-category="spellbook">
-                        <i class="fa-solid fa-wand-magic-sparkles text-purple-400 mr-1"></i>SPELLS
-                    </button>
-                    <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
-                            data-category="strategy">
-                        <i class="fa-solid fa-shield-halved text-rose-500 mr-1"></i>RAIDS
-                    </button>
-                    <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
-                            data-category="lore">
-                        <i class="fa-solid fa-scroll text-cyan-400 mr-1"></i>LORE
-                    </button>
+                    @if(isset($categories) && $categories->isNotEmpty())
+                        @foreach($categories as $category)
+                            <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
+                                    data-category="{{ $category->slug }}">
+                                <i class="{{ $category->icon }} mr-1"></i>{{ strtoupper(Str::limit($category->name, 10, '')) }}
+                            </button>
+                        @endforeach
+                    @else
+                        <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
+                                data-category="quest">
+                            <i class="fa-solid fa-khanda text-amber-500 mr-1"></i>QUESTS
+                        </button>
+                        <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
+                                data-category="spellbook">
+                            <i class="fa-solid fa-wand-magic-sparkles text-purple-400 mr-1"></i>SPELLS
+                        </button>
+                        <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
+                                data-category="strategy">
+                            <i class="fa-solid fa-shield-halved text-rose-500 mr-1"></i>RAIDS
+                        </button>
+                        <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
+                                data-category="lore">
+                            <i class="fa-solid fa-scroll text-cyan-400 mr-1"></i>LORE
+                        </button>
+                    @endif
                 </div>
 
                 <!-- Dynamic Notes List Container -->
@@ -343,12 +367,18 @@
                         <div class="flex items-center gap-1.5 bg-surface-alt px-2.5 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
                             <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs"></i>
                             <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer">
-                                <option value="quest">[QUEST] Quest Log</option>
-                                <option value="spellbook">[SPELL] Spellbook</option>
-                                <option value="strategy">[RAID] Boss Tactics</option>
-                                <option value="lore">[LORE] Ancient Lore</option>
-                                <option value="archive">[ARCHIVE] Library Vault</option>
-                                <option value="general">[GENERAL] General Note</option>
+                                @if(isset($categories) && $categories->isNotEmpty())
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->slug }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
+                                    @endforeach
+                                @else
+                                    <option value="quest">[QUEST] Quest Log</option>
+                                    <option value="spellbook">[SPELL] Spellbook</option>
+                                    <option value="strategy">[RAID] Boss Tactics</option>
+                                    <option value="lore">[LORE] Ancient Lore</option>
+                                    <option value="archive">[ARCHIVE] Library Vault</option>
+                                    <option value="general">[GENERAL] General Note</option>
+                                @endif
                             </select>
                         </div>
 
@@ -843,12 +873,18 @@
                     <div>
                         <label class="block font-bold mb-1">Category</label>
                         <select id="import-category-select" class="w-full p-1.5 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
-                            <option value="quest">Quest Log</option>
-                            <option value="lore">Ancient Lore</option>
-                            <option value="strategy">Battle Tactics</option>
-                            <option value="spellbook">Spellbook</option>
-                            <option value="archive">Archives</option>
-                            <option value="general">General</option>
+                            @if(isset($categories) && $categories->isNotEmpty())
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->slug }}">{{ $category->name }}</option>
+                                @endforeach
+                            @else
+                                <option value="quest">Quest Log</option>
+                                <option value="lore">Ancient Lore</option>
+                                <option value="strategy">Battle Tactics</option>
+                                <option value="spellbook">Spellbook</option>
+                                <option value="archive">Archives</option>
+                                <option value="general">General</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -990,6 +1026,9 @@
     <!-- Hidden Server Initial Data for Seamless Hydration -->
     <script id="initial-notes-data" type="application/json">
         {!! json_encode($notes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
+    </script>
+    <script id="initial-categories-data" type="application/json">
+        {!! json_encode($categories ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
     </script>
     <input type="hidden" id="initial-active-note-id" value="{{ $activeNote->id ?? '' }}">
 

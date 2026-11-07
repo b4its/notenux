@@ -20,6 +20,9 @@ class DatabaseSeeder extends Seeder
             'email' => 'hero@notenux.dev',
         ]);
 
-        $this->call(NoteSeeder::class);
+        $this->call([
+            CategorySeeder::class,
+            NoteSeeder::class,
+        ]);
     }
 }

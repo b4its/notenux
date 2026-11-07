@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Note;
 use App\Models\NoteChunk;
+use App\Models\User;
 use App\Services\NoteChunkService;
 use App\Services\NoteContentSanitizer;
 use Illuminate\Http\JsonResponse;
@@ -103,10 +105,29 @@ class NoteController extends Controller
             $initialNote->content = $this->sanitizer->sanitize($initialNote->content);
         }
 
+        $user = $request->user() ?? User::first();
+        $categories = Category::forUser($user)
+            ->withCount('notes')
+            ->orderBy('is_system', 'desc')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        if ($categories->isEmpty()) {
+            foreach (Category::defaultCategories() as $def) {
+                Category::firstOrCreate(['slug' => $def['slug']], $def);
+            }
+            $categories = Category::forUser($user)
+                ->withCount('notes')
+                ->orderBy('is_system', 'desc')
+                ->orderBy('name', 'asc')
+                ->get();
+        }
+
         return view('panel', [
             'notes' => $notes,
             'activeNote' => $initialNote,
             'stats' => $stats,
+            'categories' => $categories,
         ]);
     }
 
@@ -436,7 +457,7 @@ class NoteController extends Controller
         $validated = $request->validate([
             'file' => ['nullable', 'file', 'max:5120'],
             'content' => ['required_without:file', 'nullable', 'string'],
-            'category' => ['nullable', 'string', 'in:quest,lore,strategy,spellbook,archive,general'],
+            'category' => ['nullable', 'string', 'max:64'],
             'title' => ['nullable', 'string', 'max:255'],
         ]);
 

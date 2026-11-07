@@ -1,10 +1,23 @@
 <?php
 
 use App\Http\Controllers\AiAssistantController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\NoteController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [NoteController::class, 'index'])->name('panel');
+
+Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+Route::prefix('api/categories')->group(function () {
+    Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
+    Route::post('/', [CategoryController::class, 'store'])->name('api.categories.store');
+    Route::put('/{category}', [CategoryController::class, 'update'])->name('api.categories.update');
+    Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('api.categories.destroy');
+});
 
 Route::prefix('api/notes')->group(function () {
     Route::get('/', [NoteController::class, 'index'])->name('notes.index');

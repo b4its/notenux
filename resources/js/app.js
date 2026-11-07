@@ -384,6 +384,7 @@ class NotenuxPanel {
         this.audio = new RetroAudio();
         this.toast = new RetroToast(this.audio);
         this.notes = [];
+        this.categories = [];
         this.activeNote = null;
         this.activeCategory = 'all';
         this.searchQuery = '';
@@ -1259,6 +1260,15 @@ class NotenuxPanel {
 
     /* ---------------- INITIAL DOM STATE ---------------- */
     loadNotesFromDOM() {
+        const initialCatEl = document.getElementById('initial-categories-data');
+        if (initialCatEl) {
+            try {
+                this.categories = JSON.parse(initialCatEl.textContent);
+            } catch (e) {
+                this.categories = [];
+            }
+        }
+
         const initialDataEl = document.getElementById('initial-notes-data');
         if (initialDataEl) {
             try {
@@ -2432,6 +2442,24 @@ class NotenuxPanel {
     }
 
     getCategoryBadge(category) {
+        const found = this.categories?.find(c => c.slug === category);
+        if (found) {
+            const colorMap = {
+                amber: 'bg-amber-500/30 text-amber-900 dark:text-amber-300',
+                purple: 'bg-purple-500/30 text-purple-900 dark:text-purple-300',
+                rose: 'bg-rose-500/30 text-rose-900 dark:text-rose-300',
+                cyan: 'bg-cyan-500/30 text-cyan-900 dark:text-cyan-300',
+                emerald: 'bg-emerald-500/30 text-emerald-900 dark:text-emerald-300',
+                blue: 'bg-blue-500/30 text-blue-900 dark:text-blue-300',
+                gray: 'bg-gray-500/30 text-gray-900 dark:text-gray-300',
+            };
+            return {
+                label: (found.name || found.slug).toUpperCase(),
+                icon: found.icon || 'fa-solid fa-folder',
+                classes: colorMap[found.color] || 'bg-cyan-500/30 text-cyan-900 dark:text-cyan-300',
+            };
+        }
+
         switch (category) {
             case 'quest':
                 return { label: 'QUEST', icon: 'fa-solid fa-khanda', classes: 'bg-amber-500/30 text-amber-900 dark:text-amber-300' };
@@ -2441,8 +2469,10 @@ class NotenuxPanel {
                 return { label: 'RAID', icon: 'fa-solid fa-shield-halved', classes: 'bg-rose-500/30 text-rose-900 dark:text-rose-300' };
             case 'lore':
                 return { label: 'LORE', icon: 'fa-solid fa-scroll', classes: 'bg-blue-500/30 text-blue-900 dark:text-blue-300' };
+            case 'archive':
+                return { label: 'ARCHIVE', icon: 'fa-solid fa-box-archive', classes: 'bg-amber-500/30 text-amber-900 dark:text-amber-300' };
             default:
-                return { label: 'NOTE', icon: 'fa-solid fa-book-journal-whills', classes: 'bg-gray-500/30 text-gray-900 dark:text-gray-300' };
+                return { label: (category || 'NOTE').toUpperCase(), icon: 'fa-solid fa-book-journal-whills', classes: 'bg-gray-500/30 text-gray-900 dark:text-gray-300' };
         }
     }
 
