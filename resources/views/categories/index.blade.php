@@ -30,52 +30,52 @@
     @endif
 
     <!-- Top Navigation Bar -->
-    <header class="shrink-0 bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-3 py-2.5 sm:px-6 z-30">
-        <div class="flex items-center justify-between gap-2 max-w-7xl mx-auto flex-wrap sm:flex-nowrap">
+    <header class="shrink-0 bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-2 sm:px-4 lg:px-6 py-2 sm:py-2.5 z-30">
+        <div class="flex items-center justify-between gap-1.5 sm:gap-4 max-w-7xl mx-auto">
             <!-- Left Branding & Back Link -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 sm:gap-3 min-w-0">
                 <a href="{{ route('studio') }}"
-                   class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-mono tracking-wider flex items-center gap-2"
+                   class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono tracking-wider flex items-center gap-1.5 shrink-0"
                    title="Return to Studio Grimoire">
                     <i class="fa-solid fa-arrow-left"></i>
-                    <span>RETURN TO STUDIO</span>
+                    <span class="hidden sm:inline">STUDIO</span>
                 </a>
 
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-tags text-xl text-blue-600 dark:text-cyan-400"></i>
-                    <div>
-                        <div class="flex items-center gap-1.5">
-                            <span class="font-pixel text-xs sm:text-sm text-blue-600 dark:text-cyan-400 tracking-wider">CATEGORY GUILD</span>
-                            <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase">PERSONALIZE</span>
+                <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <i class="fa-solid fa-tags text-base sm:text-xl text-blue-600 dark:text-cyan-400 shrink-0"></i>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1 sm:gap-1.5">
+                            <span class="font-pixel text-xs sm:text-sm text-blue-600 dark:text-cyan-400 tracking-wider truncate">CATEGORY GUILD</span>
+                            <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden md:inline-block">PERSONALIZE</span>
                         </div>
-                        <p class="text-[10px] font-mono opacity-60 hidden sm:block">Forge & Customize Grimoire Categories for Your Scribe Profile</p>
+                        <p class="text-[10px] font-mono opacity-60 hidden md:block truncate">Forge & Customize Grimoire Categories</p>
                     </div>
                 </div>
             </div>
 
             <!-- Right Controls: SFX, CRT FX, Theme -->
-            <div class="flex items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-1 sm:gap-2 shrink-0">
                 <button id="sound-toggle-btn"
-                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle 8-bit Audio SFX">
-                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
+                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 sm:mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
                 </button>
 
                 <button id="crt-toggle-btn"
-                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden sm:inline-flex"
                         title="Toggle Retro CRT Scanlines">
-                    <i class="fa-solid fa-tv mr-1.5 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
+                    <i class="fa-solid fa-tv sm:mr-1.5 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
                 </button>
 
                 <button id="theme-toggle-btn"
-                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle Light / Dark Mode">
-                    <i class="fa-solid fa-moon text-cyan-300 mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>
+                    <i class="fa-solid fa-moon text-cyan-300 sm:mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>
                 </button>
 
                 <!-- Back to Landing Page -->
                 <a href="{{ route('landing') }}"
-                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main px-2.5 py-1.5 rounded text-xs font-mono"
+                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
                    title="Beranda Notenux">
                     <i class="fa-solid fa-house"></i>
                 </a>
@@ -85,9 +85,9 @@
                     @csrf
                     <button type="submit"
                             id="logout-btn"
-                            class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2.5 py-1.5 rounded text-xs font-mono"
+                            class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
                             title="Keluar">
-                        <i class="fa-solid fa-right-from-bracket mr-1"></i> <span class="hidden sm:inline">LOGOUT</span>
+                        <i class="fa-solid fa-right-from-bracket sm:mr-1"></i> <span class="hidden sm:inline">LOGOUT</span>
                     </button>
                 </form>
             </div>
@@ -179,7 +179,7 @@
                             <i class="fa-solid fa-palette text-amber-500 mr-1"></i> COLOR PALETTE
                         </label>
                         <input type="hidden" name="color" id="selected-color-input" value="{{ old('color', 'cyan') }}">
-                        <div class="grid grid-cols-6 gap-2 pt-1" id="color-palette-picker">
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-1" id="color-palette-picker">
                             <button type="button" data-color="cyan" class="color-palette-btn p-2 rounded-lg border-2 border-black flex flex-col items-center gap-1 bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 hover:scale-105 transition-transform ring-2 ring-cyan-400">
                                 <span class="w-4 h-4 rounded-full bg-cyan-400 border border-black"></span>
                                 <span class="text-[9px] font-bold">CYAN</span>
@@ -227,7 +227,7 @@
                                class="w-full mb-2 bg-surface-alt border-2 border-black/30 dark:border-blue-800 rounded p-1.5 text-xs focus:outline-none focus:border-cyan-400 shadow-[1px_1px_0px_#000]">
 
                         <!-- Quick Icon Presets -->
-                        <div class="grid grid-cols-7 gap-1.5 p-2 bg-surface-alt rounded-lg border border-black/20" id="icon-presets-grid">
+                        <div class="grid grid-cols-4 sm:grid-cols-7 gap-1.5 p-2 bg-surface-alt rounded-lg border border-black/20" id="icon-presets-grid">
                             @php
                                 $presets = [
                                     'fa-solid fa-flask' => 'Flask',

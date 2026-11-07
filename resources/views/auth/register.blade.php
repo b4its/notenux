@@ -33,26 +33,26 @@
 <body class="retro-crt-screen bg-[var(--bg-main)] text-[var(--text-main)] min-h-screen font-sans flex flex-col justify-between antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
 
     <!-- Top Navigation Header -->
-    <header class="w-full bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-4 py-3 z-30">
-        <div class="max-w-6xl mx-auto flex items-center justify-between">
-            <a href="{{ route('landing') }}" class="flex items-center gap-2 group transition-transform active:translate-y-0.5">
-                <i class="fa-solid fa-gamepad text-2xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform"></i>
-                <div class="flex items-center gap-1.5">
-                    <span class="font-pixel text-sm sm:text-base text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
-                    <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1.5 py-0.5 rounded border border-blue-500/40 font-bold uppercase">REGISTER</span>
+    <header class="w-full bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-3 sm:px-6 py-2.5 sm:py-3 z-30">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
+            <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2 group transition-transform active:translate-y-0.5 shrink-0 min-w-0">
+                <i class="fa-solid fa-gamepad text-xl sm:text-2xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform shrink-0"></i>
+                <div class="flex items-center gap-1 sm:gap-1.5 min-w-0">
+                    <span class="font-pixel text-xs sm:text-base text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
+                    <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1.5 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden xs:inline-block">REGISTER</span>
                 </div>
             </a>
 
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
                 <!-- Theme Toggle Button -->
                 <button id="theme-toggle-btn"
-                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle Light / Dark Mode">
-                    <i class="fa-solid fa-moon text-cyan-300 mr-1.5"></i> <span class="hidden sm:inline">THEME</span>
+                    <i class="fa-solid fa-moon text-cyan-300 sm:mr-1.5"></i> <span class="hidden sm:inline">THEME</span>
                 </button>
 
-                <a href="{{ route('landing') }}" class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-mono px-3 py-1.5 rounded">
-                    <i class="fa-solid fa-house mr-1"></i> <span class="hidden sm:inline">Beranda</span>
+                <a href="{{ route('landing') }}" class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-mono px-2.5 sm:px-3 py-1.5 rounded">
+                    <i class="fa-solid fa-house sm:mr-1"></i> <span class="hidden sm:inline">Beranda</span>
                 </a>
             </div>
         </div>

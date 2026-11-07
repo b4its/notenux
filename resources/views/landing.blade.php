@@ -33,23 +33,23 @@
 <body class="retro-crt-screen bg-[var(--bg-main)] text-[var(--text-main)] min-h-screen font-sans flex flex-col antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
 
     <!-- Top Navigation Header -->
-    <header class="sticky top-0 w-full bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-4 sm:px-6 py-3 z-40">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <header class="sticky top-0 w-full bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-2 sm:px-4 lg:px-6 py-2.5 sm:py-3 z-40">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
 
             <!-- Brand Logo -->
-            <a href="{{ route('landing') }}" class="flex items-center gap-2 group transition-transform active:translate-y-0.5">
-                <i class="fa-solid fa-gamepad text-2xl sm:text-3xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform"></i>
-                <div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="font-pixel text-sm sm:text-lg text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
-                        <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1.5 py-0.5 rounded border border-blue-500/40 font-bold uppercase">v3.0</span>
+            <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2 group transition-transform active:translate-y-0.5 shrink-0 min-w-0">
+                <i class="fa-solid fa-gamepad text-xl sm:text-3xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform shrink-0"></i>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1 sm:gap-1.5">
+                        <span class="font-pixel text-xs sm:text-lg text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
+                        <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 sm:px-1.5 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden xs:inline-block">v3.0</span>
                     </div>
-                    <p class="text-[9px] font-mono text-slate-500 dark:text-slate-400 hidden sm:block">Retro Gamified Note Studio</p>
+                    <p class="text-[9px] font-mono text-slate-500 dark:text-slate-400 hidden md:block truncate">Retro Gamified Note Studio</p>
                 </div>
             </a>
 
             <!-- Navigation Links (Desktop) -->
-            <nav class="hidden md:flex items-center gap-6 font-mono text-xs font-bold">
+            <nav class="hidden md:flex items-center gap-6 font-mono text-xs font-bold shrink-0">
                 <a href="#fitur" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">FITUR</a>
                 <a href="#playground" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">DEMO INTERAKTIF</a>
                 <a href="#arsitektur" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">CHUNK MATRIX</a>
@@ -57,32 +57,32 @@
             </nav>
 
             <!-- Right Controls & Authentication Actions -->
-            <div class="flex items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 <!-- Sound Toggle -->
                 <button id="sound-toggle-btn"
-                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono shrink-0"
                         title="Toggle 8-bit Audio SFX">
-                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 mr-1"></i> <span class="hidden xl:inline">SFX</span>
+                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 sm:mr-1"></i> <span class="hidden xl:inline">SFX</span>
                 </button>
 
                 <!-- CRT Scanline Toggle -->
                 <button id="crt-toggle-btn"
-                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2.5 py-1.5 rounded text-xs font-mono hidden sm:inline-flex"
+                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden sm:inline-flex shrink-0"
                         title="Toggle Retro CRT Scanlines">
-                    <i class="fa-solid fa-tv mr-1 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT</span>
+                    <i class="fa-solid fa-tv sm:mr-1 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT</span>
                 </button>
 
                 <!-- Theme Toggle Button -->
                 <button id="theme-toggle-btn"
-                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono shrink-0"
                         title="Toggle Light / Dark Mode">
-                    <i class="fa-solid fa-moon text-cyan-300 mr-1.5"></i> <span class="hidden sm:inline">TEMA</span>
+                    <i class="fa-solid fa-moon text-cyan-300 sm:mr-1.5"></i> <span class="hidden sm:inline">TEMA</span>
                 </button>
 
                 <!-- Auth State -->
                 @auth
                     <!-- User is logged in -->
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 sm:gap-2">
                         <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-black dark:border-blue-700 bg-[var(--bg-surface-alt)] text-xs font-mono">
                             <i class="fa-solid fa-user-ninja text-emerald-500"></i>
                             <span class="font-bold truncate max-w-[120px]">{{ auth()->user()->name }}</span>
@@ -90,15 +90,15 @@
 
                         <a href="{{ route('studio') }}"
                            id="nav-studio-btn"
-                           class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-4 py-1.5 rounded text-xs font-mono font-bold tracking-wider">
-                            <i class="fa-solid fa-terminal mr-1.5"></i> STUDIO
+                           class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2.5 sm:px-4 py-1.5 rounded text-xs font-mono font-bold tracking-wider shrink-0">
+                            <i class="fa-solid fa-terminal sm:mr-1.5"></i> <span class="hidden xs:inline">STUDIO</span>
                         </a>
 
                         <form method="POST" action="{{ route('logout') }}" class="inline">
                             @csrf
                             <button type="submit"
                                     id="nav-logout-btn"
-                                    class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2.5 py-1.5 rounded text-xs font-mono"
+                                    class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono shrink-0"
                                     title="Logout dari akun">
                                 <i class="fa-solid fa-right-from-bracket"></i>
                             </button>
@@ -108,20 +108,20 @@
                     <!-- User is guest -->
                     <a href="{{ route('login') }}"
                        id="nav-login-btn"
-                       class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-mono px-3 py-1.5 rounded">
-                        <i class="fa-solid fa-right-to-bracket mr-1"></i> <span>MASUK</span>
+                       class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-mono px-2.5 sm:px-3 py-1.5 rounded shrink-0">
+                        <i class="fa-solid fa-right-to-bracket sm:mr-1"></i> <span>MASUK</span>
                     </a>
 
                     <a href="{{ route('register') }}"
                        id="nav-register-btn"
-                       class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono px-3 py-1.5 rounded hidden sm:inline-flex">
+                       class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-mono px-3 py-1.5 rounded hidden sm:inline-flex shrink-0">
                         <i class="fa-solid fa-user-plus mr-1"></i> <span>REGISTER</span>
                     </a>
 
                     <a href="{{ route('studio') }}"
                        id="nav-studio-guest-btn"
-                       class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-3 sm:px-4 py-1.5 rounded text-xs font-mono font-bold tracking-wider">
-                        <i class="fa-solid fa-terminal mr-1.5"></i> STUDIO
+                       class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2.5 sm:px-4 py-1.5 rounded text-xs font-mono font-bold tracking-wider shrink-0">
+                        <i class="fa-solid fa-terminal sm:mr-1.5"></i> <span class="hidden xs:inline">STUDIO</span>
                     </a>
                 @endauth
             </div>

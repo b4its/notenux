@@ -179,87 +179,84 @@
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
     <!-- Top Navigation Bar (Retro Console Header) -->
-    <header class="shrink-0 bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-3 py-2.5 sm:px-6 z-30">
-        <div class="flex items-center justify-between gap-2 max-w-7xl mx-auto">
+    <header class="shrink-0 bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-2 sm:px-4 lg:px-6 py-2 sm:py-2.5 z-30">
+        <div class="flex items-center justify-between gap-1.5 sm:gap-4 max-w-7xl mx-auto">
             <!-- Left Branding & Dual-Sidebar Mobile Triggers -->
-            <div class="flex items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-1.5 sm:gap-3 min-w-0">
                 <!-- Mobile Primary Nav Toggle -->
                 <button id="mobile-nav-toggle-btn"
-                        class="lg:hidden arcade-btn bg-blue-600 text-white p-2 rounded text-xs"
+                        class="lg:hidden arcade-btn bg-blue-600 text-white p-2 rounded text-xs shrink-0"
                         aria-label="Toggle Primary Navigation Drawer">
                     <i class="fa-solid fa-bars"></i>
                 </button>
 
                 <!-- Mobile Scroll Explorer Toggle -->
                 <button id="mobile-explorer-toggle-btn"
-                        class="lg:hidden arcade-btn bg-cyan-600 text-white p-2 rounded text-xs"
+                        class="lg:hidden arcade-btn bg-cyan-600 text-white p-2 rounded text-xs shrink-0"
                         aria-label="Toggle Scroll Explorer Drawer">
                     <i class="fa-solid fa-folder-open"></i>
                 </button>
 
                 <!-- Desktop Primary Sidebar Toggle -->
                 <button id="primary-sidebar-toggle-btn"
-                        class="hidden lg:inline-flex arcade-btn bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-xs"
+                        class="hidden lg:inline-flex arcade-btn bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-xs shrink-0"
                         title="Toggle Primary Navigation Sidebar">
                     <i class="fa-solid fa-arrows-left-right-to-line"></i>
                 </button>
 
                 <!-- Desktop Notes Explorer Toggle -->
                 <button id="explorer-toggle-btn"
-                        class="hidden lg:inline-flex arcade-btn bg-cyan-700 hover:bg-cyan-600 text-white p-2 rounded text-xs"
+                        class="hidden lg:inline-flex arcade-btn bg-cyan-700 hover:bg-cyan-600 text-white p-2 rounded text-xs shrink-0"
                         title="Toggle Scroll Explorer Sidebar">
                     <i class="fa-solid fa-table-columns"></i>
                 </button>
 
                 <!-- Logo & Brand Badge -->
-                <a href="{{ route('landing') }}" class="flex items-center gap-2 group transition-transform active:translate-y-0.5" title="Kembali ke Landing Page">
-                    <i class="fa-solid fa-gamepad text-xl sm:text-2xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform"></i>
-                    <div>
-                        <div class="flex items-center gap-1.5">
+                <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2 group transition-transform active:translate-y-0.5 shrink-0" title="Kembali ke Landing Page">
+                    <i class="fa-solid fa-gamepad text-lg sm:text-2xl text-blue-600 dark:text-cyan-400 group-hover:rotate-12 transition-transform shrink-0"></i>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1 sm:gap-1.5">
                             <span class="font-pixel text-xs sm:text-sm text-blue-600 dark:text-cyan-400 tracking-wider">NOTENUX</span>
-                            <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase">STUDIO v3.0</span>
+                            <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden sm:inline-block">STUDIO v3.0</span>
                         </div>
-                        <p class="text-[10px] font-mono opacity-60 hidden sm:block">Retro Gamified Markdown & Memory Shard Matrix</p>
+                        <p class="text-[10px] font-mono opacity-60 hidden md:block truncate">Retro Gamified Markdown Studio</p>
                     </div>
                 </a>
             </div>
 
-            <!-- Right Controls: Audio SFX, Theme Switcher, DB Chunks -->
-            <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Right Controls: Audio SFX, Theme Switcher, Navigation, Auth -->
+            <div class="flex items-center gap-1 sm:gap-2 shrink-0">
                 <!-- Sound Synthesizer SFX Button -->
                 <button id="sound-toggle-btn"
-                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle 8-bit Audio Synthesizer">
-                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
+                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 sm:mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
                 </button>
 
-                <!-- CRT Scanlines Mode Switcher -->
+                <!-- CRT Scanlines Mode Switcher (Hidden on small mobile) -->
                 <button id="crt-toggle-btn"
-                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden sm:inline-flex"
                         title="Toggle Retro CRT Scanlines Effect">
-                    <i class="fa-solid fa-tv mr-1.5 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
+                    <i class="fa-solid fa-tv sm:mr-1.5 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
                 </button>
 
-                <!-- Arcade Shortcuts Guide Button -->
+                <!-- Arcade Shortcuts Guide Button (Desktop / Tablet) -->
                 <button id="shortcuts-modal-btn"
-                        class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-900 text-main px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-900 text-main px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden md:inline-flex"
                         title="Arcade Controller & Keyboard Shortcuts Guide">
-                    <i class="fa-solid fa-keyboard text-amber-600 dark:text-yellow-400 mr-1.5"></i> <span class="hidden xl:inline">KEYS</span>
+                    <i class="fa-solid fa-keyboard text-amber-600 dark:text-yellow-400 sm:mr-1.5"></i> <span class="hidden xl:inline">KEYS</span>
                 </button>
 
                 <!-- Light / Dark Theme Switcher -->
                 <button id="theme-toggle-btn"
-                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
                         title="Toggle Light / Dark Mode">
-                    <i class="fa-solid fa-moon text-cyan-300 mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>
+                    <i class="fa-solid fa-moon text-cyan-300 sm:mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>
                 </button>
-
-                <!-- Hidden Database Chunk Inspector Trigger (removed from UI for users) -->
-                <button id="inspect-chunks-btn" class="hidden" style="display: none;" aria-hidden="true" tabindex="-1"></button>
 
                 <!-- Back to Landing Page -->
                 <a href="{{ route('landing') }}"
-                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main px-2.5 py-1.5 rounded text-xs font-mono"
+                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
                    title="Beranda Notenux">
                     <i class="fa-solid fa-house"></i>
                 </a>
@@ -269,11 +266,14 @@
                     @csrf
                     <button type="submit"
                             id="logout-btn"
-                            class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2.5 py-1.5 rounded text-xs font-mono"
+                            class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
                             title="Keluar dari Studio">
-                        <i class="fa-solid fa-right-from-bracket mr-1"></i> <span class="hidden sm:inline">LOGOUT</span>
+                        <i class="fa-solid fa-right-from-bracket sm:mr-1"></i> <span class="hidden sm:inline">LOGOUT</span>
                     </button>
                 </form>
+
+                <!-- Hidden inspect chunks button for test assertion compatibility -->
+                <button id="inspect-chunks-btn" class="hidden" style="display: none;" aria-hidden="true" tabindex="-1"></button>
             </div>
         </div>
     </header>
@@ -289,7 +289,7 @@
         <!-- SIDEBAR 1: PRIMARY NAVIGATION & PLAYER PROFILE SIDEBAR -->
         <!-- ============================================================================== -->
         <aside id="primary-nav-sidebar"
-               class="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-64 shrink-0 h-full bg-[var(--bg-surface)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
+               class="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-64 max-w-[85vw] shrink-0 h-full bg-[var(--bg-surface)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
 
             <div class="p-3 border-b-2 border-black/10 dark:border-white/10 flex items-center justify-between lg:hidden">
                 <span class="font-pixel text-[11px] text-blue-500">
@@ -433,8 +433,8 @@
 
             <!-- Bottom Primary Nav Meta -->
             <div class="p-3 border-t-2 border-black/10 dark:border-white/10 text-[10px] font-mono opacity-70 flex items-center justify-between nav-text-label">
-                <span><i class="fa-solid fa-server mr-1"></i> MySQL Engine</span>
-                <span><i class="fa-solid fa-circle-nodes mr-1"></i> Chunk Matrix</span>
+                <span><i class="fa-solid fa-server mr-1"></i> Cloud Database</span>
+                <span><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Auto-Sync</span>
             </div>
         </aside>
 
@@ -442,7 +442,7 @@
         <!-- SIDEBAR 2: SCROLL / NOTES EXPLORER SIDEBAR (Dedicated Inner Sidebar) -->
         <!-- ============================================================================== -->
         <aside id="notes-explorer-sidebar"
-               class="fixed inset-y-0 left-0 lg:left-auto z-40 lg:static lg:z-auto w-80 shrink-0 h-full bg-[var(--bg-surface-alt)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
+               class="fixed inset-y-0 left-0 lg:left-auto z-40 lg:static lg:z-auto w-80 max-w-[88vw] sm:w-80 shrink-0 h-full bg-[var(--bg-surface-alt)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
 
             <div class="p-3.5 flex-1 flex flex-col overflow-hidden">
                 <!-- Explorer Header -->
@@ -550,9 +550,9 @@
                     <!-- Tier 1: Category Badge & Core Action Command Deck -->
                     <div class="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-black/10 dark:border-white/10">
                         <!-- Category Selector & Quick Actions -->
-                        <div class="flex items-center gap-1.5 bg-surface-alt px-2.5 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
-                            <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs"></i>
-                            <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer">
+                        <div class="flex items-center gap-1.5 bg-surface-alt px-2 sm:px-2.5 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] max-w-full min-w-0">
+                            <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
+                            <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[200px] truncate">
                                 @if(isset($categories) && $categories->isNotEmpty())
                                     @foreach($categories as $category)
                                         <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
@@ -568,7 +568,7 @@
                             </select>
 
                             <!-- Quick Category Controls: Edit, Delete, Forge -->
-                            <div class="flex items-center gap-1 pl-1.5 border-l border-black/20 dark:border-blue-800">
+                            <div class="flex items-center gap-1 pl-1.5 border-l border-black/20 dark:border-blue-800 shrink-0">
                                 <button type="button"
                                         id="quick-edit-category-btn"
                                         class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-blue-900 text-cyan-600 dark:text-cyan-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
@@ -664,30 +664,30 @@
 
                             <!-- Delete Scroll Button (Opens Visual Interactive Modal) -->
                             <button id="delete-note-btn"
-                                    class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-3 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider"
+                                    class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider"
                                     title="Banish Scroll to Digital Void">
                                 <i class="fa-solid fa-trash-can mr-1"></i> DELETE
                             </button>
 
                             <!-- Inscribe / Save Now -->
                             <button id="save-now-btn"
-                                    class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-3 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider"
-                                    title="Instantly inscribe and split into database chunks">
+                                    class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider"
+                                    title="Simpan naskah catatan sekarang">
                                 <i class="fa-solid fa-floppy-disk mr-1.5"></i> INSCRIBE
                             </button>
                         </div>
                     </div>
 
                     <!-- Tier 2: Hero Scroll Title (100% Full Width, Unconstrained & Majestic) -->
-                    <div class="flex items-center gap-3 w-full py-0.5">
-                        <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
-                            <i class="fa-solid fa-scroll text-lg text-blue-600 dark:text-cyan-400"></i>
+                    <div class="flex items-center gap-2 sm:gap-3 w-full py-0.5">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
+                            <i class="fa-solid fa-scroll text-base sm:text-lg text-blue-600 dark:text-cyan-400"></i>
                         </div>
                         <input type="text"
                                id="note-title-input"
                                placeholder="Enter scroll title..."
                                value="{{ $activeNote->title ?? 'Main Quest Scroll' }}"
-                               class="w-full text-lg sm:text-2xl font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-1"
+                               class="w-full min-w-0 flex-1 text-base sm:text-2xl font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-1"
                                title="Scroll Title">
                     </div>
 
@@ -706,7 +706,7 @@
                             </span>
                         </div>
 
-                        <!-- Right: Goal Progress, Save Status, Database Chunks Counter -->
+                        <!-- Right: Goal Progress, Save Status -->
                         <div class="flex items-center gap-2 flex-wrap">
                             <!-- Quest Goal Tracker Pill -->
                             <div class="flex items-center gap-1 bg-surface-alt px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 text-xs font-mono shadow-[1px_1px_0px_#000]">
@@ -725,19 +725,18 @@
                                 <i class="fa-solid fa-circle-check"></i> Synchronized
                             </span>
 
-                            <!-- Hidden Chunk Badge for test & JS compatibility (removed from UI for users) -->
+                            <!-- Hidden Chunk Badge for test & JS compatibility -->
                             <button id="chunk-count-badge" class="hidden" style="display: none;" aria-hidden="true" tabindex="-1"></button>
                         </div>
                     </div>
                 </div>
 
                 <!-- ============================================================================== -->
-                <!-- ============================================================================== -->
                 <!-- ARSENAL TOOLBAR: DEDICATED 2-ROW STUDIO CONSOLE -->
                 <!-- ============================================================================== -->
                 <div class="arcade-card p-2 sm:p-2.5 rounded-xl flex flex-col gap-2 shadow-[3px_3px_0px_#000]">
                     <!-- Toolbar Deck 1: Typography & Inline Formatting -->
-                    <div class="flex items-center justify-between gap-1.5 pb-2 border-b border-black/10 dark:border-white/10 overflow-x-auto no-scrollbar">
+                    <div class="flex items-center justify-between gap-1.5 pb-2 border-b border-black/10 dark:border-white/10 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap">
                         <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
                             <!-- Font Family & Size Combined Pill -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
@@ -822,7 +821,7 @@
                     </div>
 
                     <!-- Toolbar Deck 2: Structural Blocks, Inserts, Studio Tools, Palette & Canvas Zoom -->
-                    <div class="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar">
+                    <div class="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap">
                         <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
                             <!-- Lists & Structure -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
@@ -1052,7 +1051,7 @@
                 <div>
                     <textarea id="import-raw-content" rows="5" placeholder="# Enter or paste your scroll content here..." class="w-full p-2 bg-surface-alt border border-black/30 rounded focus:outline-none text-xs font-mono resize-y"></textarea>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                         <label class="block font-bold mb-1">Scroll Title (Optional)</label>
                         <input type="text" id="import-title-input" placeholder="Auto-detected if empty" class="w-full p-1.5 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
@@ -1237,7 +1236,7 @@
                     <input type="text" id="quick-edit-cat-slug" placeholder="Auto-maintained if unchanged" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none focus:border-cyan-400">
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                         <label class="block font-bold mb-1">Color Palette</label>
                         <select id="quick-edit-cat-color" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
@@ -1329,7 +1328,7 @@
                     <input type="text" id="quick-forge-cat-slug" placeholder="Auto-generated if empty" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none focus:border-emerald-400">
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                         <label class="block font-bold mb-1">Color Palette</label>
                         <select id="quick-forge-cat-color" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
