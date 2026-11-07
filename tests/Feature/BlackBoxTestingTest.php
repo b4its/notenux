@@ -846,3 +846,44 @@ test('black-box: duplicate scroll handles multibyte unicode titles up to 255 cha
     expect(mb_strlen($clonedTitle))->toBeLessThanOrEqual(255)
         ->and($clonedTitle)->toEndWith('(Copy)');
 });
+
+test('black-box: user can export scroll in json format with intact chunk array and import it back seamlessly', function () {
+    $note = Note::factory()->create([
+        'title' => 'Arcane Roundtrip Expedition',
+        'category' => 'spellbook',
+        'content' => '<h2>Grand Lore</h2><p>Restored from JSON matrix shard backup.</p>',
+        'font_family' => 'arcade',
+        'font_size' => '18px',
+        'theme_color' => 'emerald',
+    ]);
+    $service = app(NoteChunkService::class);
+    $service->syncChunks($note, $note->content);
+
+    // 1. Export note to JSON
+    $exportRes = $this->get("/api/notes/{$note->id}/export/json");
+    $exportRes->assertOk()
+        ->assertHeader('Content-Type', 'application/json; charset=UTF-8');
+
+    $jsonPayload = $exportRes->getContent();
+
+    // 2. Import the JSON payload back as a new note
+    $importRes = $this->postJson('/api/notes/import', [
+        'content' => $jsonPayload,
+    ]);
+
+    $importRes->assertStatus(201)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.title', 'Arcane Roundtrip Expedition')
+        ->assertJsonPath('data.category', 'spellbook')
+        ->assertJsonPath('data.font_family', 'arcade')
+        ->assertJsonPath('data.font_size', '18px')
+        ->assertJsonPath('data.theme_color', 'emerald');
+
+    $importedNoteId = $importRes->json('data.id');
+    expect($importedNoteId)->not->toBeNull()
+        ->and($importedNoteId)->not->toBe($note->id);
+
+    $importedNote = Note::find($importedNoteId);
+    expect($importedNote->chunks()->count())->toBeGreaterThan(0)
+        ->and($importedNote->content)->toContain('Grand Lore');
+});

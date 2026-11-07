@@ -610,3 +610,45 @@ test('white-box: note controller export defaults to markdown for unknown or unre
         ->and($response->getContent())->toContain('# Ancient Scroll')
         ->and($response->getContent())->toContain('Lore of the ancients');
 });
+
+test('white-box: note controller export formats plain text with clean stripped tags and telemetry headers', function () {
+    $note = Note::factory()->create([
+        'title' => 'Arcane Chronicles',
+        'category' => 'spellbook',
+        'content' => '<h1>Chapter 1</h1><p>Incantation words here.</p><table class="retro-table"><tr><td>Col1</td></tr></table>',
+        'word_count' => 5,
+        'xp' => 15,
+    ]);
+    $controller = app(NoteController::class);
+
+    $response = $controller->export($note, 'txt');
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->headers->get('Content-Type'))->toContain('text/plain')
+        ->and($response->getContent())->toContain('TITLE: Arcane Chronicles')
+        ->and($response->getContent())->toContain('CATEGORY: spellbook')
+        ->and($response->getContent())->toContain('Incantation words here.')
+        ->and($response->getContent())->not->toContain('<h1>')
+        ->and($response->getContent())->not->toContain('<table');
+});
+
+test('white-box: note controller export json contains complete chunk array with chunk_uid, checksum, and byte_size', function () {
+    $note = Note::factory()->create([
+        'title' => 'Telemetry Scroll',
+        'content' => '<p>Chunk one content</p><p>Chunk two content</p>',
+    ]);
+    $service = app(NoteChunkService::class);
+    $service->syncChunks($note, $note->content);
+
+    $controller = app(NoteController::class);
+    $response = $controller->export($note, 'json');
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->headers->get('Content-Type'))->toContain('application/json');
+
+    $decoded = json_decode($response->getContent(), true);
+    expect($decoded['id'])->toBe($note->id)
+        ->and($decoded['title'])->toBe('Telemetry Scroll')
+        ->and($decoded['chunks'])->not->toBeEmpty()
+        ->and($decoded['chunks'][0])->toHaveKeys(['id', 'chunk_uid', 'chunk_index', 'chunk_type', 'content', 'byte_size', 'checksum']);
+});

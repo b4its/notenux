@@ -1460,3 +1460,26 @@ test('white-box: keyboard shortcuts invoke undo on Ctrl+Z and redo on Ctrl+Y and
     assert.equal(undoCalled, false);
     assert.equal(prevented, false);
 });
+
+test('white-box: undo and redo delegate to textarea when in plain text mode', () => {
+    const { panel } = harness();
+    let textareaFocused = false;
+    let statsUpdated = false;
+
+    panel.isPlainTextMode = true;
+    panel.dom.plainTextEditor = {
+        focus() { textareaFocused = true; }
+    };
+    panel.updatePlainTextStats = () => { statsUpdated = true; };
+
+    panel.undo();
+    assert.equal(textareaFocused, true);
+    assert.equal(statsUpdated, true);
+
+    textareaFocused = false;
+    statsUpdated = false;
+
+    panel.redo();
+    assert.equal(textareaFocused, true);
+    assert.equal(statsUpdated, true);
+});

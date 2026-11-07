@@ -3400,7 +3400,23 @@ class NotenuxPanel {
     }
 
     undo() {
-        if (this.isPerformingHistory || !this.dom.editorArea) return;
+        if (this.isPerformingHistory) return;
+        if (this.isPlainTextMode && this.dom.plainTextEditor) {
+            this.dom.plainTextEditor.focus?.();
+            try {
+                document.execCommand('undo', false, null);
+            } catch (_) {}
+            this.updatePlainTextStats?.();
+            return;
+        }
+        if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+            this.dom.markdownRawEditor.focus?.();
+            try {
+                document.execCommand('undo', false, null);
+            } catch (_) {}
+            return;
+        }
+        if (!this.dom.editorArea) return;
         if (!this.undoStack) this.undoStack = [];
         if (!this.redoStack) this.redoStack = [];
 
@@ -3428,7 +3444,23 @@ class NotenuxPanel {
     }
 
     redo() {
-        if (this.isPerformingHistory || !this.dom.editorArea) return;
+        if (this.isPerformingHistory) return;
+        if (this.isPlainTextMode && this.dom.plainTextEditor) {
+            this.dom.plainTextEditor.focus?.();
+            try {
+                document.execCommand('redo', false, null);
+            } catch (_) {}
+            this.updatePlainTextStats?.();
+            return;
+        }
+        if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+            this.dom.markdownRawEditor.focus?.();
+            try {
+                document.execCommand('redo', false, null);
+            } catch (_) {}
+            return;
+        }
+        if (!this.dom.editorArea) return;
         if (!this.undoStack) this.undoStack = [];
         if (!this.redoStack) this.redoStack = [];
 
