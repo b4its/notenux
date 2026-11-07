@@ -178,29 +178,26 @@
 
             <div class="max-w-5xl mx-auto text-center space-y-6 relative z-10">
 
-                <!-- Hero Portrait Logo Emblem -->
-                <div class="flex justify-center mb-1">
-                    <div class="relative group">
-                        <div class="absolute -inset-1.5 bg-gradient-to-r from-blue-600 via-cyan-400 to-indigo-600 rounded-3xl blur-md opacity-35 group-hover:opacity-60 transition duration-500"></div>
-                        <div class="relative p-2 rounded-2xl bg-[var(--bg-surface)] border-2 border-black dark:border-blue-700 shadow-[5px_5px_0px_#000]">
-                            <img src="{{ asset('assets/logo/dark/icon_vertical_dark.png') }}"
-                                 alt="Notenux Studio Portrait Emblem"
-                                 class="w-24 sm:w-28 md:w-32 h-auto object-contain hidden dark:block transition-transform duration-300 group-hover:scale-105">
-                            <img src="{{ asset('assets/logo/light/icon_vertical_light.png') }}"
-                                 alt="Notenux Studio Portrait Emblem"
-                                 class="w-24 sm:w-28 md:w-32 h-auto object-contain block dark:hidden transition-transform duration-300 group-hover:scale-105">
-                        </div>
+                <!-- Hero Portrait Logo Emblem (Transparent Background) -->
+                <div class="flex justify-center mb-2 sm:mb-4">
+                    <div class="relative group transition-transform duration-300 hover:scale-105">
+                        <img src="{{ asset('assets/logo/dark/icon_vertical_dark.png') }}"
+                             alt="Notenux Studio Portrait Emblem"
+                             class="w-24 xs:w-28 sm:w-36 md:w-40 lg:w-44 h-auto object-contain hidden dark:block filter drop-shadow-[0_10px_25px_rgba(37,99,235,0.25)]">
+                        <img src="{{ asset('assets/logo/light/icon_vertical_light.png') }}"
+                             alt="Notenux Studio Portrait Emblem"
+                             class="w-24 xs:w-28 sm:w-36 md:w-40 lg:w-44 h-auto object-contain block dark:hidden filter drop-shadow-[0_10px_25px_rgba(26,85,224,0.2)]">
                     </div>
                 </div>
 
                 <!-- Badge -->
-                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border-2 border-black dark:border-cyan-400/50 bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-cyan-300 font-pixel text-[10px] tracking-wider shadow-[3px_3px_0px_#000]">
+                <div class="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 rounded-full border-2 border-black dark:border-cyan-400/50 bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-cyan-300 font-pixel text-[9px] sm:text-[10px] tracking-wider shadow-[3px_3px_0px_#000] max-w-full">
                     <i class="fa-solid fa-bolt text-amber-500 animate-pulse"></i>
                     <span>RETRO GAMIFIED NOTE STUDIO & MARKDOWN MATRIX</span>
                 </div>
 
                 <!-- Main Headline -->
-                <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+                <h1 class="text-2xl xs:text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight break-words">
                     Abadikan Pemikiran. <br class="hidden sm:block">
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 dark:from-cyan-300 dark:via-blue-400 dark:to-purple-400">
                         Tingkatkan Level Scribe.
@@ -208,16 +205,16 @@
                 </h1>
 
                 <!-- Subheadline -->
-                <p class="max-w-2xl mx-auto text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-300 font-mono leading-relaxed">
+                <p class="max-w-2xl mx-auto text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-300 font-mono leading-relaxed px-2">
                     Bukan sekadar aplikasi catatan biasa. Notenux menggabungkan kenyamanan editor Markdown multi-font, integritas penyimpanan chunk kriptografis SHA-256, dan sistem leveling RPG gamifikasi yang membuat aktivitas menulismu adiktif.
                 </p>
 
                 <!-- Hero Action Buttons -->
-                <div class="pt-2 flex flex-wrap items-center justify-center gap-3 sm:gap-4 font-mono">
+                <div class="pt-2 flex flex-col xs:flex-row flex-wrap items-center justify-center gap-2.5 sm:gap-4 font-mono w-full px-2">
                     <!-- Primary CTA leading to /studio -->
                     <a href="{{ route('studio') }}"
                        id="hero-studio-cta"
-                       class="arcade-btn px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-pixel text-xs sm:text-sm tracking-wider shadow-[5px_5px_0px_#000] active:translate-y-1 transition-all">
+                       class="arcade-btn w-full xs:w-auto text-center px-5 py-3 sm:px-6 sm:py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-pixel text-xs sm:text-sm tracking-wider shadow-[5px_5px_0px_#000] active:translate-y-1 transition-all">
                         <i class="fa-solid fa-terminal mr-2 text-cyan-300"></i>
                         <span>BUKA STUDIO</span>
                     </a>
@@ -225,20 +222,20 @@
                     @guest
                         <a href="{{ route('register') }}"
                            id="hero-register-cta"
-                           class="arcade-btn px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm tracking-wider shadow-[5px_5px_0px_#000] active:translate-y-1 transition-all">
+                           class="arcade-btn w-full xs:w-auto text-center px-5 py-3 sm:px-6 sm:py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm tracking-wider shadow-[5px_5px_0px_#000] active:translate-y-1 transition-all">
                             <i class="fa-solid fa-user-plus mr-2"></i>
                             <span>DAFTAR SCRIBE GRATIS</span>
                         </a>
 
                         <a href="{{ route('login') }}"
                            id="hero-login-cta"
-                           class="arcade-btn px-5 py-3.5 rounded-xl bg-[var(--bg-surface)] hover:bg-slate-200 dark:hover:bg-blue-900/40 text-[var(--text-main)] font-bold text-xs sm:text-sm tracking-wider shadow-[4px_4px_0px_#000] active:translate-y-1 transition-all">
+                           class="arcade-btn w-full xs:w-auto text-center px-4 py-3 sm:px-5 sm:py-3.5 rounded-xl bg-[var(--bg-surface)] hover:bg-slate-200 dark:hover:bg-blue-900/40 text-[var(--text-main)] font-bold text-xs sm:text-sm tracking-wider shadow-[4px_4px_0px_#000] active:translate-y-1 transition-all">
                             <i class="fa-solid fa-right-to-bracket mr-1.5 text-blue-500"></i>
                             <span>MASUK</span>
                         </a>
                     @else
                         <a href="{{ route('categories.index') }}"
-                           class="arcade-btn px-5 py-3.5 rounded-xl bg-[var(--bg-surface)] hover:bg-slate-200 dark:hover:bg-blue-900/40 text-[var(--text-main)] font-bold text-xs sm:text-sm tracking-wider shadow-[4px_4px_0px_#000] active:translate-y-1 transition-all">
+                           class="arcade-btn w-full xs:w-auto text-center px-5 py-3.5 rounded-xl bg-[var(--bg-surface)] hover:bg-slate-200 dark:hover:bg-blue-900/40 text-[var(--text-main)] font-bold text-xs sm:text-sm tracking-wider shadow-[4px_4px_0px_#000] active:translate-y-1 transition-all">
                             <i class="fa-solid fa-folder-open mr-1.5 text-cyan-400"></i>
                             <span>KELOLA KATEGORI</span>
                         </a>
@@ -252,7 +249,7 @@
                     <div class="arcade-card rounded-2xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[6px_6px_0px_#000] overflow-hidden">
 
                         <!-- Station Header & Tabs -->
-                        <div class="px-4 py-2.5 bg-[var(--bg-surface-alt)] border-b-2 border-black dark:border-blue-900 flex flex-wrap items-center justify-between gap-2">
+                        <div class="px-3 sm:px-4 py-2.5 bg-[var(--bg-surface-alt)] border-b-2 border-black dark:border-blue-900 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
                             <div class="flex items-center gap-2">
                                 <span class="w-3 h-3 rounded-full bg-rose-500 border border-black/40 inline-block"></span>
                                 <span class="w-3 h-3 rounded-full bg-amber-500 border border-black/40 inline-block"></span>
@@ -261,14 +258,14 @@
                             </div>
 
                             <!-- Tabs -->
-                            <div class="flex items-center gap-1">
-                                <button type="button" id="tab-btn-quests" class="station-tab-btn px-2.5 py-1 rounded text-[10px] font-bold bg-blue-600 text-white arcade-btn" data-tab="quests">
+                            <div class="flex items-center gap-1 flex-wrap w-full xs:w-auto">
+                                <button type="button" id="tab-btn-quests" class="station-tab-btn px-2 sm:px-2.5 py-1 rounded text-[10px] font-bold bg-blue-600 text-white arcade-btn" data-tab="quests">
                                     <i class="fa-solid fa-khanda mr-1"></i> Quests
                                 </button>
-                                <button type="button" id="tab-btn-hasher" class="station-tab-btn px-2.5 py-1 rounded text-[10px] font-bold bg-[var(--bg-surface)] text-[var(--text-main)] arcade-btn" data-tab="hasher">
+                                <button type="button" id="tab-btn-hasher" class="station-tab-btn px-2 sm:px-2.5 py-1 rounded text-[10px] font-bold bg-[var(--bg-surface)] text-[var(--text-main)] arcade-btn" data-tab="hasher">
                                     <i class="fa-solid fa-fingerprint mr-1"></i> Shard Hasher
                                 </button>
-                                <button type="button" id="tab-btn-fonts" class="station-tab-btn px-2.5 py-1 rounded text-[10px] font-bold bg-[var(--bg-surface)] text-[var(--text-main)] arcade-btn" data-tab="fonts">
+                                <button type="button" id="tab-btn-fonts" class="station-tab-btn px-2 sm:px-2.5 py-1 rounded text-[10px] font-bold bg-[var(--bg-surface)] text-[var(--text-main)] arcade-btn" data-tab="fonts">
                                     <i class="fa-solid fa-font mr-1"></i> Font Lab
                                 </button>
                             </div>
@@ -376,42 +373,34 @@
                     </div>
                 </div>
 
-                <!-- Hero Metrics Telemetry Strip -->
-                <div class="pt-6 max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 font-mono text-left">
-                    <div class="arcade-card p-3 rounded-lg border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000]">
-                        <div class="flex items-center gap-2 text-blue-600 dark:text-cyan-400 text-xs font-bold">
+                <!-- Hero Metrics Telemetry Strip (Responsive 2-column) -->
+                <div class="pt-6 max-w-xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 font-mono text-left w-full px-2">
+                    <div class="arcade-card p-3.5 rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] flex items-center justify-between sm:block">
+                        <div>
+                            <div class="flex items-center gap-2 text-blue-600 dark:text-cyan-400 text-xs font-bold">
+                                <i class="fa-solid fa-scroll"></i>
+                                <span>MANUSCRIPTS</span>
+                            </div>
+                            <div class="mt-1 font-pixel text-lg sm:text-xl text-slate-900 dark:text-white" id="telemetry-notes">{{ $noteCount }}+</div>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Catatan tersimpan</p>
+                        </div>
+                        <div class="sm:hidden text-2xl text-blue-500/40">
                             <i class="fa-solid fa-scroll"></i>
-                            <span>MANUSCRIPTS</span>
                         </div>
-                        <div class="mt-1 font-pixel text-lg sm:text-xl text-slate-900 dark:text-white" id="telemetry-notes">{{ $noteCount }}+</div>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Catatan tersimpan</p>
                     </div>
 
-                    <div class="arcade-card p-3 rounded-lg border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000]">
-                        <div class="flex items-center gap-2 text-cyan-600 dark:text-cyan-300 text-xs font-bold">
-                            <i class="fa-solid fa-cubes"></i>
-                            <span>DB SHARDS</span>
+                    <div class="arcade-card p-3.5 rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000] flex items-center justify-between sm:block">
+                        <div>
+                            <div class="flex items-center gap-2 text-amber-600 dark:text-yellow-400 text-xs font-bold">
+                                <i class="fa-solid fa-award"></i>
+                                <span>RPG LEVELING</span>
+                            </div>
+                            <div class="mt-1 font-pixel text-lg sm:text-xl text-slate-900 dark:text-white">LV.50+</div>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">XP & Mana Progress</p>
                         </div>
-                        <div class="mt-1 font-pixel text-lg sm:text-xl text-slate-900 dark:text-white" id="telemetry-chunks">{{ $chunkCount }}+</div>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Chunk terpartisi aman</p>
-                    </div>
-
-                    <div class="arcade-card p-3 rounded-lg border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000]">
-                        <div class="flex items-center gap-2 text-amber-600 dark:text-yellow-400 text-xs font-bold">
+                        <div class="sm:hidden text-2xl text-amber-500/40">
                             <i class="fa-solid fa-award"></i>
-                            <span>RPG LEVELING</span>
                         </div>
-                        <div class="mt-1 font-pixel text-lg sm:text-xl text-slate-900 dark:text-white">LV.50+</div>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400">XP & Mana Progress</p>
-                    </div>
-
-                    <div class="arcade-card p-3 rounded-lg border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000]">
-                        <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-xs font-bold">
-                            <i class="fa-solid fa-shield-halved"></i>
-                            <span>XSS SANITIZED</span>
-                        </div>
-                        <div class="mt-1 font-pixel text-lg sm:text-xl text-slate-900 dark:text-white">100%</div>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Keamanan Konten Terjamin</p>
                     </div>
                 </div>
 
@@ -439,9 +428,9 @@
                 <div class="arcade-card rounded-2xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[8px_8px_0px_#000] overflow-hidden">
 
                     <!-- Console Top Bar: Font Selector & Templates -->
-                    <div class="px-4 py-3 border-b-2 border-black dark:border-blue-900 bg-[var(--bg-surface-alt)] flex flex-wrap items-center justify-between gap-3">
+                    <div class="px-3 sm:px-4 py-3 border-b-2 border-black dark:border-blue-900 bg-[var(--bg-surface-alt)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
                         <!-- Font Selector Switches -->
-                        <div class="flex items-center gap-1.5 flex-wrap">
+                        <div class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                             <span class="text-[10px] font-mono font-bold mr-1 text-slate-600 dark:text-slate-400">FONT:</span>
                             <button type="button" class="demo-font-btn arcade-btn bg-blue-600 text-white text-[10px] font-mono px-2 py-1 rounded" data-font="pixel">
                                 [Pixel]
@@ -461,7 +450,7 @@
                         </div>
 
                         <!-- Template Quick-Insert Buttons & Preview Toggle -->
-                        <div class="flex items-center gap-1.5 text-xs font-mono">
+                        <div class="flex items-center gap-1 sm:gap-1.5 text-xs font-mono flex-wrap">
                             <span class="text-[10px] font-bold text-slate-600 dark:text-slate-400 mr-1 hidden sm:inline">TEMPLATE:</span>
                             <button type="button" id="template-quest-btn" class="arcade-btn bg-amber-400 hover:bg-amber-300 text-black text-[10px] font-mono px-2 py-1 rounded" title="Muat template Quest">
                                 ⚔️ Quest
@@ -479,7 +468,7 @@
                     </div>
 
                     <!-- Spell Bar (Markdown Formatting Toolbar) -->
-                    <div class="px-4 py-2 border-b border-black/20 dark:border-blue-900/60 bg-[var(--bg-surface)] flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                    <div class="px-3 sm:px-4 py-2 border-b border-black/20 dark:border-blue-900/60 bg-[var(--bg-surface)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs font-mono">
                         <div class="flex items-center gap-1 flex-wrap">
                             <span class="text-[10px] text-slate-500 dark:text-slate-400 mr-1 font-bold">SPELL BAR:</span>
                             <button type="button" class="spell-btn arcade-btn px-2 py-0.5 rounded text-[11px] bg-[var(--bg-surface-alt)] font-bold" data-action="bold" title="Tebal (Ctrl+B)">
@@ -503,7 +492,7 @@
                         </div>
 
                         <!-- Clipboard and Quick Download Actions -->
-                        <div class="flex items-center gap-1.5">
+                        <div class="flex items-center gap-1.5 w-full sm:w-auto justify-end">
                             <button type="button" id="demo-copy-btn" class="arcade-btn px-2 py-1 rounded text-[10px] bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-[var(--text-main)]" title="Salin seluruh naskah Markdown">
                                 <i class="fa-solid fa-copy mr-1 text-cyan-500"></i> Salin
                             </button>
@@ -514,26 +503,27 @@
                     </div>
 
                     <!-- Telemetry Stats Simulation Bar -->
-                    <div class="px-4 py-2 border-b-2 border-dashed border-black/10 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-                        <div class="flex items-center gap-3">
+                    <div class="px-3 sm:px-4 py-2.5 border-b-2 border-dashed border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs font-mono">
+                        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
                             <span class="font-pixel text-[10px] text-blue-600 dark:text-cyan-400" id="demo-level-display">LV. 1 NOVICE</span>
-                            <div class="w-32 bg-black/20 dark:bg-black/60 h-2 rounded border border-black/30 overflow-hidden">
+                            <div class="w-24 xs:w-32 bg-black/20 dark:bg-black/60 h-2 rounded border border-black/30 overflow-hidden">
                                 <div id="demo-xp-bar" class="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-200" style="width: 25%;"></div>
                             </div>
                             <span class="text-[10px] font-bold text-amber-500" id="demo-xp-text">25 / 100 XP</span>
                         </div>
 
-                        <div class="flex items-center gap-2 sm:gap-3 text-[11px] text-slate-600 dark:text-slate-400 flex-wrap">
+                        <div class="flex items-center gap-1.5 sm:gap-3 text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-400 flex-wrap">
                             <span><strong id="demo-word-count">24</strong> kata</span>
                             <span>&bull;</span>
                             <span><strong id="demo-char-count">142</strong> karakter</span>
                             <span>&bull;</span>
-                            <span class="hidden sm:inline"><strong id="demo-line-count">7</strong> baris</span>
-                            <span class="hidden sm:inline">&bull;</span>
+                            <span class="hidden xs:inline"><strong id="demo-line-count">7</strong> baris</span>
+                            <span class="hidden xs:inline">&bull;</span>
                             <span class="text-cyan-500 font-bold" id="demo-read-time">~1 mnt baca</span>
                             <span>&bull;</span>
                             <span class="text-emerald-500 font-bold"><i class="fa-solid fa-circle-check"></i> Auto-Synced</span>
                         </div>
+                    </div>
                     </div>
 
                     <!-- Editor Workspace (Split / Interactive Area) -->
@@ -680,32 +670,32 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
 
                 <!-- Interactive Shard Integrity Simulator Deck -->
                 <div class="arcade-card rounded-2xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[6px_6px_0px_#000] p-4 sm:p-6 space-y-5">
-                    <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black/10 dark:border-blue-900/60 pb-3">
+                    <div class="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 border-b-2 border-black/10 dark:border-blue-900/60 pb-3">
                         <div class="flex items-center gap-2">
                             <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
                             <span class="font-pixel text-xs text-blue-950 dark:text-cyan-300">LIVE INTEGRITY AUDIT MATRIX</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button type="button" id="sim-corrupt-btn" class="arcade-btn px-3 py-1.5 rounded text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold" title="Simulasikan modifikasi data tak sah pada Shard #2">
+                        <div class="flex items-center gap-2 w-full xs:w-auto">
+                            <button type="button" id="sim-corrupt-btn" class="arcade-btn flex-1 xs:flex-none text-center px-3 py-1.5 rounded text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold" title="Simulasikan modifikasi data tak sah pada Shard #2">
                                 <i class="fa-solid fa-bug mr-1"></i> Corrupt Shard #2
                             </button>
-                            <button type="button" id="sim-repair-btn" class="arcade-btn px-3 py-1.5 rounded text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold" title="Pulihkan shard dan sinkronisasi ulang checksum SHA-256">
+                            <button type="button" id="sim-repair-btn" class="arcade-btn flex-1 xs:flex-none text-center px-3 py-1.5 rounded text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold" title="Pulihkan shard dan sinkronisasi ulang checksum SHA-256">
                                 <i class="fa-solid fa-wrench mr-1"></i> Restore & Audit
                             </button>
                         </div>
                     </div>
 
                     <!-- Global Shard Status Banner -->
-                    <div id="sim-status-banner" class="p-3 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/10 flex items-center justify-between gap-3 text-xs">
+                    <div id="sim-status-banner" class="p-3 rounded-xl border-2 border-emerald-500/60 bg-emerald-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs">
                         <div class="flex items-center gap-2">
                             <i id="sim-status-icon" class="fa-solid fa-circle-check text-emerald-500 text-base"></i>
                             <span id="sim-status-text" class="font-bold text-emerald-600 dark:text-emerald-400">STATUS: All 3 memory shards intact. Cryptographic integrity 100% verified.</span>
                         </div>
-                        <span id="sim-status-chip" class="px-2 py-0.5 rounded font-pixel text-[9px] bg-emerald-600 text-white">SECURE</span>
+                        <span id="sim-status-chip" class="px-2 py-0.5 rounded font-pixel text-[9px] bg-emerald-600 text-white shrink-0">SECURE</span>
                     </div>
 
                     <!-- 3 Visual Shards -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs">
                         <!-- Shard 1 -->
                         <div class="p-4 rounded-xl border-2 border-black/20 dark:border-blue-900 bg-[var(--bg-surface-alt)] space-y-2">
                             <div class="flex items-center justify-between text-[11px] font-bold">
@@ -751,7 +741,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                 </div>
 
                 <!-- 3 Explainer Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 text-xs">
                     <div class="arcade-card p-5 rounded-xl border-2 border-black dark:border-blue-800 bg-[var(--bg-surface)] shadow-[4px_4px_0px_#000] space-y-2">
                         <div class="text-blue-600 dark:text-cyan-400 font-bold flex items-center gap-2">
                             <span class="w-6 h-6 rounded bg-blue-600 text-white flex items-center justify-center text-[10px] font-pixel">01</span>
@@ -772,7 +762,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                         </p>
                     </div>
 
-                    <div class="arcade-card p-5 rounded-xl border-2 border-black dark:border-blue-800 bg-[var(--bg-surface)] shadow-[4px_4px_0px_#000] space-y-2">
+                    <div class="arcade-card p-5 rounded-xl border-2 border-black dark:border-blue-800 bg-[var(--bg-surface)] shadow-[4px_4px_0px_#000] space-y-2 sm:col-span-2 lg:col-span-1">
                         <div class="text-purple-600 dark:text-purple-400 font-bold flex items-center gap-2">
                             <span class="w-6 h-6 rounded bg-purple-600 text-white flex items-center justify-center text-[10px] font-pixel">03</span>
                             <span>Zero Memory Bloat</span>
@@ -803,7 +793,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                 </div>
 
                 <!-- 5 Rank Buttons Row -->
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
+                <div class="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
                     <button type="button" class="rank-card arcade-btn p-3 rounded-xl border-2 border-black dark:border-blue-800 bg-blue-600 text-white text-center space-y-1" data-rank="1">
                         <i class="fa-solid fa-feather text-lg"></i>
                         <div class="font-pixel text-[9px]">LV. 1-9</div>
@@ -828,7 +818,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                         <div class="text-[10px] font-bold">Archmage</div>
                     </button>
 
-                    <button type="button" class="rank-card arcade-btn p-3 rounded-xl border-2 border-black dark:border-blue-800 bg-[var(--bg-surface)] text-[var(--text-main)] text-center space-y-1 col-span-2 sm:col-span-1" data-rank="5">
+                    <button type="button" class="rank-card arcade-btn p-3 rounded-xl border-2 border-black dark:border-blue-800 bg-[var(--bg-surface)] text-[var(--text-main)] text-center space-y-1 col-span-2 xs:col-span-1" data-rank="5">
                         <i class="fa-solid fa-crown text-lg text-amber-400"></i>
                         <div class="font-pixel text-[9px]">LV. 50+</div>
                         <div class="text-[10px] font-bold">Chrono-Scribe</div>
@@ -836,8 +826,8 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                 </div>
 
                 <!-- Active Rank Detail Display Card -->
-                <div id="rank-detail-card" class="arcade-card rounded-2xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[6px_6px_0px_#000] p-5 sm:p-6 space-y-3">
-                    <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black/10 dark:border-blue-900/60 pb-3">
+                <div id="rank-detail-card" class="arcade-card rounded-2xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[6px_6px_0px_#000] p-4 sm:p-6 space-y-3">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b-2 border-black/10 dark:border-blue-900/60 pb-3">
                         <div class="flex items-center gap-3">
                             <div id="rank-detail-icon" class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xl shadow-[2px_2px_0px_#000]">
                                 <i class="fa-solid fa-feather"></i>
@@ -999,7 +989,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
     </main>
 
     <!-- Floating Scribe Companion Widget (Mascot Sprite) -->
-    <div id="scribe-companion" class="fixed bottom-4 right-4 z-40 font-mono hidden sm:flex items-end gap-2 pointer-events-auto">
+    <div id="scribe-companion" class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 font-mono hidden sm:flex items-end gap-2 pointer-events-auto max-w-[calc(100vw-2rem)]">
         <div id="companion-bubble" class="arcade-card p-3 rounded-xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[4px_4px_0px_#000] text-xs max-w-[220px] transition-all">
             <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
                 <span class="font-pixel text-cyan-400">SCRIBE SPRITE</span>
@@ -1009,7 +999,7 @@ Ketuk tombol template di atas, klik tombol Spell Bar, atau ketik apa saja di sin
                 Tekan tombol template atau ketik di Playground untuk menaikkan XP Scribe kamu!
             </p>
         </div>
-        <button type="button" id="companion-avatar-btn" class="w-12 h-12 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center text-xl active:translate-y-0.5 transition-transform" title="Klik untuk tips Scribe!">
+        <button type="button" id="companion-avatar-btn" class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center text-lg sm:text-xl active:translate-y-0.5 transition-transform" title="Klik untuk tips Scribe!">
             🧙‍♂️
         </button>
     </div>

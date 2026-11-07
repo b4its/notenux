@@ -163,3 +163,36 @@ test('landing page contains rpg scribe rank codex and floating sprite companion'
         ->assertSee('companion-bubble')
         ->assertSee('faq-search-input');
 });
+
+test('all brand logo assets have transparent alpha channel and no solid background container', function () {
+    $logoFiles = [
+        public_path('assets/logo/dark/icon_dark.png'),
+        public_path('assets/logo/dark/icon_horizontal_dark.png'),
+        public_path('assets/logo/dark/icon_vertical_dark.png'),
+        public_path('assets/logo/light/icon_horizontal_light.png'),
+        public_path('assets/logo/light/icon_light.png'),
+        public_path('assets/logo/light/icon_vertical_light.png'),
+        public_path('assets/logo/icon_dark.png'),
+        public_path('assets/logo/icon_light.png'),
+    ];
+
+    foreach ($logoFiles as $filePath) {
+        expect(file_exists($filePath))->toBeTrue();
+        $im = imagecreatefrompng($filePath);
+        expect($im)->not->toBeFalse();
+        $corner = imagecolorsforindex($im, imagecolorat($im, 0, 0));
+        // GD alpha of 127 signifies 100% transparency
+        expect($corner['alpha'])->toBeGreaterThan(100);
+        imagedestroy($im);
+    }
+});
+
+test('telemetry strip omits db shards and xss sanitized while keeping manuscripts and rpg leveling', function () {
+    $response = $this->get(route('landing'));
+
+    $response->assertOk()
+        ->assertSee('MANUSCRIPTS')
+        ->assertSee('RPG LEVELING')
+        ->assertDontSee('DB SHARDS')
+        ->assertDontSee('XSS SANITIZED');
+});
