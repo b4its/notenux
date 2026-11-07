@@ -7,9 +7,51 @@
 
     <title>{{ config('app.name', 'Notenux') }} - Retro Gamified Notes Studio</title>
 
-    <!-- App Favicon & Touch Icon -->
-    <link rel="icon" type="image/png" href="{{ asset('assets/logo/icon_dark.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('assets/logo/icon_dark.png') }}">
+    <!-- App Favicon & Touch Icon (Default Light, dynamically adapts to theme) -->
+    <link rel="icon" id="app-favicon" type="image/png" href="{{ asset('assets/logo/light/icon_light.png') }}">
+    <link rel="apple-touch-icon" id="app-apple-touch-icon" href="{{ asset('assets/logo/light/icon_light.png') }}">
+
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('notenux_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            const lightFavicon = "{{ asset('assets/logo/light/icon_light.png') }}";
+            const darkFavicon = "{{ asset('assets/logo/dark/icon_dark.png') }}";
+            window.notenuxFaviconLight = lightFavicon;
+            window.notenuxFaviconDark = darkFavicon;
+
+            function applyFavicon(theme) {
+                const target = theme === 'dark' ? darkFavicon : lightFavicon;
+                const fav = document.getElementById('app-favicon') || document.querySelector('link[rel="icon"]');
+                const apple = document.getElementById('app-apple-touch-icon') || document.querySelector('link[rel="apple-touch-icon"]');
+                if (fav) fav.setAttribute('href', target);
+                if (apple) apple.setAttribute('href', target);
+            }
+
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.documentElement.setAttribute('data-theme', 'dark');
+                applyFavicon('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.setAttribute('data-theme', 'light');
+                applyFavicon('light');
+            }
+
+            if (!localStorage.getItem('notenux_theme') && window.matchMedia) {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                    const nextTheme = e.matches ? 'dark' : 'light';
+                    if (nextTheme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                        document.documentElement.setAttribute('data-theme', 'dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                        document.documentElement.setAttribute('data-theme', 'light');
+                    }
+                    applyFavicon(nextTheme);
+                });
+            }
+        })();
+    </script>
 
     <!-- Font Awesome 6 Free CDN for all icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />

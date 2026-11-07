@@ -1135,6 +1135,7 @@ class NotenuxPanel {
             }
         }
         localStorage.setItem('notenux_theme', theme);
+        this.updateFavicon(theme);
 
         if (notify) {
             this.toast.show(
@@ -1143,6 +1144,20 @@ class NotenuxPanel {
                 'Theme Switched',
                 theme === 'dark' ? 'fa-solid fa-moon text-cyan-400' : 'fa-solid fa-sun text-amber-400'
             );
+        }
+    }
+
+    updateFavicon(theme) {
+        const favicon = document.getElementById('app-favicon') || document.querySelector('link[rel="icon"]');
+        const appleIcon = document.getElementById('app-apple-touch-icon') || document.querySelector('link[rel="apple-touch-icon"]');
+        const lightFaviconUrl = window.notenuxFaviconLight || '/assets/logo/light/icon_light.png';
+        const darkFaviconUrl = window.notenuxFaviconDark || '/assets/logo/dark/icon_dark.png';
+        const targetFavicon = theme === 'dark' ? darkFaviconUrl : lightFaviconUrl;
+        if (favicon) {
+            favicon.setAttribute('href', targetFavicon);
+        }
+        if (appleIcon) {
+            appleIcon.setAttribute('href', targetFavicon);
         }
     }
 

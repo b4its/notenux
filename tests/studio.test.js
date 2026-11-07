@@ -1483,3 +1483,53 @@ test('white-box: undo and redo delegate to textarea when in plain text mode', ()
     assert.equal(textareaFocused, true);
     assert.equal(statsUpdated, true);
 });
+
+test('white-box: updateFavicon dynamically adapts link elements to active dark and light theme', () => {
+    const { panel, context } = harness();
+    const faviconElement = { href: '', setAttribute(name, val) { if (name === 'href') this.href = val; } };
+    const appleIconElement = { href: '', setAttribute(name, val) { if (name === 'href') this.href = val; } };
+
+    context.document.getElementById = (id) => {
+        if (id === 'app-favicon') return faviconElement;
+        if (id === 'app-apple-touch-icon') return appleIconElement;
+        return null;
+    };
+    context.window.notenuxFaviconLight = '/assets/logo/light/icon_light.png';
+    context.window.notenuxFaviconDark = '/assets/logo/dark/icon_dark.png';
+
+    panel.updateFavicon('dark');
+    assert.equal(faviconElement.href, '/assets/logo/dark/icon_dark.png');
+    assert.equal(appleIconElement.href, '/assets/logo/dark/icon_dark.png');
+
+    panel.updateFavicon('light');
+    assert.equal(faviconElement.href, '/assets/logo/light/icon_light.png');
+    assert.equal(appleIconElement.href, '/assets/logo/light/icon_light.png');
+});
+
+test('white-box: setTheme invokes updateFavicon and sets theme classes and attributes', () => {
+    const { panel, context } = harness();
+    let updatedFaviconTheme = null;
+    panel.updateFavicon = (t) => { updatedFaviconTheme = t; };
+
+    const classList = new Set();
+    const attributes = {};
+    context.document.documentElement = {
+        classList: {
+            add(c) { classList.add(c); },
+            remove(c) { classList.delete(c); },
+            contains(c) { return classList.has(c); },
+        },
+        setAttribute(k, v) { attributes[k] = v; },
+    };
+
+    panel.setTheme('dark', false);
+    assert.equal(updatedFaviconTheme, 'dark');
+    assert.equal(classList.has('dark'), true);
+    assert.equal(attributes['data-theme'], 'dark');
+
+    panel.setTheme('light', false);
+    assert.equal(updatedFaviconTheme, 'light');
+    assert.equal(classList.has('dark'), false);
+    assert.equal(attributes['data-theme'], 'light');
+});
+
