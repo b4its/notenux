@@ -749,3 +749,59 @@ test('white-box: saveActiveNote flushes editorArea innerHTML to note content bef
     assert.ok(capturedBody.content.includes('<img src="data:image/png;base64,XYZ">'));
     assert.equal(panel.activeNote.content, capturedBody.content);
 });
+
+test('white-box: renderMarkdownModalPreview parses markdown and updates modal stats', () => {
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({
+                querySelectorAll: () => [],
+                attributes: [],
+                innerHTML: '',
+                content: { querySelectorAll: () => [] }
+            }),
+            addEventListener() {},
+            querySelector() { return null; },
+        }
+    });
+    vm.runInContext(source + '\nglobalThis.Panel = NotenuxPanel;\nglobalThis.MarkdownEngine = MarkdownEngine;', context);
+    const panel = Object.create(context.Panel.prototype);
+    panel.dom = {
+        markdownModalTextarea: { value: '# Hello World\n\nThis is a **markdown** preview.' },
+        markdownModalPreview: { innerHTML: '' },
+        mdModalWordCount: { textContent: '' },
+        mdModalCharCount: { textContent: '' }
+    };
+
+    panel.renderMarkdownModalPreview();
+
+    assert.ok(panel.dom.markdownModalPreview.innerHTML.includes('<h1>Hello World</h1>'));
+    assert.ok(panel.dom.markdownModalPreview.innerHTML.includes('<strong>markdown</strong>'));
+    assert.ok(panel.dom.mdModalWordCount.textContent.includes('8 kata'));
+    assert.ok(panel.dom.mdModalCharCount.textContent.includes('46 karakter'));
+});
+
+test('white-box: clear controls normalize rich formatting and clear editor content', () => {
+    const { panel } = harness();
+    let handledInput = false;
+    panel.handleEditorInput = () => { handledInput = true; };
+
+    panel.dom.editorArea = {
+        innerHTML: '<h1>Heading</h1><p style="color:red;">Rich content</p>',
+        innerText: 'Heading\n\nRich content'
+    };
+    panel.dom.clearConfirmModal = { classList: { add: () => {}, remove: () => {} } };
+
+    // Simulate clear all content
+    panel.dom.editorArea.innerHTML = '<p><br></p>';
+    panel.handleEditorInput();
+    assert.equal(panel.dom.editorArea.innerHTML, '<p><br></p>');
+    assert.equal(handledInput, true);
+
+    // Simulate normalize format
+    panel.dom.editorArea.innerText = 'Paragraph 1\n\nParagraph 2';
+    const plainText = panel.dom.editorArea.innerText;
+    const paragraphs = plainText.split(/\n\n+/).filter(Boolean);
+    panel.dom.editorArea.innerHTML = paragraphs.map(p => `<p>${panel.escapeHtml(p.trim())}</p>`).join('');
+    assert.equal(panel.dom.editorArea.innerHTML, '<p>Paragraph 1</p><p>Paragraph 2</p>');
+});

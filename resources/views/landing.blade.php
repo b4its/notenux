@@ -224,11 +224,11 @@
 
                     <div class="arcade-card p-3 rounded-lg border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[3px_3px_0px_#000]">
                         <div class="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-xs font-bold">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <span>AI SPELLCASTER</span>
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span>XSS SANITIZED</span>
                         </div>
                         <div class="mt-1 font-pixel text-lg sm:text-xl text-slate-900 dark:text-white">100%</div>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400">AI Assistant Ready</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Keamanan Konten Terjamin</p>
                     </div>
                 </div>
 
@@ -335,7 +335,7 @@ Ketuk tombol template di atas atau ketik apa saja di sini!</textarea>
                     <!-- Playground Footer CTA -->
                     <div class="px-4 py-3 bg-[var(--bg-surface-alt)] border-t-2 border-black dark:border-blue-900 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
                         <span class="text-slate-600 dark:text-slate-400">
-                            <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Ini adalah simulasi mini. Studio lengkap memiliki AI assistant, chunk manager, export & import!
+                            <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Ini adalah simulasi mini. Studio lengkap memiliki chunk manager, markdown preview modal, export & import!
                         </span>
                         <a href="{{ route('studio') }}" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white text-xs font-mono px-3.5 py-1.5 rounded font-bold">
                             BUKA STUDIO LENGKAP &rarr;
@@ -388,14 +388,14 @@ Ketuk tombol template di atas atau ketik apa saja di sini!</textarea>
                         </p>
                     </div>
 
-                    <!-- Card 3: AI Spellcaster -->
+                    <!-- Card 3: Zen Mode Writing -->
                     <div class="arcade-card p-6 rounded-xl border-2 border-black dark:border-blue-900 bg-[var(--bg-surface)] shadow-[5px_5px_0px_#000] space-y-3 hover:-translate-y-1 transition-transform">
                         <div class="w-12 h-12 rounded-lg bg-purple-600 text-white border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center text-xl">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <i class="fa-solid fa-expand"></i>
                         </div>
-                        <h3 class="font-pixel text-xs sm:text-sm text-blue-950 dark:text-cyan-300">AI SPELLCASTER ASSISTANT</h3>
+                        <h3 class="font-pixel text-xs sm:text-sm text-blue-950 dark:text-cyan-300">DISTRACTION-FREE ZEN MODE</h3>
                         <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Gunakan mantra AI terintegrasi untuk meringkas, memoles tata bahasa, menyusun outline, atau memperluas ide catatan dalam hitungan detik.
+                            Fokus penuh pada naskah tulisanmu dengan mode Zen layar penuh, menyembunyikan semua distraksi agar alur berpikirmu mengalir lancar.
                         </p>
                     </div>
 

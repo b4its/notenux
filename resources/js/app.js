@@ -839,6 +839,29 @@ class NotenuxPanel {
             importTitleInput: document.getElementById('import-title-input'),
             importCategorySelect: document.getElementById('import-category-select'),
 
+            markdownModal: document.getElementById('markdown-modal'),
+            closeMarkdownModalBtn: document.getElementById('close-markdown-modal-btn'),
+            cancelMarkdownModalBtn: document.getElementById('cancel-markdown-modal-btn'),
+            confirmMarkdownModalBtn: document.getElementById('confirm-markdown-modal-btn'),
+            markdownModalTextarea: document.getElementById('markdown-modal-textarea'),
+            markdownModalPreview: document.getElementById('markdown-modal-preview'),
+            mdInsertSampleBtn: document.getElementById('md-insert-sample-btn'),
+            mdTabSplitBtn: document.getElementById('md-tab-split-btn'),
+            mdTabEditorBtn: document.getElementById('md-tab-editor-btn'),
+            mdTabPreviewBtn: document.getElementById('md-tab-preview-btn'),
+            mdModalEditorPane: document.getElementById('md-modal-editor-pane'),
+            mdModalPreviewPane: document.getElementById('md-modal-preview-pane'),
+            mdModalGrid: document.getElementById('md-modal-grid'),
+            mdModalWordCount: document.getElementById('md-modal-word-count'),
+            mdModalCharCount: document.getElementById('md-modal-char-count'),
+
+            clearEditorBtn: document.getElementById('clear-editor-btn'),
+            clearConfirmModal: document.getElementById('clear-confirm-modal'),
+            closeClearModalX: document.getElementById('close-clear-modal-x'),
+            cancelClearModalBtn: document.getElementById('cancel-clear-modal-btn'),
+            clearFormattingOnlyBtn: document.getElementById('clear-formatting-only-btn'),
+            clearAllContentBtn: document.getElementById('clear-all-content-btn'),
+
             findReplaceToggleBtn: document.getElementById('find-replace-toggle-btn'),
             findReplaceBar: document.getElementById('find-replace-bar'),
             findInput: document.getElementById('find-input'),
@@ -866,6 +889,8 @@ class NotenuxPanel {
         this.initFindReplace();
         this.initImportModal();
         this.initShortcutsModal();
+        this.initMarkdownModal();
+        this.initClearControls();
         this.bindEvents();
         this.initAiAssistant();
         this.bindKeyboardShortcuts();
@@ -1131,6 +1156,211 @@ class NotenuxPanel {
                 }
             });
         }
+    }
+
+    /* ---------------- MARKDOWN MODAL & LIVE PREVIEW ---------------- */
+    initMarkdownModal() {
+        if (!this.dom.markdownModal) return;
+
+        if (this.dom.markdownPasteBtn) {
+            this.dom.markdownPasteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openMarkdownModal();
+            });
+        }
+
+        const closeModal = () => this.closeMarkdownModal();
+        if (this.dom.closeMarkdownModalBtn) this.dom.closeMarkdownModalBtn.addEventListener('click', closeModal);
+        if (this.dom.cancelMarkdownModalBtn) this.dom.cancelMarkdownModalBtn.addEventListener('click', closeModal);
+        this.dom.markdownModal.addEventListener('click', (e) => {
+            if (e.target === this.dom.markdownModal) closeModal();
+        });
+
+        if (this.dom.markdownModalTextarea) {
+            this.dom.markdownModalTextarea.addEventListener('input', () => {
+                this.renderMarkdownModalPreview();
+            });
+        }
+
+        if (this.dom.mdInsertSampleBtn && this.dom.markdownModalTextarea) {
+            this.dom.mdInsertSampleBtn.addEventListener('click', () => {
+                this.dom.markdownModalTextarea.value = `# 📜 Arcane Manuscript Outline\n\nMenulis catatan dengan format **Markdown** instan:\n\n- [x] Susun rencana utama\n- [x] Inisialisasi cryptographic chunk matrix\n- [ ] Publikasikan dokumen\n\n### Formula Singkat\n\`\`\`javascript\nconst power = (intellect) => Math.pow(intellect, 2);\n\`\`\`\n\n| Item | Kategori | Level |\n| --- | --- | --- |\n| Wand | Arcane | 10 |\n| Shield | Defense | 8 |`;
+                this.renderMarkdownModalPreview();
+            });
+        }
+
+        const setViewMode = (mode) => {
+            if (!this.dom.mdModalGrid || !this.dom.mdModalEditorPane || !this.dom.mdModalPreviewPane) return;
+            const splitBtn = this.dom.mdTabSplitBtn;
+            const editorBtn = this.dom.mdTabEditorBtn;
+            const previewBtn = this.dom.mdTabPreviewBtn;
+
+            [splitBtn, editorBtn, previewBtn].forEach(b => {
+                if (b) {
+                    b.classList.remove('bg-cyan-600', 'text-white', 'font-bold');
+                    b.classList.add('bg-surface');
+                }
+            });
+
+            if (mode === 'split') {
+                if (splitBtn) {
+                    splitBtn.classList.add('bg-cyan-600', 'text-white', 'font-bold');
+                    splitBtn.classList.remove('bg-surface');
+                }
+                this.dom.mdModalGrid.className = 'p-4 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono';
+                this.dom.mdModalEditorPane.classList.remove('hidden');
+                this.dom.mdModalPreviewPane.classList.remove('hidden');
+            } else if (mode === 'editor') {
+                if (editorBtn) {
+                    editorBtn.classList.add('bg-cyan-600', 'text-white', 'font-bold');
+                    editorBtn.classList.remove('bg-surface');
+                }
+                this.dom.mdModalGrid.className = 'p-4 overflow-y-auto flex-1 flex flex-col text-xs font-mono';
+                this.dom.mdModalEditorPane.classList.remove('hidden');
+                this.dom.mdModalPreviewPane.classList.add('hidden');
+            } else if (mode === 'preview') {
+                if (previewBtn) {
+                    previewBtn.classList.add('bg-cyan-600', 'text-white', 'font-bold');
+                    previewBtn.classList.remove('bg-surface');
+                }
+                this.dom.mdModalGrid.className = 'p-4 overflow-y-auto flex-1 flex flex-col text-xs font-mono';
+                this.dom.mdModalEditorPane.classList.add('hidden');
+                this.dom.mdModalPreviewPane.classList.remove('hidden');
+            }
+        };
+
+        if (this.dom.mdTabSplitBtn) this.dom.mdTabSplitBtn.addEventListener('click', () => setViewMode('split'));
+        if (this.dom.mdTabEditorBtn) this.dom.mdTabEditorBtn.addEventListener('click', () => setViewMode('editor'));
+        if (this.dom.mdTabPreviewBtn) this.dom.mdTabPreviewBtn.addEventListener('click', () => setViewMode('preview'));
+
+        if (this.dom.confirmMarkdownModalBtn) {
+            this.dom.confirmMarkdownModalBtn.addEventListener('click', () => {
+                const mdText = this.dom.markdownModalTextarea?.value || '';
+                if (!mdText.trim()) {
+                    this.toast.show('Silakan ketik atau tempel teks Markdown terlebih dahulu.', 'warning');
+                    return;
+                }
+
+                const html = MarkdownEngine.parse(mdText);
+                const modeInput = document.querySelector('input[name="md_apply_mode"]:checked');
+                const mode = modeInput ? modeInput.value : 'cursor';
+
+                if (mode === 'replace' && this.dom.editorArea) {
+                    this.dom.editorArea.innerHTML = html;
+                } else if (this.dom.editorArea) {
+                    this.dom.editorArea.focus();
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount > 0 && this.dom.editorArea.contains(sel.anchorNode)) {
+                        document.execCommand('insertHTML', false, html);
+                    } else {
+                        this.dom.editorArea.innerHTML += html;
+                    }
+                }
+
+                this.handleEditorInput();
+                this.closeMarkdownModal();
+                this.toast.show('Markdown berhasil dikonversi dan diterapkan ke catatan!', 'success', 'Markdown Applied', 'fa-solid fa-file-code text-cyan-400');
+            });
+        }
+    }
+
+    openMarkdownModal() {
+        if (!this.dom.markdownModal) return;
+        this.audio.playClick();
+        this.dom.markdownModal.classList.remove('hidden');
+        if (this.dom.markdownModalTextarea) {
+            this.dom.markdownModalTextarea.focus();
+            this.renderMarkdownModalPreview();
+        }
+    }
+
+    closeMarkdownModal() {
+        if (!this.dom.markdownModal) return;
+        this.audio.playBlip();
+        this.dom.markdownModal.classList.add('hidden');
+    }
+
+    renderMarkdownModalPreview() {
+        if (!this.dom.markdownModalTextarea || !this.dom.markdownModalPreview) return;
+        const text = this.dom.markdownModalTextarea.value || '';
+        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+        const chars = text.length;
+
+        if (this.dom.mdModalWordCount) this.dom.mdModalWordCount.textContent = `${words} kata`;
+        if (this.dom.mdModalCharCount) this.dom.mdModalCharCount.textContent = `${chars} karakter`;
+
+        if (!text.trim()) {
+            this.dom.markdownModalPreview.innerHTML = '<p class="text-slate-400 italic">Preview hasil terjemahan Markdown akan otomatis muncul di sini...</p>';
+            return;
+        }
+
+        const html = MarkdownEngine.parse(text);
+        this.dom.markdownModalPreview.innerHTML = html;
+    }
+
+    /* ---------------- CLEAR CONTROLS & CONFIRMATION MODAL ---------------- */
+    initClearControls() {
+        if (this.dom.clearEditorBtn) {
+            this.dom.clearEditorBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.audio.playClick();
+
+                const selection = window.getSelection();
+                const hasSelection = selection && !selection.isCollapsed && selection.toString().trim().length > 0;
+
+                if (hasSelection && this.dom.editorArea?.contains(selection.anchorNode)) {
+                    const plain = selection.toString();
+                    document.execCommand('insertText', false, plain);
+                    this.handleEditorInput();
+                    this.toast.show('Format teks terseleksi berhasil dibersihkan!', 'success', 'Format Cleared', 'fa-solid fa-broom text-amber-400');
+                } else {
+                    this.openClearModal();
+                }
+            });
+        }
+
+        const closeClearModal = () => this.closeClearModal();
+        if (this.dom.closeClearModalX) this.dom.closeClearModalX.addEventListener('click', closeClearModal);
+        if (this.dom.cancelClearModalBtn) this.dom.cancelClearModalBtn.addEventListener('click', closeClearModal);
+        if (this.dom.clearConfirmModal) {
+            this.dom.clearConfirmModal.addEventListener('click', (e) => {
+                if (e.target === this.dom.clearConfirmModal) closeClearModal();
+            });
+        }
+
+        if (this.dom.clearFormattingOnlyBtn) {
+            this.dom.clearFormattingOnlyBtn.addEventListener('click', () => {
+                if (!this.dom.editorArea) return;
+                this.audio.playWarp();
+                const plainText = this.dom.editorArea.innerText || '';
+                const paragraphs = plainText.split(/\n\n+/).filter(Boolean);
+                this.dom.editorArea.innerHTML = paragraphs.map(p => `<p>${this.escapeHtml(p.trim())}</p>`).join('') || '<p><br></p>';
+                this.handleEditorInput();
+                this.closeClearModal();
+                this.toast.show('Semua format teks berhasil dinormalisasi menjadi teks polos.', 'success', 'Format Cleared', 'fa-solid fa-broom text-amber-400');
+            });
+        }
+
+        if (this.dom.clearAllContentBtn) {
+            this.dom.clearAllContentBtn.addEventListener('click', () => {
+                if (!this.dom.editorArea) return;
+                this.audio.playBlip();
+                this.dom.editorArea.innerHTML = '<p><br></p>';
+                this.handleEditorInput();
+                this.closeClearModal();
+                this.toast.show('Isi catatan berhasil dikosongkan.', 'info', 'Editor Cleared', 'fa-solid fa-trash-can text-rose-400');
+            });
+        }
+    }
+
+    openClearModal() {
+        if (!this.dom.clearConfirmModal) return;
+        this.dom.clearConfirmModal.classList.remove('hidden');
+    }
+
+    closeClearModal() {
+        if (!this.dom.clearConfirmModal) return;
+        this.dom.clearConfirmModal.classList.add('hidden');
     }
 
     /* ---------------- IN-CANVAS FIND & REPLACE ---------------- */
@@ -2296,13 +2526,7 @@ class NotenuxPanel {
     }
 
     promptMarkdownInput() {
-        const mdText = prompt('Paste your raw Markdown (.md) here to convert into rich document:');
-        if (mdText) {
-            const html = MarkdownEngine.parse(mdText);
-            document.execCommand('insertHTML', false, html);
-            this.handleEditorInput();
-            this.toast.show('Markdown (.md) converted and inscribed!', 'success', 'Markdown Inscribed', 'fa-solid fa-file-code text-cyan-400');
-        }
+        this.openMarkdownModal();
     }
 
     toggleZenMode() {

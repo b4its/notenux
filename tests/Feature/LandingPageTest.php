@@ -20,7 +20,7 @@ test('landing page renders successfully for guests with interactive sections', f
         ->assertSee('demo-editor-input')
         ->assertSee('demo-xp-bar')
         ->assertSee('CHUNK MATRIX ENGINE')
-        ->assertSee('AI SPELLCASTER ASSISTANT')
+        ->assertSee('DISTRACTION-FREE ZEN MODE')
         ->assertSee('font-awesome', false);
 });
 

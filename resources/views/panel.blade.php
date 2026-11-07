@@ -823,8 +823,8 @@
                                 </button>
                             </div>
 
-                            <!-- Clear Formatting -->
-                            <button data-command="removeFormat" class="arcade-btn bg-surface hover:bg-rose-200 dark:hover:bg-rose-950 px-2 h-7 rounded text-xs font-mono" title="Clear Formatting">
+                            <!-- Clear Formatting / Content -->
+                            <button id="clear-editor-btn" type="button" class="arcade-btn bg-surface hover:bg-rose-200 dark:hover:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold px-2 h-7 rounded text-xs font-mono" title="Bersihkan format teks atau kosongkan catatan">
                                 <i class="fa-solid fa-broom mr-1"></i> CLEAR
                             </button>
                         </div>
@@ -966,32 +966,7 @@
                     </div>
                 </div>
 
-                <details class="arcade-card p-3 rounded-lg font-mono text-xs">
-                    <summary class="cursor-pointer font-bold text-blue-600 dark:text-cyan-300">AI ASSISTANT — Bantuan Naskah</summary>
-                    <div class="grid gap-3 pt-3">
-                        <p>Isi naskah dikirim ke penyedia AI saat Generate ditekan. Hasil hanya diterapkan setelah Anda meninjaunya.</p>
-                        <div class="flex flex-wrap gap-2">
-                            <select id="ai-action" aria-label="Tindakan AI" class="bg-surface border rounded p-2">
-                                <option value="improve">Perbaiki tulisan</option>
-                                <option value="summarize">Ringkas</option>
-                                <option value="continue">Lanjutkan</option>
-                                <option value="translate">Terjemahkan</option>
-                                <option value="custom">Instruksi khusus</option>
-                            </select>
-                            <button id="ai-generate-btn" class="arcade-btn bg-blue-600 text-white px-3 py-2 rounded">Generate</button>
-                            <button id="ai-cancel-btn" class="arcade-btn bg-surface px-3 py-2 rounded" disabled>Batal</button>
-                        </div>
-                        <label for="ai-instruction">Instruksi / bahasa tujuan</label>
-                        <textarea id="ai-instruction" maxlength="2000" rows="2" class="bg-surface border rounded p-2"></textarea>
-                        <p id="ai-status" role="status" aria-live="polite"></p>
-                        <label for="ai-result">Preview hasil (Markdown, dapat diedit)</label>
-                        <textarea id="ai-result" rows="6" class="bg-surface border rounded p-2" readonly></textarea>
-                        <div class="flex flex-wrap gap-2">
-                            <button id="ai-append-btn" class="arcade-btn bg-blue-600 text-white px-3 py-2 rounded" disabled>Tambahkan ke naskah</button>
-                            <button id="ai-replace-btn" class="arcade-btn bg-amber-600 text-white px-3 py-2 rounded" disabled>Ganti isi naskah</button>
-                        </div>
-                    </div>
-                </details>
+
 
                 <!-- Bottom Telemetry Bar -->
                 <div class="arcade-card p-2 rounded-lg flex items-center justify-between text-[11px] font-mono opacity-80 shadow-[2px_2px_0px_#000]">
@@ -1393,6 +1368,147 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- MARKDOWN EDITOR & LIVE PREVIEW MODAL -->
+    <!-- ============================================================================== -->
+    <div id="markdown-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-4xl bg-[var(--bg-surface)] rounded-xl border-4 border-black dark:border-cyan-500 shadow-[8px_8px_0px_#000] flex flex-col max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-3.5 bg-cyan-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-file-code text-lg"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">MARKDOWN EDITOR & LIVE PREVIEW</h3>
+                </div>
+                <button type="button" id="close-markdown-modal-btn" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- View Toggles & Status -->
+            <div class="p-3 bg-[var(--bg-surface-alt)] border-b-2 border-black/10 dark:border-white/10 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
+                <div class="flex items-center gap-1.5">
+                    <button type="button" id="md-tab-split-btn" class="arcade-btn bg-cyan-600 text-white px-2.5 py-1 rounded text-xs font-bold">
+                        <i class="fa-solid fa-table-columns mr-1"></i> Split View
+                    </button>
+                    <button type="button" id="md-tab-editor-btn" class="arcade-btn bg-[var(--bg-surface)] px-2.5 py-1 rounded text-xs">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> Editor Saja
+                    </button>
+                    <button type="button" id="md-tab-preview-btn" class="arcade-btn bg-[var(--bg-surface)] px-2.5 py-1 rounded text-xs">
+                        <i class="fa-solid fa-eye mr-1"></i> Preview Saja
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300">
+                    <span><strong id="md-modal-word-count">0</strong> kata</span>
+                    <span>&bull;</span>
+                    <span><strong id="md-modal-char-count">0</strong> karakter</span>
+                </div>
+            </div>
+
+            <!-- Modal Body: Split / Tabbed View -->
+            <div class="p-4 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono" id="md-modal-grid">
+                <!-- Editor Pane -->
+                <div id="md-modal-editor-pane" class="flex flex-col space-y-1.5">
+                    <div class="flex items-center justify-between font-bold text-blue-900 dark:text-cyan-300">
+                        <label for="markdown-modal-textarea" class="flex items-center gap-1">
+                            <i class="fa-brands fa-markdown text-base text-cyan-500"></i> Markdown Editor
+                        </label>
+                        <button type="button" id="md-insert-sample-btn" class="text-[10px] text-cyan-600 dark:text-cyan-400 underline hover:opacity-80">
+                            + Masukkan Contoh
+                        </button>
+                    </div>
+                    <textarea id="markdown-modal-textarea"
+                              rows="12"
+                              placeholder="# Judul Dokumen&#10;&#10;Tulis atau tempel teks Markdown (.md) Anda di sini...&#10;&#10;**Tebal**, *Miring*, dan `Kode inline`&#10;&#10;- [x] Tugas selesai&#10;- [ ] Rencana berikutnya&#10;&#10;| Kolom 1 | Kolom 2 |&#10;| --- | --- |&#10;| Data A | Data B |"
+                              class="w-full flex-1 p-3 bg-[var(--bg-main)] text-[var(--text-main)] border-2 border-black/30 dark:border-blue-700/60 rounded-lg focus:outline-none focus:border-cyan-500 text-xs font-mono leading-relaxed resize-y"></textarea>
+                </div>
+
+                <!-- Preview Pane -->
+                <div id="md-modal-preview-pane" class="flex flex-col space-y-1.5">
+                    <div class="flex items-center justify-between font-bold text-blue-900 dark:text-cyan-300">
+                        <span class="flex items-center gap-1">
+                            <i class="fa-solid fa-eye text-base text-purple-500"></i> Live Preview HTML
+                        </span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                            Render Instan
+                        </span>
+                    </div>
+                    <div id="markdown-modal-preview"
+                         class="w-full flex-1 p-3 bg-[var(--bg-main)] text-[var(--text-main)] border-2 border-dashed border-purple-500/40 rounded-lg overflow-y-auto max-w-none text-xs leading-relaxed min-h-[220px]">
+                        <p class="text-slate-400 italic">Preview hasil terjemahan Markdown akan otomatis muncul di sini...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Action Controls -->
+            <div class="p-3.5 border-t-2 border-black/10 dark:border-white/10 bg-[var(--bg-surface-alt)] flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+                <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="md_apply_mode" value="cursor" checked class="text-cyan-600 focus:ring-0">
+                        <span>Sisipkan di Kursor</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="md_apply_mode" value="replace" class="text-cyan-600 focus:ring-0">
+                        <span>Ganti Seluruh Catatan</span>
+                    </label>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="button" id="cancel-markdown-modal-btn" class="arcade-btn bg-[var(--bg-surface)] px-3 py-1.5 rounded text-xs font-mono">
+                        Batal
+                    </button>
+                    <button type="button" id="confirm-markdown-modal-btn" class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-1.5 rounded text-xs font-mono font-bold">
+                        <i class="fa-solid fa-check mr-1.5"></i> Terapkan ke Catatan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- CLEAR CONFIRMATION MODAL (POPUP PILIHAN BERSIHKAN) -->
+    <!-- ============================================================================== -->
+    <div id="clear-confirm-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-md bg-[var(--bg-surface)] rounded-xl border-4 border-black dark:border-rose-600 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden">
+            <div class="p-3.5 bg-rose-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-broom text-lg"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">BERSIHKAN EDITOR</h3>
+                </div>
+                <button type="button" id="close-clear-modal-x" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4 font-mono text-xs">
+                <p class="text-[var(--text-main)] leading-relaxed font-bold">
+                    Pilih tindakan pembersihan untuk editor catatan aktif:
+                </p>
+                <div class="space-y-3">
+                    <button type="button" id="clear-formatting-only-btn" class="arcade-btn w-full p-3 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/80 text-amber-950 dark:text-amber-200 border-2 border-amber-600 text-left flex items-start gap-2.5">
+                        <i class="fa-solid fa-wand-magic-sparkles text-base mt-0.5 text-amber-600 shrink-0"></i>
+                        <div>
+                            <div class="font-bold">1. Bersihkan Format Teks Saja</div>
+                            <div class="text-[11px] opacity-80 mt-0.5">Menghapus semua warna, ukuran, tebal/miring, dan tag heading menjadi teks polos tanpa menghapus isi tulisanmu.</div>
+                        </div>
+                    </button>
+
+                    <button type="button" id="clear-all-content-btn" class="arcade-btn w-full p-3 rounded-lg bg-rose-100 hover:bg-rose-200 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 text-rose-950 dark:text-rose-200 border-2 border-rose-600 text-left flex items-start gap-2.5">
+                        <i class="fa-solid fa-trash-can text-base mt-0.5 text-rose-600 shrink-0"></i>
+                        <div>
+                            <div class="font-bold">2. Kosongkan Seluruh Isi Catatan</div>
+                            <div class="text-[11px] opacity-80 mt-0.5">Mengosongkan seluruh lembar kerja di editor aktif.</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <div class="p-3 border-t-2 border-black/10 dark:border-white/10 bg-[var(--bg-surface-alt)] flex justify-end">
+                <button type="button" id="cancel-clear-modal-btn" class="arcade-btn bg-[var(--bg-surface)] px-4 py-1.5 rounded text-xs font-mono font-bold">
+                    Batal
+                </button>
+            </div>
         </div>
     </div>
 
