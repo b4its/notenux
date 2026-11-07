@@ -160,12 +160,12 @@ test('a user can update their personalized category', function () {
     ]);
 });
 
-test('system and default categories can be modified and dismantled with safe preservation', function () {
+test('system and default categories can be modified and dismantled with automatic manuscript deletion', function () {
     $this->seed(CategorySeeder::class);
     $user = User::factory()->create();
     $systemCat = Category::where('slug', 'quest')->firstOrFail();
 
-    Note::factory()->create([
+    $note = Note::factory()->create([
         'title' => 'Ancient Quest Scroll',
         'category' => 'quest',
     ]);
@@ -202,14 +202,13 @@ test('system and default categories can be modified and dismantled with safe pre
         'id' => $systemCat->id,
     ]);
 
-    // Notes reassigned to safe fallback
-    $this->assertDatabaseHas('notes', [
-        'title' => 'Ancient Quest Scroll',
-        'category' => 'general',
+    // Notes associated with deleted category are automatically deleted
+    $this->assertDatabaseMissing('notes', [
+        'id' => $note->id,
     ]);
 });
 
-test('deleting the general category safely reassigns notes to another remaining category', function () {
+test('deleting the general category automatically deletes all scrolls in that category', function () {
     $this->seed(CategorySeeder::class);
     $user = User::factory()->create();
     $generalCat = Category::where('slug', 'general')->firstOrFail();
@@ -227,9 +226,9 @@ test('deleting the general category safely reassigns notes to another remaining 
         'id' => $generalCat->id,
     ]);
 
-    $note->refresh();
-    expect($note->category)->not->toBe('general');
-    expect(Category::where('slug', $note->category)->exists())->toBeTrue();
+    $this->assertDatabaseMissing('notes', [
+        'id' => $note->id,
+    ]);
 });
 
 test('studio panel view renders quick edit, delete, and forge controls for category selector', function () {
@@ -282,7 +281,7 @@ test('a user cannot update or delete another users category', function () {
     ]);
 });
 
-test('deleting a personalized category safely reassigns notes to general category', function () {
+test('deleting a personalized category automatically deletes its associated notes', function () {
     $user = User::factory()->create();
     $cat = Category::factory()->create([
         'user_id' => $user->id,
@@ -304,9 +303,8 @@ test('deleting a personalized category safely reassigns notes to general categor
         'id' => $cat->id,
     ]);
 
-    $this->assertDatabaseHas('notes', [
+    $this->assertDatabaseMissing('notes', [
         'id' => $note->id,
-        'category' => 'general',
     ]);
 });
 

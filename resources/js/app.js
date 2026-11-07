@@ -3960,34 +3960,39 @@ class NotenuxPanel {
 
             const data = await response.json();
             if (response.ok) {
-                const fallbackSlug = data.data?.fallback_slug || 'general';
-                const fallbackName = data.data?.fallback_name || 'General Notes';
+                const deletedCount = data.data?.deleted_notes_count ?? 0;
 
                 // Remove from in-memory categories
                 this.categories = this.categories.filter(c => String(c.id) !== String(id));
-                const fallback = data.data?.fallback_category;
-                if (fallback && !this.categories.some(category => category.id === fallback.id)) this.categories.push(fallback);
 
-                // Reassign affected notes in memory
+                // Remove all notes in this category from in-memory notes & clean up drafts
                 if (deletedSlug) {
-                    this.notes.forEach(note => {
-                        if (note.category === deletedSlug) {
-                            note.category = fallbackSlug;
-                        }
+                    const deletedNotes = this.notes.filter(n => n.category === deletedSlug);
+                    deletedNotes.forEach(n => {
+                        this.dirtyNotes.delete(n.id);
+                        localStorage.removeItem(`notenux_draft_${n.id}`);
                     });
-
-                    if (this.activeNote && this.activeNote.category === deletedSlug) {
-                        this.activeNote.category = fallbackSlug;
-                    }
+                    this.notes = this.notes.filter(note => note.category !== deletedSlug);
 
                     if (this.activeCategory === deletedSlug) {
                         this.activeCategory = 'all';
+                    }
+
+                    if (this.activeNote && this.activeNote.category === deletedSlug) {
+                        this.activeNote = null;
+                        if (this.notes.length > 0) {
+                            await this.selectNote(this.notes[0]);
+                        } else {
+                            await this.createNewNote(true);
+                        }
                     }
                 }
 
                 this.syncCategoriesDOM();
                 this.renderNotesList();
-                this.toast.show(`Category "${deletedName}" banished. Scrolls migrated to ${fallbackName}.`, 'success', 'Category Banished');
+                this.refreshPlayerStats();
+                const notesMsg = deletedCount > 0 ? ` and ${deletedCount} associated scroll${deletedCount === 1 ? '' : 's'} were banished.` : ' banished.';
+                this.toast.show(`Category "${deletedName}"${notesMsg}`, 'success', 'Category Banished');
             } else {
                 const errorMsg = data.message || 'Gagal menghapus kategori.';
                 this.toast.show(errorMsg, 'danger', 'Delete Failed');

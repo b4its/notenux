@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Category extends Model
@@ -52,6 +53,21 @@ class Category extends Model
                 $category->slug = Str::slug($category->name);
             }
         });
+
+        static::deleting(function (Category $category): void {
+            $category->notes()->get()->each(function (Note $note): void {
+                $note->chunks()->delete();
+                $note->delete();
+            });
+        });
+    }
+
+    /**
+     * Delete the model from the database atomically.
+     */
+    public function delete(): ?bool
+    {
+        return DB::transaction(fn (): ?bool => parent::delete());
     }
 
     /**

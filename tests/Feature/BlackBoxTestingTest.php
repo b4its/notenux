@@ -451,11 +451,9 @@ test('black-box: complete personalized category journey with automatic note pres
     $deleteCatRes = $this->actingAs($user)->deleteJson("/api/categories/{$catId}");
     $deleteCatRes->assertOk();
 
-    // 5. Verify the category is gone, but note is preserved safely in fallback
+    // 5. Verify the category and its associated notes are automatically deleted
     $this->assertDatabaseMissing('categories', ['id' => $catId]);
-    $preservationNote = Note::find($noteId);
-    expect($preservationNote)->not->toBeNull()
-        ->and($preservationNote->category)->not->toBe('grand-invocations');
+    $this->assertDatabaseMissing('notes', ['id' => $noteId]);
 });
 
 test('black-box: user exports scroll in markdown, html, and plain text formats with valid headers', function () {

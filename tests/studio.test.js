@@ -283,6 +283,43 @@ test('white-box: quick forge reports success and saves the original selected not
     assert.ok(!messages.some(message => message[1] === 'danger'));
 });
 
+test('white-box: quick delete category automatically banishes category and its associated notes', async () => {
+    const { panel, context, messages } = harness(async (url, options) => {
+        if (url === '/api/categories/5' && options?.method === 'DELETE') {
+            return response({
+                deleted_id: 5,
+                deleted_slug: 'tactics',
+                deleted_notes_count: 2
+            });
+        }
+        return response({});
+    });
+    panel.categories = [
+        { id: 5, name: 'Tactics', slug: 'tactics' },
+        { id: 6, name: 'Lore', slug: 'lore' }
+    ];
+    panel.notes = [
+        { id: 101, title: 'Ambush Plan', category: 'tactics', content: 'Alpha' },
+        { id: 102, title: 'Siege Engine', category: 'tactics', content: 'Beta' },
+        { id: 103, title: 'Ancient Kings', category: 'lore', content: 'Gamma' }
+    ];
+    panel.activeNote = panel.notes[0];
+    panel.activeCategory = 'tactics';
+    context.document.getElementById = id => ({ value: id === 'quick-delete-cat-id' ? '5' : '' });
+    panel.syncCategoriesDOM = () => {};
+    panel.renderNotesList = () => {};
+    panel.refreshPlayerStats = () => {};
+
+    await panel.confirmQuickDeleteCategory();
+
+    assert.equal(panel.categories.some(c => c.id === 5), false);
+    assert.equal(panel.notes.length, 1);
+    assert.equal(panel.notes[0].id, 103);
+    assert.equal(panel.activeCategory, 'all');
+    assert.equal(panel.activeNote.id, 103);
+    assert.ok(messages.some(message => message[0].includes('banished')));
+});
+
 test('white-box: RetroSearchableSelect wraps native select, provides search filtering and dispatches change', () => {
     let changeFired = false;
     const listeners = new Map();

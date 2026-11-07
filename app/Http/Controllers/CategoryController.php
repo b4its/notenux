@@ -137,7 +137,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * Remove the specified category and preserve its notes.
+     * Remove the specified category and automatically delete its associated notes atomically.
      */
     public function destroy(Request $request, Category $category): RedirectResponse|JsonResponse
     {
@@ -147,57 +147,32 @@ class CategoryController extends Controller
             abort(403, 'Unauthorized access to category.');
         }
 
-        [$name, $slug, $fallback] = $this->mutateCategories(function () use ($category, $user): array {
+        [$name, $slug, $deletedNotesCount] = $this->mutateCategories(function () use ($category): array {
             $category->refresh();
             $name = $category->name;
             $slug = $category->slug;
-
-            // Determine safe fallback category for existing notes
-            // Prefer 'general' if it's not the category being deleted, or another available category
-            $fallback = Category::forUser($user)->where('id', '!=', $category->id)
-                ->where('slug', '!=', $slug)
-                ->orderByRaw("slug = 'general' DESC")
-                ->orderBy('id')
-                ->first();
-
-            $fallback ??= Category::create([
-                'user_id' => $user->id,
-                'name' => 'General Notes',
-                'slug' => $this->allocateSlug($slug === 'general' ? 'quest' : 'general'),
-                'icon' => 'fa-solid fa-book-journal-whills',
-                'color' => 'gray',
-                'is_system' => false,
-            ]);
-
-            $fallbackSlug = $fallback->slug;
-
-            // Safely migrate existing scrolls in this category to fallback
-            Note::where('category', $slug)->update(['category' => $fallbackSlug]);
+            $deletedCount = $category->notes()->count();
 
             $category->delete();
 
-            return [$name, $slug, $fallback];
+            return [$name, $slug, $deletedCount];
         });
-        $fallbackSlug = $fallback->slug;
-        $fallbackName = $fallback->name;
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'status' => 'success',
-                'message' => "Category '{$name}' banished. All associated scrolls were preserved in {$fallbackName}.",
+                'message' => "Category '{$name}' and all associated scrolls were banished.",
                 'data' => [
                     'deleted_id' => $category->id,
                     'deleted_slug' => $slug,
-                    'fallback_slug' => $fallbackSlug,
-                    'fallback_name' => $fallbackName,
-                    'fallback_category' => $fallback,
+                    'deleted_notes_count' => $deletedNotesCount,
                 ],
             ]);
         }
 
         return redirect()->route('categories.index')
             ->with('status', 'success')
-            ->with('message', "Category '{$name}' banished. Associated scrolls were preserved in {$fallbackName}.");
+            ->with('message', "Category '{$name}' and all associated scrolls were banished.");
     }
 
     protected function allocateSlug(string $value, ?int $exceptId = null): string
