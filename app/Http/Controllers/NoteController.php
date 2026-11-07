@@ -5,16 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Note;
 use App\Models\NoteChunk;
 use App\Services\NoteChunkService;
+use App\Services\NoteContentSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class NoteController extends Controller
 {
     public function __construct(
-        protected NoteChunkService $chunkService
+        protected NoteChunkService $chunkService,
+        protected NoteContentSanitizer $sanitizer
     ) {}
 
     /**
@@ -23,6 +26,7 @@ class NoteController extends Controller
      */
     public function index(Request $request): View|JsonResponse
     {
+        $request->validate(['q' => ['nullable', 'string', 'max:255'], 'category' => ['nullable', 'string', 'max:64'], 'sort' => ['nullable', 'string']]);
         $query = Note::select([
             'id',
             'uuid',
@@ -96,6 +100,7 @@ class NoteController extends Controller
         $initialNote = $notes->first();
         if ($initialNote) {
             $initialNote = Note::with('chunks')->find($initialNote->id);
+            $initialNote->content = $this->sanitizer->sanitize($initialNote->content);
         }
 
         return view('panel', [
@@ -119,16 +124,20 @@ class NoteController extends Controller
             'theme_color' => ['nullable', 'string', 'max:32'],
         ]);
 
-        $note = Note::create([
-            'title' => $validated['title'],
-            'category' => $validated['category'] ?? 'quest',
-            'font_family' => $validated['font_family'] ?? 'pixel',
-            'font_size' => $validated['font_size'] ?? '16px',
-            'theme_color' => $validated['theme_color'] ?? 'blue',
-            'content' => $validated['content'] ?? '',
-        ]);
+        $note = DB::transaction(function () use ($validated): Note {
+            $note = Note::create([
+                'title' => $validated['title'],
+                'category' => $validated['category'] ?? 'quest',
+                'font_family' => $validated['font_family'] ?? 'pixel',
+                'font_size' => $validated['font_size'] ?? '16px',
+                'theme_color' => $validated['theme_color'] ?? 'blue',
+                'content' => $this->sanitizer->sanitize($validated['content'] ?? ''),
+            ]);
 
-        $chunks = $this->chunkService->syncChunks($note, $validated['content'] ?? '');
+            $this->chunkService->syncChunks($note, $note->content);
+
+            return $note;
+        });
 
         return response()->json([
             'status' => 'success',
@@ -143,6 +152,7 @@ class NoteController extends Controller
     public function show(Note $note): JsonResponse
     {
         $note->load('chunks');
+        $note->content = $this->sanitizer->sanitize($note->content);
 
         return response()->json([
             'status' => 'success',
@@ -166,12 +176,17 @@ class NoteController extends Controller
             'is_favorite' => ['sometimes', 'boolean'],
         ]);
 
-        $note->fill($validated);
-        $note->save();
+        DB::transaction(function () use ($note, $validated): void {
+            if (array_key_exists('content', $validated)) {
+                $validated['content'] = $this->sanitizer->sanitize($validated['content']);
+            }
+            $note->fill($validated);
+            $note->save();
 
-        if ($request->has('content')) {
-            $this->chunkService->syncChunks($note, $request->input('content'));
-        }
+            if (array_key_exists('content', $validated)) {
+                $this->chunkService->syncChunks($note, $validated['content']);
+            }
+        });
 
         return response()->json([
             'status' => 'success',
@@ -229,12 +244,16 @@ class NoteController extends Controller
      */
     public function duplicate(Note $note): JsonResponse
     {
-        $clone = $note->replicate(['uuid']);
-        $clone->title = "{$note->title} (Copy)";
-        $clone->is_pinned = false;
-        $clone->save();
+        $clone = DB::transaction(function () use ($note): Note {
+            $clone = $note->replicate(['uuid']);
+            $clone->title = mb_substr($note->title, 0, 248).' (Copy)';
+            $clone->is_pinned = false;
+            $clone->save();
 
-        $this->chunkService->syncChunks($clone, $note->content);
+            $this->chunkService->syncChunks($clone, $this->sanitizer->sanitize($note->content));
+
+            return $clone;
+        });
 
         return response()->json([
             'status' => 'success',
@@ -248,6 +267,7 @@ class NoteController extends Controller
      */
     public function export(Note $note, string $format = 'md'): Response
     {
+        $note->content = $this->sanitizer->sanitize($note->content);
         $format = strtolower($format);
         $filename = Str::slug($note->title) ?: 'scroll';
 
@@ -266,9 +286,10 @@ class NoteController extends Controller
         }
 
         if ($format === 'html') {
-            $html = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{$note->title}</title>\n";
+            $title = e($note->title);
+            $html = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{$title}</title>\n";
             $html .= "<style>body{font-family:sans-serif;max-width:800px;margin:2rem auto;line-height:1.6;padding:1rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}</style>\n";
-            $html .= "</head>\n<body>\n<h1>{$note->title}</h1>\n{$note->content}\n</body>\n</html>";
+            $html .= "</head>\n<body>\n<h1>{$title}</h1>\n{$note->content}\n</body>\n</html>";
 
             return response($html, 200, [
                 'Content-Type' => 'text/html; charset=UTF-8',
@@ -327,12 +348,12 @@ class NoteController extends Controller
 
         $validated = $request->validate([
             'content' => ['required', 'string'],
-            'chunk_type' => ['nullable', 'string', 'max:32'],
+            'chunk_type' => ['nullable', 'string', 'in:paragraph,heading,code,quote,table,task,list'],
         ]);
 
         $updatedChunk = $this->chunkService->updateChunk(
             $chunk,
-            $validated['content'],
+            $this->sanitizer->sanitize($validated['content']),
             $validated['chunk_type'] ?? null
         );
 
@@ -392,7 +413,7 @@ class NoteController extends Controller
     {
         $validated = $request->validate([
             'order' => ['required', 'array'],
-            'order.*' => ['required'],
+            'order.*' => ['required', 'regex:/^(?:[0-9]+|chk_[A-Za-z0-9_]+)$/'],
         ]);
 
         $reordered = $this->chunkService->reorderChunks($note, $validated['order']);

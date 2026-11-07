@@ -5,14 +5,16 @@ namespace App\Services;
 use App\Models\Note;
 use App\Models\NoteChunk;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class NoteChunkService
 {
     /**
      * Maximum character count per database chunk if not split by natural block boundaries.
      */
-    public const MAX_CHUNK_SIZE = 1200;
+    public const MAX_CHUNK_SIZE = 1000;
 
     /**
      * Synchronize a note's content with its identity-backed chunks in the database.
@@ -21,34 +23,36 @@ class NoteChunkService
      */
     public function syncChunks(Note $note, ?string $content): array
     {
-        $rawContent = (string) ($content ?? '');
+        return DB::transaction(function () use ($note, $content): array {
+            $rawContent = (string) ($content ?? '');
 
-        // Break content into chunks with individual identities
-        $chunkPayloads = $this->splitIntoChunks($rawContent);
+            // Break content into chunks with individual identities
+            $chunkPayloads = $this->splitIntoChunks($rawContent);
 
-        // Delete existing chunks and recreate to ensure clean index sequence & unique IDs
-        $note->chunks()->delete();
+            // Delete existing chunks and recreate to ensure clean index sequence & unique IDs
+            $note->chunks()->delete();
 
-        $createdChunks = [];
-        foreach ($chunkPayloads as $index => $payload) {
-            /** @var NoteChunk $chunk */
-            $chunk = $note->chunks()->create([
-                'chunk_uid' => $payload['chunk_uid'],
-                'chunk_index' => $index,
-                'chunk_type' => $payload['chunk_type'],
-                'content' => $payload['content'],
-                'byte_size' => strlen($payload['content']),
-                'checksum' => hash('sha256', $payload['content']),
-                'metadata' => $payload['metadata'] ?? null,
-            ]);
+            $createdChunks = [];
+            foreach ($chunkPayloads as $index => $payload) {
+                /** @var NoteChunk $chunk */
+                $chunk = $note->chunks()->create([
+                    'chunk_uid' => $payload['chunk_uid'],
+                    'chunk_index' => $index,
+                    'chunk_type' => $payload['chunk_type'],
+                    'content' => $payload['content'],
+                    'byte_size' => strlen($payload['content']),
+                    'checksum' => hash('sha256', $payload['content']),
+                    'metadata' => $payload['metadata'] ?? null,
+                ]);
 
-            $createdChunks[] = $chunk;
-        }
+                $createdChunks[] = $chunk;
+            }
 
-        // Calculate metrics
-        $this->updateNoteMetrics($note, $rawContent);
+            // Calculate metrics
+            $this->updateNoteMetrics($note, $rawContent);
 
-        return $createdChunks;
+            return $createdChunks;
+        });
     }
 
     /**
@@ -73,14 +77,20 @@ class NoteChunkService
 
         // Check if content looks like HTML
         if (preg_match('/<[a-z][\s\S]*>/i', $content)) {
-            // Split by common HTML block separators while preserving structure
-            $pattern = '/(<\/?(?:p|h[1-6]|div|blockquote|pre|ul|ol|li|table|section|article)[^>]*>)/i';
-            $parts = preg_split($pattern, $content, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-
+            preg_match_all('/<!--[\s\S]*?-->|<\/?[a-zA-Z](?:[^>"\']|"[^"]*"|\'[^\']*\')*>|[^<]+|</', $content, $matches);
             $currentAccumulator = '';
-            foreach ($parts as $part) {
+            $openTags = [];
+            $voidTags = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+            foreach ($matches[0] as $part) {
                 $currentAccumulator .= $part;
-                if (strlen($currentAccumulator) >= self::MAX_CHUNK_SIZE) {
+                if (preg_match('/^<\/(\w+)/', $part, $tag)) {
+                    if (end($openTags) === strtolower($tag[1])) {
+                        array_pop($openTags);
+                    }
+                } elseif (preg_match('/^<(\w+)/', $part, $tag) && ! in_array(strtolower($tag[1]), $voidTags, true) && ! str_ends_with($part, '/>')) {
+                    $openTags[] = strtolower($tag[1]);
+                }
+                if ($openTags === [] && strlen($currentAccumulator) >= self::MAX_CHUNK_SIZE) {
                     $rawBlocks[] = $currentAccumulator;
                     $currentAccumulator = '';
                 }
@@ -91,7 +101,7 @@ class NoteChunkService
             }
         } else {
             // Plain text or Markdown chunking
-            $paragraphs = preg_split('/(\r\n\r\n|\n\n)/', $content);
+            $paragraphs = preg_split('/((?:\r?\n){2,})/', $content, -1, PREG_SPLIT_DELIM_CAPTURE);
             $currentAccumulator = '';
 
             foreach ($paragraphs as $para) {
@@ -99,7 +109,7 @@ class NoteChunkService
                     $rawBlocks[] = $currentAccumulator;
                     $currentAccumulator = $para;
                 } else {
-                    $currentAccumulator .= ($currentAccumulator === '' ? '' : "\n\n").$para;
+                    $currentAccumulator .= $para;
                 }
             }
 
@@ -168,20 +178,22 @@ class NoteChunkService
      */
     public function updateChunk(NoteChunk $chunk, string $newContent, ?string $type = null): NoteChunk
     {
-        $type = $type ?: $this->detectChunkType($newContent);
+        return DB::transaction(function () use ($chunk, $newContent, $type): NoteChunk {
+            $type = $type ?: $this->detectChunkType($newContent);
 
-        $chunk->update([
-            'content' => $newContent,
-            'chunk_type' => $type,
-            'byte_size' => strlen($newContent),
-            'checksum' => hash('sha256', $newContent),
-        ]);
+            $chunk->update([
+                'content' => $newContent,
+                'chunk_type' => $type,
+                'byte_size' => strlen($newContent),
+                'checksum' => hash('sha256', $newContent),
+            ]);
 
-        $note = $chunk->note;
-        $reassembled = $this->reassemble($note);
-        $this->updateNoteMetrics($note, $reassembled);
+            $note = $chunk->note;
+            $reassembled = $this->reassemble($note);
+            $this->updateNoteMetrics($note, $reassembled);
 
-        return $chunk->fresh();
+            return $chunk->fresh();
+        });
     }
 
     /**
@@ -247,21 +259,23 @@ class NoteChunkService
      */
     public function deleteChunk(NoteChunk $chunk): Note
     {
-        $note = $chunk->note;
-        $chunk->delete();
+        return DB::transaction(function () use ($chunk): Note {
+            $note = $chunk->note;
+            $chunk->delete();
 
-        // Reindex remaining chunks
-        $remaining = $note->chunks()->orderBy('chunk_index', 'asc')->get();
-        foreach ($remaining as $idx => $item) {
-            if ($item->chunk_index !== $idx) {
-                $item->update(['chunk_index' => $idx]);
+            // Reindex remaining chunks
+            $remaining = $note->chunks()->orderBy('chunk_index', 'asc')->get();
+            foreach ($remaining as $idx => $item) {
+                if ($item->chunk_index !== $idx) {
+                    $item->update(['chunk_index' => $idx]);
+                }
             }
-        }
 
-        $reassembled = $this->reassemble($note);
-        $this->updateNoteMetrics($note, $reassembled);
+            $reassembled = $this->reassemble($note);
+            $this->updateNoteMetrics($note, $reassembled);
 
-        return $note->fresh();
+            return $note->fresh();
+        });
     }
 
     /**
@@ -272,24 +286,38 @@ class NoteChunkService
      */
     public function reorderChunks(Note $note, array $orderedIdentities): Collection
     {
-        $chunks = $note->chunks()->get()->keyBy(function (NoteChunk $chunk) {
-            return (string) $chunk->id;
-        });
+        return DB::transaction(function () use ($note, $orderedIdentities): Collection {
+            $chunks = $note->chunks()->get()->keyBy(function (NoteChunk $chunk) {
+                return (string) $chunk->id;
+            });
 
-        $chunksByUid = $chunks->keyBy('chunk_uid');
+            $chunksByUid = $chunks->keyBy('chunk_uid');
 
-        foreach ($orderedIdentities as $index => $identity) {
-            $strIdentity = (string) $identity;
-            $chunk = $chunks->get($strIdentity) ?? $chunksByUid->get($strIdentity);
-            if ($chunk) {
-                $chunk->update(['chunk_index' => $index]);
+            $resolved = [];
+            foreach ($orderedIdentities as $identity) {
+                $chunk = $chunks->get((string) $identity) ?? $chunksByUid->get((string) $identity);
+                if (! $chunk || in_array($chunk->id, $resolved, true)) {
+                    throw ValidationException::withMessages(['order' => 'Order must contain every shard of this scroll exactly once.']);
+                }
+                $resolved[] = $chunk->id;
             }
-        }
+            if (count($resolved) !== $chunks->count()) {
+                throw ValidationException::withMessages(['order' => 'Order must contain every shard of this scroll exactly once.']);
+            }
 
-        $reassembled = $this->reassemble($note);
-        $this->updateNoteMetrics($note, $reassembled);
+            foreach ($orderedIdentities as $index => $identity) {
+                $strIdentity = (string) $identity;
+                $chunk = $chunks->get($strIdentity) ?? $chunksByUid->get($strIdentity);
+                if ($chunk) {
+                    $chunk->update(['chunk_index' => $index]);
+                }
+            }
 
-        return $note->chunks()->orderBy('chunk_index', 'asc')->get();
+            $reassembled = $this->reassemble($note);
+            $this->updateNoteMetrics($note, $reassembled);
+
+            return $note->chunks()->orderBy('chunk_index', 'asc')->get();
+        });
     }
 
     /**
@@ -297,35 +325,37 @@ class NoteChunkService
      */
     public function importMarkdown(string $rawMarkdown, ?string $filename = null, ?string $category = 'quest'): Note
     {
-        $title = null;
-        if (preg_match('/^#\s+(.+)$/m', $rawMarkdown, $matches)) {
-            $title = trim($matches[1]);
-        } elseif ($filename) {
-            $title = ucwords(str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME)));
-        }
+        return DB::transaction(function () use ($rawMarkdown, $filename, $category): Note {
+            $title = null;
+            if (preg_match('/^#\s+(.+)$/m', $rawMarkdown, $matches)) {
+                $title = trim($matches[1]);
+            } elseif ($filename) {
+                $title = ucwords(str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME)));
+            }
 
-        if (empty($title)) {
-            $title = 'Imported Scroll '.now()->format('Y-m-d H:i');
-        }
+            if (empty($title)) {
+                $title = 'Imported Scroll '.now()->format('Y-m-d H:i');
+            }
 
-        $html = Str::markdown($rawMarkdown);
-        $html = str_replace('<table>', '<table class="retro-table">', $html);
+            $html = Str::markdown($rawMarkdown, ['html_input' => 'strip', 'allow_unsafe_links' => false]);
+            $html = str_replace('<table>', '<table class="retro-table">', $html);
 
-        $allowedCategories = ['quest', 'lore', 'strategy', 'spellbook', 'archive', 'general'];
-        $validCategory = in_array($category, $allowedCategories, true) ? $category : 'quest';
+            $allowedCategories = ['quest', 'lore', 'strategy', 'spellbook', 'archive', 'general'];
+            $validCategory = in_array($category, $allowedCategories, true) ? $category : 'quest';
 
-        $note = Note::create([
-            'title' => Str::limit($title, 120, ''),
-            'category' => $validCategory,
-            'content' => '',
-            'font_family' => 'pixel',
-            'font_size' => '16px',
-            'theme_color' => 'blue',
-        ]);
+            $note = Note::create([
+                'title' => Str::limit($title, 120, ''),
+                'category' => $validCategory,
+                'content' => '',
+                'font_family' => 'pixel',
+                'font_size' => '16px',
+                'theme_color' => 'blue',
+            ]);
 
-        $this->syncChunks($note, $html);
+            $this->syncChunks($note, $html);
 
-        return $note->fresh();
+            return $note->fresh();
+        });
     }
 
     /**
@@ -333,8 +363,8 @@ class NoteChunkService
      */
     protected function updateNoteMetrics(Note $note, string $rawContent): void
     {
-        $cleanText = trim(strip_tags($rawContent));
-        $wordCount = $cleanText === '' ? 0 : str_word_count($cleanText);
+        $cleanText = trim(html_entity_decode(strip_tags(preg_replace('/<\/(?:p|div|h[1-6]|li|tr|blockquote)>|<br\s*\/?\s*>/i', ' ', $rawContent)), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $wordCount = preg_match_all('/[\p{L}\p{N}]+(?:[\x{2019}\x{0027}-][\p{L}\p{N}]+)*/u', $cleanText);
         $charCount = mb_strlen($cleanText);
         $xp = max(10, (int) round($wordCount * 3));
         $level = max(1, (int) floor($xp / 120) + 1);

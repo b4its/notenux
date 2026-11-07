@@ -63,32 +63,34 @@
 }
 
 /* Retro arcade button & box helpers */
-.arcade-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    transition: all 0.1s ease;
-    border: 2px solid #000000;
-    box-shadow: 3px 3px 0px #000000;
-    user-select: none;
-    cursor: pointer;
-}
+@layer components {
+    .arcade-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        transition: all 0.1s ease;
+        border: 2px solid #000000;
+        box-shadow: 3px 3px 0px #000000;
+        user-select: none;
+        cursor: pointer;
+    }
 
-.arcade-btn:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0px #000000;
-}
+    .arcade-btn:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 4px 4px 0px #000000;
+    }
 
-.arcade-btn:active {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0px #000000;
-}
+    .arcade-btn:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0px #000000;
+    }
 
-.arcade-card {
-    border: 2px solid var(--border-color);
-    box-shadow: var(--retro-shadow);
-    background-color: var(--bg-surface);
+    .arcade-card {
+        border: 2px solid var(--border-color);
+        box-shadow: var(--retro-shadow);
+        background-color: var(--bg-surface);
+    }
 }
 
 /* Editor content typography customization */

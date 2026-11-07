@@ -2,6 +2,12 @@
 
 return [
 
+    'ai' => [
+        'key' => env('AI_API_KEY'),
+        'model' => env('AI_MODEL'),
+        'base_url' => env('AI_BASE_URL', 'https://api.openai.com/v1'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

@@ -254,8 +254,8 @@
                         <span class="font-pixel text-[11px] text-blue-900 dark:text-cyan-300">SCROLL DIRECTORY</span>
                     </div>
 
-                    <!-- Mobile Close -->
-                    <button id="close-mobile-explorer-btn" class="lg:hidden arcade-btn bg-red-600 text-white text-xs px-2 py-1 rounded">
+                    <!-- Directory Close Button -->
+                    <button id="close-mobile-explorer-btn" class="arcade-btn bg-red-600 hover:bg-red-500 text-white text-xs px-2 py-1 rounded" title="Close Scroll Directory">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -718,6 +718,33 @@
                     </div>
                 </div>
 
+                <details class="arcade-card p-3 rounded-lg font-mono text-xs">
+                    <summary class="cursor-pointer font-bold text-blue-600 dark:text-cyan-300">AI ASSISTANT — Bantuan Naskah</summary>
+                    <div class="grid gap-3 pt-3">
+                        <p>Isi naskah dikirim ke penyedia AI saat Generate ditekan. Hasil hanya diterapkan setelah Anda meninjaunya.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <select id="ai-action" aria-label="Tindakan AI" class="bg-surface border rounded p-2">
+                                <option value="improve">Perbaiki tulisan</option>
+                                <option value="summarize">Ringkas</option>
+                                <option value="continue">Lanjutkan</option>
+                                <option value="translate">Terjemahkan</option>
+                                <option value="custom">Instruksi khusus</option>
+                            </select>
+                            <button id="ai-generate-btn" class="arcade-btn bg-blue-600 text-white px-3 py-2 rounded">Generate</button>
+                            <button id="ai-cancel-btn" class="arcade-btn bg-surface px-3 py-2 rounded" disabled>Batal</button>
+                        </div>
+                        <label for="ai-instruction">Instruksi / bahasa tujuan</label>
+                        <textarea id="ai-instruction" maxlength="2000" rows="2" class="bg-surface border rounded p-2"></textarea>
+                        <p id="ai-status" role="status" aria-live="polite"></p>
+                        <label for="ai-result">Preview hasil (Markdown, dapat diedit)</label>
+                        <textarea id="ai-result" rows="6" class="bg-surface border rounded p-2" readonly></textarea>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="ai-append-btn" class="arcade-btn bg-blue-600 text-white px-3 py-2 rounded" disabled>Tambahkan ke naskah</button>
+                            <button id="ai-replace-btn" class="arcade-btn bg-amber-600 text-white px-3 py-2 rounded" disabled>Ganti isi naskah</button>
+                        </div>
+                    </div>
+                </details>
+
                 <!-- Bottom Telemetry Bar -->
                 <div class="arcade-card p-2 rounded-lg flex items-center justify-between text-[11px] font-mono opacity-80 shadow-[2px_2px_0px_#000]">
                     <div class="flex items-center gap-2">
@@ -962,7 +989,7 @@
 
     <!-- Hidden Server Initial Data for Seamless Hydration -->
     <script id="initial-notes-data" type="application/json">
-        {!! json_encode($notes) !!}
+        {!! json_encode($notes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
     </script>
     <input type="hidden" id="initial-active-note-id" value="{{ $activeNote->id ?? '' }}">
 

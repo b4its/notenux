@@ -2,6 +2,41 @@
  * Notenux - Retro Gamified Dual-Sidebar Panel & Markdown-Enabled Chunked Editor
  */
 
+const fetch = (url, options = {}) => window.fetch(url, {
+    ...options,
+    headers: {
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        ...options.headers,
+    },
+});
+
+function sanitizeHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    const allowed = new Set('p div span br h1 h2 h3 h4 h5 h6 strong b em i u s del sub sup blockquote pre code ul ol li table thead tbody tfoot tr th td hr a img input font'.split(' '));
+    for (const element of template.content.querySelectorAll('*')) {
+        if (!allowed.has(element.localName)) {
+            element.remove();
+            continue;
+        }
+        for (const attribute of [...element.attributes]) {
+            const { name, value } = attribute;
+            const safe = ['class', 'title', 'alt'].includes(name)
+                || (name === 'type' && element.localName === 'input' && value === 'checkbox')
+                || (name === 'checked' && element.localName === 'input')
+                || (['colspan', 'rowspan', 'width', 'height', 'size', 'start'].includes(name) && /^\d+$/.test(value))
+                || (name === 'color' && /^(#[a-f0-9]{3,8}|[a-z]+)$/i.test(value))
+                || (name === 'style' && /^(\s*(color|background-color|text-align|font-size|font-family|font-weight|font-style|text-decoration)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value))
+                || (name === 'href' && element.localName === 'a' && /^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(value))
+                || (name === 'src' && element.localName === 'img' && /^https?:\/\//i.test(value));
+            if (!safe) element.removeAttribute(name);
+        }
+        if (element.localName === 'input' && element.type !== 'checkbox') element.remove();
+    }
+    return template.innerHTML;
+}
+
 class RetroAudio {
     constructor() {
         this.ctx = null;
@@ -127,13 +162,14 @@ class RetroToast {
         toast.classList.add(borderColor);
 
         const iconHtml = `<i class="${iconClass || defaultIcon} text-base shrink-0 mt-0.5"></i>`;
-        const titleHtml = title ? `<div class="font-bold text-xs uppercase tracking-wider mb-0.5">${title}</div>` : '';
+        const escape = value => { const span = document.createElement('span'); span.textContent = value; return span.innerHTML; };
+        const titleHtml = title ? `<div class="font-bold text-xs uppercase tracking-wider mb-0.5">${escape(title)}</div>` : '';
 
         toast.innerHTML = `
             ${iconHtml}
             <div class="flex-1 min-w-0 pr-2">
                 ${titleHtml}
-                <div class="text-xs break-words">${message}</div>
+                <div class="text-xs break-words">${escape(message)}</div>
             </div>
             <button class="toast-close-btn opacity-60 hover:opacity-100 text-xs shrink-0 cursor-pointer">
                 <i class="fa-solid fa-xmark"></i>
@@ -184,18 +220,26 @@ class MarkdownEngine {
         if (!md) return '';
 
         if (typeof window.marked !== 'undefined' && typeof window.marked.parse === 'function') {
-            return window.marked.parse(md);
+            return sanitizeHtml(window.marked.parse(md));
         }
 
         let html = md;
+        const codeTokens = [];
+        const protectCode = value => {
+            const token = `\uE000${codeTokens.length}\uE001`;
+            codeTokens.push(value);
+            return token;
+        };
 
         // Code blocks ```lang ... ```
         html = html.replace(/```([a-z0-9_-]*)\n([\s\S]*?)```/gim, (match, lang, code) => {
-            return `<pre><code class="language-${lang}">${MarkdownEngine.escape(code.trim())}</code></pre>`;
+            return protectCode(`<pre><code class="language-${lang}">${MarkdownEngine.escape(code.replace(/\n$/, ''))}</code></pre>`);
         });
 
         // Inline code `code`
-        html = html.replace(/`([^`]+)`/gim, '<code>$1</code>');
+        html = html.replace(/`([^`]+)`/gim, (_, code) => protectCode(`<code>${MarkdownEngine.escape(code)}</code>`));
+        html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/gi, (_, alt, url) => `<img alt="${MarkdownEngine.escape(alt).replace(/"/g, '&quot;')}" src="${MarkdownEngine.escape(url).replace(/"/g, '&quot;')}">`);
+        html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+|#[^\s)]+)\)/gi, (_, text, url) => `<a href="${MarkdownEngine.escape(url).replace(/"/g, '&quot;')}">${text}</a>`);
 
         // Markdown Tables
         html = html.replace(/((?:\|[^\n]+\|\r?\n)+)/g, (tableBlock) => {
@@ -259,18 +303,30 @@ class MarkdownEngine {
         html = blocks.map(b => {
             const trimmed = b.trim();
             if (!trimmed) return '';
-            if (/^<(h[1-6]|ul|ol|pre|table|blockquote|hr)/i.test(trimmed)) {
+            if (/^<(h[1-6]|ul|ol|pre|table|blockquote|hr)/i.test(trimmed) || /^\uE000\d+\uE001$/.test(trimmed)) {
                 return trimmed;
             }
             return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
         }).join('');
 
-        return html;
+        html = html.replace(/\uE000(\d+)\uE001/g, (_, index) => codeTokens[Number(index)] || '');
+        return sanitizeHtml(html);
     }
 
     static toMarkdown(html) {
         if (!html) return '';
         let md = html;
+
+        md = md.replace(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)');
+        md = md.replace(/<img\b[^>]*>/gi, image => {
+            const url = image.match(/\bsrc="([^"]*)"/i)?.[1] || '';
+            const alt = image.match(/\balt="([^"]*)"/i)?.[1] || '';
+            return `![${alt}](${url})`;
+        });
+        md = md.replace(/<ol\b[^>]*>([\s\S]*?)<\/ol>/gi, (_, list) => {
+            let index = 0;
+            return list.replace(/<li\b[^>]*>([\s\S]*?)<\/li>/gi, (_, item) => `${++index}. ${item}\n`) + '\n';
+        });
 
         // Table to Markdown
         md = md.replace(/<table[^>]*>([\s\S]*?)<\/table>/gi, (match, tableContent) => {
@@ -293,17 +349,15 @@ class MarkdownEngine {
         md = md.replace(/<li[^>]*>\s*<input[^>]*checked[^>]*>\s*([\s\S]*?)<\/li>/gi, '- [x] $1\n');
         md = md.replace(/<li[^>]*>\s*<input[^>]*type="checkbox"[^>]*>\s*([\s\S]*?)<\/li>/gi, '- [ ] $1\n');
 
-        md = md.replace(/<h1>(.*?)<\/h1>/gi, '# $1\n\n');
-        md = md.replace(/<h2>(.*?)<\/h2>/gi, '## $1\n\n');
-        md = md.replace(/<h3>(.*?)<\/h3>/gi, '### $1\n\n');
-        md = md.replace(/<p>(.*?)<\/p>/gi, '$1\n\n');
+        md = md.replace(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi, (_, level, text) => '#'.repeat(Number(level)) + ' ' + text + '\n\n');
+        md = md.replace(/<p\b[^>]*>([\s\S]*?)<\/p>/gi, '$1\n\n');
         md = md.replace(/<strong>(.*?)<\/strong>/gi, '**$1**');
         md = md.replace(/<b>(.*?)<\/b>/gi, '**$1**');
         md = md.replace(/<em>(.*?)<\/em>/gi, '*$1*');
         md = md.replace(/<i>(.*?)<\/i>/gi, '*$1*');
         md = md.replace(/<del>(.*?)<\/del>/gi, '~~$1~~');
         md = md.replace(/<blockquote>(.*?)<\/blockquote>/gi, '> $1\n\n');
-        md = md.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```\n\n');
+        md = md.replace(/<pre\b[^>]*>\s*<code\b[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/gi, '```\n$1\n```\n\n');
         md = md.replace(/<code>(.*?)<\/code>/gi, '`$1`');
         md = md.replace(/<li>(.*?)<\/li>/gi, '- $1\n');
         md = md.replace(/<ul[^>]*>/gi, '');
@@ -312,7 +366,9 @@ class MarkdownEngine {
         md = md.replace(/<\/ol>/gi, '\n');
         md = md.replace(/<hr[^>]*>/gi, '---\n\n');
         md = md.replace(/<br[^>]*>/gi, '\n');
-        return md.replace(/<[^>]+>/g, '').trim();
+        const decoder = document.createElement('textarea');
+        decoder.innerHTML = md.replace(/<[^>]+>/g, '').trim();
+        return decoder.value;
     }
 
     static escape(str) {
@@ -331,6 +387,7 @@ class NotenuxPanel {
         this.activeNote = null;
         this.activeCategory = 'all';
         this.searchQuery = '';
+        this.searchResultIds = null;
         this.currentSort = 'updated_desc';
         this.wordGoal = parseInt(localStorage.getItem('notenux_word_goal') || '250', 10);
         this.saveTimeout = null;
@@ -338,6 +395,9 @@ class NotenuxPanel {
         this.currentZoom = 100;
         this.isRawMarkdownMode = false;
         this.goalCelebrated = false;
+        this.saveQueue = Promise.resolve();
+        this.selectionVersion = 0;
+        this.dirtyNotes = new Set();
 
         this.dom = {
             primaryNavSidebar: document.getElementById('primary-nav-sidebar'),
@@ -376,6 +436,8 @@ class NotenuxPanel {
             duplicateNoteBtn: document.getElementById('duplicate-note-btn'),
             exportNoteBtn: document.getElementById('export-note-btn'),
             exportMenu: document.getElementById('export-menu'),
+            copyMarkdownBtn: document.getElementById('copy-markdown-btn'),
+            copyHtmlBtn: document.getElementById('copy-html-btn'),
             zenModeBtn: document.getElementById('zen-mode-btn'),
             archiveNoteBtn: document.getElementById('archive-note-btn'),
             deleteNoteBtn: document.getElementById('delete-note-btn'),
@@ -460,9 +522,87 @@ class NotenuxPanel {
         this.initImportModal();
         this.initShortcutsModal();
         this.bindEvents();
+        this.initAiAssistant();
         this.bindKeyboardShortcuts();
+        window.addEventListener('beforeunload', event => {
+            if (this.dirtyNotes.size > 0) {
+                this.saveDraftLocal();
+                event.preventDefault();
+                event.returnValue = '';
+            }
+        });
         this.loadNotesFromDOM();
         this.refreshPlayerStats();
+    }
+
+    initAiAssistant() {
+        const get = id => document.getElementById(id);
+        const generate = get('ai-generate-btn');
+        if (!generate) return;
+        const result = get('ai-result');
+        const status = get('ai-status');
+        const cancel = get('ai-cancel-btn');
+        const append = get('ai-append-btn');
+        const replace = get('ai-replace-btn');
+        let controller;
+        let context;
+        let requestVersion = 0;
+        cancel.addEventListener('click', () => controller?.abort());
+        generate.addEventListener('click', async () => {
+            if (!this.activeNote || controller) return;
+            const action = get('ai-action').value;
+            const instruction = get('ai-instruction').value.trim();
+            const content = MarkdownEngine.toMarkdown(this.activeNote.content || '');
+            if (!content.trim() || content.length > 30000 || (['custom', 'translate'].includes(action) && !instruction)) {
+                status.textContent = 'Isi naskah 1–30.000 karakter dan instruksi / bahasa tujuan bila diperlukan.';
+                return;
+            }
+            context = { id: this.activeNote.id, content: this.activeNote.content };
+            const version = ++requestVersion;
+            controller = new AbortController();
+            generate.disabled = true;
+            cancel.disabled = false;
+            append.disabled = replace.disabled = true;
+            result.value = '';
+            result.readOnly = true;
+            status.textContent = 'AI sedang menyiapkan hasil…';
+            try {
+                const response = await fetch(`/api/notes/${context.id}/assistant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, instruction, content }),
+                    signal: controller.signal,
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Permintaan AI gagal.');
+                if (version !== requestVersion) return;
+                result.value = data.data.content;
+                result.readOnly = false;
+                append.disabled = replace.disabled = false;
+                status.textContent = 'Tinjau hasil sebelum menerapkannya. Naskah belum diubah.';
+            } catch (error) {
+                status.textContent = error.name === 'AbortError' ? 'Permintaan dibatalkan. Naskah tidak diubah.' : error.message;
+            } finally {
+                controller = null;
+                generate.disabled = false;
+                cancel.disabled = true;
+            }
+        });
+        const apply = mode => {
+            if (!context || this.activeNote?.id !== context.id || this.activeNote.content !== context.content) {
+                status.textContent = 'Naskah telah berubah. Generate ulang untuk menghindari penimpaan perubahan.';
+                return;
+            }
+            if (!result.value.trim()) return;
+            const html = MarkdownEngine.parse(result.value);
+            this.dom.editorArea.innerHTML = mode === 'append' ? this.dom.editorArea.innerHTML + html : html;
+            if (this.isRawMarkdownMode) this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(this.dom.editorArea.innerHTML);
+            this.handleEditorInput();
+            append.disabled = replace.disabled = true;
+            status.textContent = 'Hasil diterapkan. Autosave dijadwalkan.';
+        };
+        append.addEventListener('click', () => apply('append'));
+        replace.addEventListener('click', () => apply('replace'));
     }
 
     /* ---------------- THEME & DISPLAY ---------------- */
@@ -545,6 +685,12 @@ class NotenuxPanel {
                 this.dom.shortcutsModal.classList.add('hidden');
             });
         }
+        this.dom.shortcutsModal?.addEventListener('click', (e) => {
+            if (e.target === this.dom.shortcutsModal) {
+                this.audio.playClick();
+                this.dom.shortcutsModal.classList.add('hidden');
+            }
+        });
     }
 
     /* ---------------- IMPORT MARKDOWN / FILE MODAL ---------------- */
@@ -566,6 +712,11 @@ class NotenuxPanel {
 
         if (this.dom.closeImportModalBtn) this.dom.closeImportModalBtn.addEventListener('click', closeModal);
         if (this.dom.cancelImportBtn) this.dom.cancelImportBtn.addEventListener('click', closeModal);
+        this.dom.importModal.addEventListener('click', (e) => {
+            if (e.target === this.dom.importModal) {
+                closeModal();
+            }
+        });
 
         if (this.dom.confirmImportBtn) {
             this.dom.confirmImportBtn.addEventListener('click', async () => {
@@ -697,6 +848,7 @@ class NotenuxPanel {
         const show = forceState !== null ? forceState : isHidden;
 
         if (show) {
+            if (this.isRawMarkdownMode) this.toggleMarkdownRawView();
             this.dom.findReplaceBar.classList.remove('hidden');
             this.dom.findInput?.focus();
             this.dom.findInput?.select();
@@ -717,6 +869,7 @@ class NotenuxPanel {
             }
             parent.removeChild(m);
         });
+        this.dom.editorArea.normalize();
         this.findMatches = [];
         this.currentMatchIndex = -1;
         if (this.dom.findMatchBadge) this.dom.findMatchBadge.textContent = '0 matches';
@@ -857,26 +1010,54 @@ class NotenuxPanel {
 
         this.dom.mobileNavToggleBtn?.addEventListener('click', () => {
             this.audio.playBlip();
-            this.dom.primaryNavSidebar?.classList.toggle('-translate-x-full');
-            this.dom.notesExplorerSidebar?.classList.add('-translate-x-full');
-            this.updateMobileOverlay();
+            if (window.innerWidth >= 1024) {
+                this.dom.primaryNavSidebar?.classList.toggle('collapsed');
+                const isColl = this.dom.primaryNavSidebar?.classList.contains('collapsed');
+                localStorage.setItem('notenux_primary_collapsed', isColl ? 'true' : 'false');
+                this.toast.show(isColl ? 'Main navigation collapsed' : 'Main navigation expanded', 'info');
+            } else {
+                this.dom.primaryNavSidebar?.classList.toggle('-translate-x-full');
+                this.dom.notesExplorerSidebar?.classList.add('-translate-x-full');
+                this.updateMobileOverlay();
+            }
         });
 
         this.dom.mobileExplorerToggleBtn?.addEventListener('click', () => {
             this.audio.playBlip();
-            this.dom.notesExplorerSidebar?.classList.toggle('-translate-x-full');
-            this.dom.primaryNavSidebar?.classList.add('-translate-x-full');
-            this.updateMobileOverlay();
+            if (window.innerWidth >= 1024) {
+                this.dom.notesExplorerSidebar?.classList.toggle('collapsed');
+                const isColl = this.dom.notesExplorerSidebar?.classList.contains('collapsed');
+                localStorage.setItem('notenux_explorer_collapsed', isColl ? 'true' : 'false');
+                this.toast.show(isColl ? 'Scroll Explorer collapsed' : 'Scroll Explorer expanded', 'info');
+            } else {
+                this.dom.notesExplorerSidebar?.classList.toggle('-translate-x-full');
+                this.dom.primaryNavSidebar?.classList.add('-translate-x-full');
+                this.updateMobileOverlay();
+            }
         });
 
         this.dom.closeMobileNavBtn?.addEventListener('click', () => {
-            this.dom.primaryNavSidebar?.classList.add('-translate-x-full');
-            this.updateMobileOverlay();
+            this.audio.playBlip();
+            if (window.innerWidth >= 1024) {
+                this.dom.primaryNavSidebar?.classList.add('collapsed');
+                localStorage.setItem('notenux_primary_collapsed', 'true');
+                this.toast.show('Main navigation collapsed', 'info');
+            } else {
+                this.dom.primaryNavSidebar?.classList.add('-translate-x-full');
+                this.updateMobileOverlay();
+            }
         });
 
         this.dom.closeMobileExplorerBtn?.addEventListener('click', () => {
-            this.dom.notesExplorerSidebar?.classList.add('-translate-x-full');
-            this.updateMobileOverlay();
+            this.audio.playBlip();
+            if (window.innerWidth >= 1024) {
+                this.dom.notesExplorerSidebar?.classList.add('collapsed');
+                localStorage.setItem('notenux_explorer_collapsed', 'true');
+                this.toast.show('Scroll Explorer collapsed', 'info');
+            } else {
+                this.dom.notesExplorerSidebar?.classList.add('-translate-x-full');
+                this.updateMobileOverlay();
+            }
         });
 
         this.dom.sidebarOverlay?.addEventListener('click', () => {
@@ -918,7 +1099,7 @@ class NotenuxPanel {
 
         this.dom.zoomInBtn?.addEventListener('click', () => {
             if (this.currentZoom < 200) {
-                this.currentZoom += 15;
+                this.currentZoom = Math.min(200, this.currentZoom + 15);
                 updateZoomUI();
                 this.toast.show(`Content Zoom: ${this.currentZoom}%`, 'info', null, 'fa-solid fa-magnifying-glass-plus text-cyan-400');
             }
@@ -926,7 +1107,7 @@ class NotenuxPanel {
 
         this.dom.zoomOutBtn?.addEventListener('click', () => {
             if (this.currentZoom > 60) {
-                this.currentZoom -= 15;
+                this.currentZoom = Math.max(60, this.currentZoom - 15);
                 updateZoomUI();
                 this.toast.show(`Content Zoom: ${this.currentZoom}%`, 'info', null, 'fa-solid fa-magnifying-glass-minus text-blue-400');
             }
@@ -940,6 +1121,15 @@ class NotenuxPanel {
     }
 
     /* ---------------- SOUND TOGGLE ---------------- */
+    adjustZoom(delta) {
+        this.currentZoom = Math.min(200, Math.max(60, this.currentZoom + delta));
+        if (this.dom.editorZoomWrapper) {
+            this.dom.editorZoomWrapper.style.transform = `scale(${this.currentZoom / 100})`;
+            this.dom.editorZoomWrapper.style.width = `${10000 / this.currentZoom}%`;
+        }
+        if (this.dom.zoomLevelDisplay) this.dom.zoomLevelDisplay.textContent = `${this.currentZoom}%`;
+    }
+
     initSoundToggle() {
         const updateSoundLabel = () => {
             if (this.dom.soundToggleBtn) {
@@ -1089,7 +1279,7 @@ class NotenuxPanel {
             this.renderNotesList();
             this.loadNoteIntoEditor(this.activeNote);
         } else {
-            this.createNewNote(false);
+            this.createNewNote(true);
         }
     }
 
@@ -1097,6 +1287,9 @@ class NotenuxPanel {
     bindEvents() {
         this.dom.searchInput?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value.toLowerCase().trim();
+            this.searchResultIds = null;
+            clearTimeout(this.searchTimeout);
+            if (this.searchQuery) this.searchTimeout = setTimeout(() => this.searchNotes(), 250);
             this.renderNotesList();
         });
 
@@ -1222,6 +1415,28 @@ class NotenuxPanel {
             });
         });
 
+        this.dom.copyMarkdownBtn?.addEventListener('click', () => {
+            if (!this.activeNote) return;
+            this.audio.playCoin();
+            const md = MarkdownEngine.toMarkdown(this.dom.editorArea?.innerHTML || this.activeNote.content || '');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(md);
+                this.toast.show('Scroll Markdown copied to clipboard!', 'success', 'Markdown Copied', 'fa-brands fa-markdown text-cyan-400');
+            }
+            this.dom.exportMenu?.classList.add('hidden');
+        });
+
+        this.dom.copyHtmlBtn?.addEventListener('click', () => {
+            if (!this.activeNote) return;
+            this.audio.playCoin();
+            const html = this.dom.editorArea?.innerHTML || this.activeNote.content || '';
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(html);
+                this.toast.show('Scroll HTML copied to clipboard!', 'success', 'HTML Copied', 'fa-solid fa-code text-emerald-400');
+            }
+            this.dom.exportMenu?.classList.add('hidden');
+        });
+
         this.dom.zenModeBtn?.addEventListener('click', () => {
             this.toggleZenMode();
         });
@@ -1282,6 +1497,13 @@ class NotenuxPanel {
             this.closeChunkInspector();
         });
 
+        this.dom.chunkModal?.addEventListener('click', (e) => {
+            if (e.target === this.dom.chunkModal) {
+                this.audio.playBlip();
+                this.closeChunkInspector();
+            }
+        });
+
         this.dom.verifyChunksBtn?.addEventListener('click', () => {
             this.verifyChunksIntegrity();
         });
@@ -1325,6 +1547,9 @@ class NotenuxPanel {
 
     /* ---------------- RICH TEXT TOOLBAR ---------------- */
     initEditorToolbar() {
+        document.querySelectorAll('[data-command], [data-color], #insert-table-btn, #insert-task-btn, #insert-media-btn').forEach(button => {
+            button.addEventListener('mousedown', event => event.preventDefault());
+        });
         document.querySelectorAll('[data-command]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1334,7 +1559,7 @@ class NotenuxPanel {
 
                 if (command === 'createLink') {
                     const url = prompt('Enter link URL (https://...):');
-                    if (url) {
+                    if (url && /^(https?:\/\/|mailto:|#)/i.test(url)) {
                         document.execCommand(command, false, url);
                         this.toast.show('Hyperlink inserted', 'info');
                     }
@@ -1395,14 +1620,14 @@ class NotenuxPanel {
                 return;
             }
 
-            if (textHtml && textHtml.includes('<table')) {
+            if (textHtml) {
                 e.preventDefault();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(textHtml, 'text/html');
                 doc.querySelectorAll('table').forEach(tbl => {
                     tbl.classList.add('retro-table');
                 });
-                document.execCommand('insertHTML', false, doc.body.innerHTML);
+                document.execCommand('insertHTML', false, sanitizeHtml(doc.body.innerHTML));
                 this.handleEditorInput();
                 this.toast.show('Pasted HTML Table formatted cleanly!', 'info', 'Table Injected', 'fa-solid fa-table text-cyan-400');
             }
@@ -1480,7 +1705,15 @@ class NotenuxPanel {
             alt = 'Guardian Shield';
         }
 
-        const imgHtml = `<p><img src="${src}" alt="${alt}" class="rounded-lg border-2 border-blue-500 max-h-72 shadow-md my-2"></p><p><br></p>`;
+        if (!/^https?:\/\//i.test(src)) {
+            this.toast.show('Gunakan URL gambar HTTP atau HTTPS.', 'warning');
+            return;
+        }
+        const image = document.createElement('img');
+        image.src = src;
+        image.alt = alt;
+        image.className = 'rounded-lg border-2 border-blue-500 max-h-72 shadow-md my-2';
+        const imgHtml = `<p>${image.outerHTML}</p><p><br></p>`;
         document.execCommand('insertHTML', false, imgHtml);
         this.dom.editorArea.focus();
         this.handleEditorInput();
@@ -1488,18 +1721,22 @@ class NotenuxPanel {
     }
 
     toggleMarkdownRawView() {
+        this.toggleFindBar(false);
         this.audio.playBlip();
         this.isRawMarkdownMode = !this.isRawMarkdownMode;
 
         if (this.isRawMarkdownMode) {
             const md = MarkdownEngine.toMarkdown(this.dom.editorArea.innerHTML);
+            this.rawViewOriginalHtml = this.dom.editorArea.innerHTML;
+            this.rawViewOriginalMarkdown = md;
             this.dom.markdownRawEditor.value = md;
             this.dom.editorArea.classList.add('hidden');
             this.dom.markdownRawEditor.classList.remove('hidden');
             this.dom.markdownViewToggleBtn.innerHTML = '<i class="fa-solid fa-eye mr-1 text-cyan-400"></i> WYSIWYG';
             this.toast.show('Raw Markdown View activated', 'info');
         } else {
-            const html = MarkdownEngine.parse(this.dom.markdownRawEditor.value);
+            const html = this.dom.markdownRawEditor.value === this.rawViewOriginalMarkdown
+                ? this.rawViewOriginalHtml : MarkdownEngine.parse(this.dom.markdownRawEditor.value);
             this.dom.editorArea.innerHTML = html;
             this.dom.markdownRawEditor.classList.add('hidden');
             this.dom.editorArea.classList.remove('hidden');
@@ -1560,7 +1797,9 @@ class NotenuxPanel {
     handleEditorInput() {
         if (!this.activeNote) return;
 
-        this.activeNote.content = this.dom.editorArea.innerHTML;
+        const content = this.dom.editorArea.cloneNode(true);
+        content.querySelectorAll('mark.search-match').forEach(mark => mark.replaceWith(...mark.childNodes));
+        this.activeNote.content = content.innerHTML;
         this.updateWordAndCharMetrics();
         this.triggerXpBurst();
         this.saveDraftLocal();
@@ -1635,6 +1874,9 @@ class NotenuxPanel {
     }
 
     scheduleAutoSave() {
+        if (!this.activeNote) return;
+        this.dirtyNotes.add(this.activeNote.id);
+        this.saveDraftLocal();
         if (this.dom.saveStatusText) {
             this.dom.saveStatusText.innerHTML = '<span class="text-amber-500 animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Inscribing...</span>';
         }
@@ -1646,22 +1888,29 @@ class NotenuxPanel {
     }
 
     /* ---------------- CRUD & API SYNC ---------------- */
-    async saveActiveNote(manual = false) {
-        if (!this.activeNote) return;
+    saveActiveNote(manual = false) {
+        if (!this.activeNote) return Promise.resolve(false);
+        clearTimeout(this.saveTimeout);
+        const note = this.activeNote;
+        const snapshot = { ...note };
+        const task = this.saveQueue.then(() => this.persistNote(note, snapshot, manual));
+        this.saveQueue = task.catch(() => false);
+        return task;
+    }
+
+    async persistNote(note, snapshot, manual) {
 
         try {
             const payload = {
-                title: this.activeNote.title || 'Untitled Scroll',
-                category: this.activeNote.category || 'quest',
-                content: this.dom.editorArea.innerHTML,
-                font_family: this.activeNote.font_family || 'pixel',
-                font_size: this.activeNote.font_size || '16px',
-                theme_color: this.activeNote.theme_color || 'blue',
-                is_pinned: this.activeNote.is_pinned || false,
-                is_favorite: this.activeNote.is_favorite || false,
+                title: snapshot.title || 'Untitled Scroll',
+                category: snapshot.category || 'quest',
+                content: snapshot.content || '',
+                font_family: snapshot.font_family || 'pixel',
+                font_size: snapshot.font_size || '16px',
+                theme_color: snapshot.theme_color || 'blue',
             };
 
-            const response = await fetch(`/api/notes/${this.activeNote.id}`, {
+            const response = await fetch(`/api/notes/${note.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1672,16 +1921,14 @@ class NotenuxPanel {
 
             const data = await response.json();
             if (response.ok && data.status === 'success') {
-                this.activeNote = data.data;
-                const index = this.notes.findIndex(n => n.id === this.activeNote.id);
-                if (index !== -1) {
-                    this.notes[index] = data.data;
-                }
+                const unchanged = ['title', 'content', 'category', 'font_family', 'font_size', 'theme_color'].every(key => note[key] === snapshot[key]);
+                if (unchanged) Object.assign(note, data.data, { is_pinned: note.is_pinned, is_favorite: note.is_favorite });
+                if (unchanged) this.dirtyNotes.delete(note.id);
 
                 // Clear draft backup since persisted
-                localStorage.removeItem(`notenux_draft_${this.activeNote.id}`);
+                if (unchanged) localStorage.removeItem(`notenux_draft_${note.id}`);
 
-                if (this.dom.saveStatusText) {
+                if (this.dom.saveStatusText && this.activeNote?.id === note.id && unchanged) {
                     this.dom.saveStatusText.innerHTML = '<span class="text-emerald-500"><i class="fa-solid fa-check mr-1"></i> Synchronized</span>';
                 }
 
@@ -1690,12 +1937,13 @@ class NotenuxPanel {
 
                 if (manual) {
                     this.toast.show(
-                        `Scroll "${this.activeNote.title}" inscribed into database chunks!`,
+                        `Scroll "${note.title}" inscribed into database chunks!`,
                         'success',
                         'Saved to Matrix',
                         'fa-solid fa-floppy-disk text-emerald-400'
                     );
                 }
+                return true;
             } else {
                 throw new Error(data.message || 'Failed to save');
             }
@@ -1706,6 +1954,7 @@ class NotenuxPanel {
             if (manual) {
                 this.toast.show('Failed to synchronize scroll with server database.', 'danger', 'Storage Error');
             }
+            return false;
         }
     }
 
@@ -1756,10 +2005,11 @@ class NotenuxPanel {
 
     async togglePinActiveNote() {
         if (!this.activeNote) return;
+        const note = this.activeNote;
         this.audio.playClick();
 
         try {
-            const response = await fetch(`/api/notes/${this.activeNote.id}/pin`, {
+            const response = await fetch(`/api/notes/${note.id}/pin`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1769,12 +2019,12 @@ class NotenuxPanel {
 
             const data = await response.json();
             if (response.ok) {
-                this.activeNote.is_pinned = data.is_pinned;
-                this.updatePinButtonUI();
+                note.is_pinned = data.is_pinned;
+                if (this.activeNote?.id === note.id) this.updatePinButtonUI();
                 this.renderNotesList();
 
                 this.toast.show(
-                    this.activeNote.is_pinned ? 'Scroll pinned to top of Grimoire' : 'Scroll unpinned',
+                    note.is_pinned ? 'Scroll pinned to top of Grimoire' : 'Scroll unpinned',
                     'info',
                     'Pin Status',
                     'fa-solid fa-thumbtack text-amber-400'
@@ -1787,10 +2037,11 @@ class NotenuxPanel {
 
     async toggleFavoriteActiveNote() {
         if (!this.activeNote) return;
+        const note = this.activeNote;
         this.audio.playClick();
 
         try {
-            const response = await fetch(`/api/notes/${this.activeNote.id}/favorite`, {
+            const response = await fetch(`/api/notes/${note.id}/favorite`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1800,12 +2051,12 @@ class NotenuxPanel {
 
             const data = await response.json();
             if (response.ok) {
-                this.activeNote.is_favorite = data.is_favorite;
-                this.updateFavoriteButtonUI();
+                note.is_favorite = data.is_favorite;
+                if (this.activeNote?.id === note.id) this.updateFavoriteButtonUI();
                 this.renderNotesList();
 
                 this.toast.show(
-                    this.activeNote.is_favorite ? 'Scroll saved to bookmarks!' : 'Scroll removed from favorites',
+                    note.is_favorite ? 'Scroll saved to bookmarks!' : 'Scroll removed from favorites',
                     'info',
                     'Favorite',
                     'fa-solid fa-star text-amber-400'
@@ -1818,6 +2069,7 @@ class NotenuxPanel {
 
     async duplicateActiveNote() {
         if (!this.activeNote) return;
+        if (!await this.saveActiveNote()) return;
         this.audio.playCoin();
 
         try {
@@ -1849,10 +2101,11 @@ class NotenuxPanel {
         }
     }
 
-    exportActiveNote(format) {
+    async exportActiveNote(format) {
         if (!this.activeNote) return;
+        if (!await this.saveActiveNote()) return;
         this.audio.playCoin();
-        window.open(`/api/notes/${this.activeNote.id}/export/${format}`, '_blank');
+        window.location.assign(`/api/notes/${this.activeNote.id}/export/${format}`);
         this.toast.show(`Exporting scroll as .${format.toUpperCase()}`, 'info', 'Export Started', 'fa-solid fa-download text-blue-400');
     }
 
@@ -1884,7 +2137,7 @@ class NotenuxPanel {
 
         if (this.dom.deleteConfirmModal) {
             this.dom.deleteConfirmModal.classList.remove('hidden');
-            this.audio.playBip();
+            this.audio.playBlip();
             this.dom.cancelDeleteModalBtn?.focus();
         }
     }
@@ -1899,6 +2152,8 @@ class NotenuxPanel {
         if (!this.activeNote) return;
 
         const noteId = this.activeNote.id;
+        clearTimeout(this.saveTimeout);
+        await this.saveQueue;
         const title = this.activeNote.title || 'Untitled Scroll';
         this.closeDeleteConfirmModal();
         this.audio.playDelete();
@@ -1913,11 +2168,13 @@ class NotenuxPanel {
 
             if (response.ok) {
                 this.notes = this.notes.filter(n => n.id !== noteId);
-                this.activeNote = this.notes.length > 0 ? this.notes[0] : null;
+                this.activeNote = null;
+                this.dirtyNotes.delete(noteId);
+                localStorage.removeItem(`notenux_draft_${noteId}`);
 
                 this.renderNotesList();
-                if (this.activeNote) {
-                    this.loadNoteIntoEditor(this.activeNote);
+                if (this.notes.length > 0) {
+                    await this.selectNote(this.notes[0]);
                 } else {
                     this.createNewNote(true);
                 }
@@ -1942,9 +2199,12 @@ class NotenuxPanel {
     }
 
     async selectNote(note) {
+        const version = ++this.selectionVersion;
+        if (this.activeNote && this.dirtyNotes.has(this.activeNote.id)) {
+            if (!await this.saveActiveNote()) return;
+        }
+        if (version !== this.selectionVersion) return;
         this.audio.playBlip();
-        this.activeNote = note;
-        this.renderNotesList();
 
         // If content is not yet in memory (due to optimized lightweight list queries), fetch on demand
         if (note.content === undefined || note.content === null) {
@@ -1952,18 +2212,26 @@ class NotenuxPanel {
                 const response = await fetch(`/api/notes/${note.id}`);
                 const data = await response.json();
                 if (response.ok && data.data) {
-                    this.activeNote = data.data;
+                    if (version !== this.selectionVersion) return;
+                    note = data.data;
                     const idx = this.notes.findIndex(n => n.id === note.id);
                     if (idx !== -1) {
                         this.notes[idx] = data.data;
                     }
+                } else {
+                    throw new Error('Load failed');
                 }
             } catch (e) {
-                // Fallback
+                this.toast.show('Tidak dapat memuat naskah. Coba lagi.', 'danger');
+                return;
             }
         }
 
-        this.loadNoteIntoEditor(this.activeNote);
+        if (version !== this.selectionVersion) return;
+        this.activeNote = note;
+        this.closeChunkInspector();
+        this.renderNotesList();
+        this.loadNoteIntoEditor(note);
         if (window.innerWidth < 1024) {
             this.closeMobileDrawers();
         }
@@ -1971,6 +2239,15 @@ class NotenuxPanel {
 
     loadNoteIntoEditor(note) {
         if (!note) return;
+        this.clearFindHighlights();
+        try {
+            const draft = JSON.parse(localStorage.getItem(`notenux_draft_${note.id}`) || 'null');
+            if (draft && draft.timestamp > new Date(note.updated_at || 0).getTime()) {
+                Object.assign(note, { title: draft.title, content: draft.content });
+                this.dirtyNotes.add(note.id);
+                this.toast.show('Draft lokal dipulihkan. Simpan untuk sinkronisasi.', 'warning');
+            }
+        } catch (_) {}
 
         if (this.dom.noteTitleInput) {
             this.dom.noteTitleInput.value = note.title;
@@ -1981,11 +2258,13 @@ class NotenuxPanel {
         }
 
         if (this.dom.editorArea) {
-            this.dom.editorArea.innerHTML = note.content || '';
+            this.dom.editorArea.innerHTML = sanitizeHtml(note.content || '');
         }
 
         if (this.dom.markdownRawEditor) {
             this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(note.content || '');
+            this.rawViewOriginalMarkdown = this.dom.markdownRawEditor.value;
+            this.rawViewOriginalHtml = this.dom.editorArea.innerHTML;
         }
 
         const font = note.font_family || 'pixel';
@@ -2034,6 +2313,23 @@ class NotenuxPanel {
         }
     }
 
+    async searchNotes() {
+        const query = this.searchQuery;
+        try {
+            const response = await fetch(`/api/notes?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            if (!response.ok) throw new Error('Search failed');
+            if (query !== this.searchQuery) return;
+            this.searchResultIds = new Set(data.data.map(note => note.id));
+            for (const summary of data.data) {
+                if (!this.notes.some(note => note.id === summary.id)) this.notes.push(summary);
+            }
+            this.renderNotesList();
+        } catch (_) {
+            if (query === this.searchQuery) this.toast.show('Pencarian server gagal. Hasil lokal ditampilkan.', 'warning');
+        }
+    }
+
     /* ---------------- RENDER NOTES LIST ---------------- */
     renderNotesList() {
         if (!this.dom.notesList) return;
@@ -2046,6 +2342,7 @@ class NotenuxPanel {
 
         if (this.searchQuery) {
             filtered = filtered.filter(n =>
+                this.searchResultIds?.has(n.id) ||
                 n.title.toLowerCase().includes(this.searchQuery) ||
                 (n.content && n.content.toLowerCase().includes(this.searchQuery))
             );
@@ -2152,6 +2449,9 @@ class NotenuxPanel {
     /* ---------------- CHUNK INSPECTOR & INTEGRITY AUDITOR ---------------- */
     async openChunkInspector() {
         if (!this.activeNote) return;
+        const noteId = this.activeNote.id;
+        if (this.dirtyNotes.has(this.activeNote.id) && !await this.saveActiveNote()) return;
+        if (this.activeNote?.id !== noteId) return;
         this.audio.playCoin();
 
         if (this.dom.chunkModal) {
@@ -2172,8 +2472,9 @@ class NotenuxPanel {
         }
 
         try {
-            const response = await fetch(`/api/notes/${this.activeNote.id}/chunks`);
+            const response = await fetch(`/api/notes/${noteId}/chunks`);
             const data = await response.json();
+            if (this.activeNote?.id !== noteId) return;
 
             if (response.ok && data.status === 'success') {
                 if (this.dom.chunkModalCount) {
@@ -2220,10 +2521,26 @@ class NotenuxPanel {
                                 title="Copy Chunk Identity Key">
                             <i class="fa-solid fa-copy mr-1"></i> COPY UID
                         </button>
+                        <button onclick="window.notenux.moveChunk(${index}, -1)"
+                                class="arcade-btn bg-surface px-1.5 py-0.5 text-[9px] rounded hover:bg-cyan-200"
+                                title="Move Shard Up">
+                            <i class="fa-solid fa-chevron-up"></i>
+                        </button>
+                        <button onclick="window.notenux.moveChunk(${index}, 1)"
+                                class="arcade-btn bg-surface px-1.5 py-0.5 text-[9px] rounded hover:bg-cyan-200"
+                                title="Move Shard Down">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
                     </div>
                     <div class="flex items-center gap-2 text-[11px] opacity-75">
-                        <span class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded uppercase font-bold text-blue-600 dark:text-cyan-300">${chunk.chunk_type}</span>
+                        <span class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded uppercase font-bold text-blue-600 dark:text-cyan-300">${this.escapeHtml(chunk.chunk_type)}</span>
                         <span>${chunk.byte_size} bytes</span>
+                        <button onclick="window.notenux.toggleChunkEditor(${chunk.id})" class="arcade-btn bg-surface px-2 py-0.5 text-[10px] rounded hover:bg-blue-300">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
+                        <button onclick="window.notenux.deleteChunk(${chunk.id})" class="arcade-btn bg-red-600 text-white px-2 py-0.5 text-[10px] rounded hover:bg-red-500" title="Delete Shard">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="text-[10px] text-gray-500 dark:text-gray-400 truncate mb-1">
@@ -2231,6 +2548,13 @@ class NotenuxPanel {
                 </div>
                 <div id="chunk-view-${chunk.id}" class="bg-white dark:bg-black/50 p-2.5 rounded border border-gray-300 dark:border-gray-800 max-h-28 overflow-y-auto text-main text-[11px] whitespace-pre-wrap leading-relaxed">
                     ${this.escapeHtml(chunk.content)}
+                </div>
+                <div id="chunk-edit-${chunk.id}" class="hidden mt-2">
+                    <textarea class="w-full p-2 bg-white dark:bg-black/80 border border-blue-500 rounded text-[11px] font-mono text-main leading-relaxed" rows="3">${this.escapeHtml(chunk.content)}</textarea>
+                    <div class="flex justify-end gap-2 mt-1">
+                        <button onclick="window.notenux.toggleChunkEditor(${chunk.id})" class="arcade-btn bg-surface px-2 py-0.5 text-[10px] rounded">Cancel</button>
+                        <button onclick="window.notenux.saveIndividualChunk(${chunk.id})" class="arcade-btn bg-emerald-600 text-white px-2 py-0.5 text-[10px] rounded">Save Shard</button>
+                    </div>
                 </div>
             </div>
         `).join('');
