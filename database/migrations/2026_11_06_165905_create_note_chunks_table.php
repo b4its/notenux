@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('chunk_uid', 64)->unique();
             $table->unsignedInteger('chunk_index')->default(0);
             $table->string('chunk_type', 32)->default('paragraph');
-            $table->text('content');
+            $table->longText('content');
             $table->unsignedInteger('byte_size')->default(0);
             $table->string('checksum', 64)->nullable();
             $table->json('metadata')->nullable();
