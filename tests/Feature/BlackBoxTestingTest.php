@@ -1628,3 +1628,78 @@ test('black-box: ai assistant handles unexpected network throwable with 502 erro
     $res->assertStatus(502)
         ->assertJsonPath('status', 'error');
 });
+
+test('black-box: application health check endpoint /up returns 200 OK', function () {
+    $res = $this->get('/up');
+    $res->assertStatus(200);
+});
+
+test('black-box: import json backup restores note with typography, flags, and recomputed chunks', function () {
+    $user = User::factory()->create();
+
+    $jsonPayload = json_encode([
+        'title' => 'Arcane Tome from Ancient Era',
+        'category' => 'spellbook',
+        'content' => '<h2>Forbidden Spells</h2><p>Cast with caution.</p>',
+        'font_family' => 'mono',
+        'font_size' => '18px',
+        'theme_color' => 'purple',
+        'is_pinned' => true,
+        'is_favorite' => true,
+    ]);
+
+    $file = UploadedFile::fake()->createWithContent('backup.json', (string) $jsonPayload);
+
+    $res = $this->actingAs($user)->postJson('/api/notes/import', [
+        'file' => $file,
+    ]);
+
+    $res->assertStatus(201)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.title', 'Arcane Tome from Ancient Era')
+        ->assertJsonPath('data.category', 'spellbook')
+        ->assertJsonPath('data.font_family', 'mono')
+        ->assertJsonPath('data.font_size', '18px')
+        ->assertJsonPath('data.theme_color', 'purple')
+        ->assertJsonPath('data.is_pinned', true)
+        ->assertJsonPath('data.is_favorite', true);
+
+    $noteId = $res->json('data.id');
+    $this->assertDatabaseHas('notes', [
+        'id' => $noteId,
+        'user_id' => $user->id,
+        'title' => 'Arcane Tome from Ancient Era',
+    ]);
+});
+
+test('black-box: note export endpoint produces clean and secure csv, json, txt, and html downloads', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create([
+        'title' => '=1+1 Tax Formula',
+        'content' => '<h2>Secret Formulas</h2><p>Never reveal.</p>',
+    ]);
+
+    // CSV format: formula injection sanitization
+    $csvRes = $this->actingAs($user)->get("/api/notes/{$note->id}/export/csv");
+    $csvRes->assertStatus(200)
+        ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    expect($csvRes->getContent())->toContain("'=1+1 Tax Formula");
+
+    // JSON format
+    $jsonRes = $this->actingAs($user)->get("/api/notes/{$note->id}/export/json");
+    $jsonRes->assertStatus(200)
+        ->assertHeader('Content-Type', 'application/json; charset=UTF-8')
+        ->assertJsonPath('title', '=1+1 Tax Formula');
+
+    // TXT format
+    $txtRes = $this->actingAs($user)->get("/api/notes/{$note->id}/export/txt");
+    $txtRes->assertStatus(200)
+        ->assertHeader('Content-Type', 'text/plain; charset=UTF-8');
+    expect($txtRes->getContent())->toContain('TITLE: =1+1 Tax Formula');
+
+    // HTML format
+    $htmlRes = $this->actingAs($user)->get("/api/notes/{$note->id}/export/html");
+    $htmlRes->assertStatus(200)
+        ->assertHeader('Content-Type', 'text/html; charset=UTF-8');
+    expect($htmlRes->getContent())->toContain('Secret Formulas');
+});

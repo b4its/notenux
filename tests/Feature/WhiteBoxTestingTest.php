@@ -1173,3 +1173,24 @@ test('white-box: database restore command recovers database state from json back
     @unlink("{$backupDir}/white_box_restore_test.json");
     @unlink("{$backupDir}/white_box_restore_test.sql");
 });
+
+test('white-box: note chunk service detects and isolates corrupted chunks upon cryptographic audit', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create();
+    $service = app(NoteChunkService::class);
+
+    $service->syncChunks($note, '<p>First safe paragraph.</p><p>Second secure paragraph.</p>');
+    $reportInitial = $service->verifyIntegrity($note);
+    expect($reportInitial['status'])->toBe('verified')
+        ->and($reportInitial['verified'])->toBeTrue()
+        ->and($reportInitial['corrupted_chunks'])->toBe(0);
+
+    // Intentionally corrupt a chunk's content in database without updating checksum
+    $chunk = $note->chunks()->first();
+    $chunk->updateQuietly(['content' => '<p>Tampered illegal text.</p>']);
+
+    $reportCorrupted = $service->verifyIntegrity($note);
+    expect($reportCorrupted['status'])->toBe('corrupted')
+        ->and($reportCorrupted['verified'])->toBeFalse()
+        ->and($reportCorrupted['corrupted_chunks'])->toBe(1);
+});

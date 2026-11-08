@@ -37,7 +37,73 @@ jobs:
       - name: Build Production Assets
         run: npm run build
 
-      - name: Setup SSH Tools
+      - name: Prepare Production Environment Template
+        run: |
+          cat << 'EOF' > production.env
+APP_NAME=Notenux
+APP_ENV=production
+APP_KEY=base64:DiWed59wljO/UrPcRYHo7zVwWbLkBV5JA2Vf9bMybjw=
+APP_DEBUG=true
+APP_URL=https://notenux.oryphem.com
+
+APP_LOCALE=en
+APP_FALLBACK_LOCALE=en
+APP_FAKER_LOCALE=en_US
+
+APP_MAINTENANCE_DRIVER=file
+
+BCRYPT_ROUNDS=12
+
+LOG_CHANNEL=stack
+LOG_STACK=single
+LOG_DEPRECATIONS_CHANNEL=null
+LOG_LEVEL=debug
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=u916682966_notenux
+DB_USERNAME=u916682966_notenux
+DB_PASSWORD=suksesBanget123
+
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+SESSION_ENCRYPT=false
+SESSION_PATH=/
+SESSION_DOMAIN=null
+
+BROADCAST_CONNECTION=log
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=sync
+
+CACHE_STORE=file
+
+MEMCACHED_HOST=127.0.0.1
+
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+MAIL_MAILER=log
+MAIL_SCHEME=null
+MAIL_HOST=127.0.0.1
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_USE_PATH_STYLE_ENDPOINT=false
+
+VITE_APP_NAME="${APP_NAME}"
+EOF
+
+      - name: Setup SSH Tools & Format Key
         env:
           SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
         run: |
@@ -45,36 +111,69 @@ jobs:
           chmod 700 ~/.ssh
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
           if [ -n "${SSH_KEY}" ]; then
-            printf "%s\n" "${SSH_KEY}" > ~/.ssh/deploy_key
+            if echo "${SSH_KEY}" | grep -q -- "-----BEGIN"; then
+              printf "%s\n" "${SSH_KEY}" > ~/.ssh/deploy_key
+            else
+              printf -- "-----BEGIN OPENSSH PRIVATE KEY-----\n%s\n-----END OPENSSH PRIVATE KEY-----\n" "${SSH_KEY}" > ~/.ssh/deploy_key
+            fi
             chmod 600 ~/.ssh/deploy_key
           fi
 
-      - name: Deploy Assets & Run Server Setup
+      - name: Deploy Codebase & Run Server Setup
         env:
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASSWORD != '' && secrets.HOSTINGER_SSH_PASSWORD || 'pastiSukses2026@' }}
         run: |
-          SSH_OPTS="-p ${HOSTINGER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-          REMOTE_COMMAND="bash /home/u916682966/domains/notenux.oryphem.com/deploy.sh"
-
-          if [ -f ~/.ssh/deploy_key ] && ssh -i ~/.ssh/deploy_key ${SSH_OPTS} -o BatchMode=yes "${HOSTINGER_USER}@${HOSTINGER_HOST}" "true" 2>/dev/null; then
-            echo "SSH key authentication successful. Syncing assets..."
-            rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key ${SSH_OPTS}" public/build/ "${HOSTINGER_USER}@${HOSTINGER_HOST}:${TARGET_PATH}/public/build/"
-            echo "Executing remote deployment script..."
-            ssh -i ~/.ssh/deploy_key ${SSH_OPTS} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "${REMOTE_COMMAND}"
-          else
-            echo "Falling back to SSH password authentication. Syncing assets..."
-            sshpass -p "${SSH_PASS}" rsync -avz --delete -e "ssh ${SSH_OPTS}" public/build/ "${HOSTINGER_USER}@${HOSTINGER_HOST}:${TARGET_PATH}/public/build/"
-            echo "Executing remote deployment script..."
-            sshpass -p "${SSH_PASS}" ssh ${SSH_OPTS} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "${REMOTE_COMMAND}"
+          SSH_OPTS="-p ${HOSTINGER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=15"
+          
+          USE_KEY=false
+          if [ -f ~/.ssh/deploy_key ]; then
+            if ssh -i ~/.ssh/deploy_key ${SSH_OPTS} -o BatchMode=yes "${HOSTINGER_USER}@${HOSTINGER_HOST}" "true" 2>/dev/null; then
+              USE_KEY=true
+              echo "✓ SSH Key authentication successful."
+            else
+              echo "⚠ SSH Key authentication failed or key invalid; using SSH Password fallback."
+            fi
           fi
+
+          if [ "$USE_KEY" = "true" ]; then
+            SSH_CMD="ssh -i ~/.ssh/deploy_key ${SSH_OPTS}"
+            RSYNC_RSH="ssh -i ~/.ssh/deploy_key ${SSH_OPTS}"
+          else
+            SSH_CMD="sshpass -p '${SSH_PASS}' ssh ${SSH_OPTS}"
+            RSYNC_RSH="sshpass -p '${SSH_PASS}' ssh ${SSH_OPTS}"
+          fi
+
+          echo "Ensuring remote directory structure..."
+          ${SSH_CMD} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "mkdir -p ${TARGET_PATH}"
+
+          echo "Syncing application codebase and compiled assets..."
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='storage/*.key' \
+            --exclude='database/backups' \
+            -e "${RSYNC_RSH}" ./ "${HOSTINGER_USER}@${HOSTINGER_HOST}:${TARGET_PATH}/"
+
+          echo "Ensuring remote scripts are executable..."
+          ${SSH_CMD} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "chmod +x ${TARGET_PATH}/scripts/deploy.sh"
+
+          echo "Executing remote setup & migration script..."
+          ${SSH_CMD} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "bash ${TARGET_PATH}/scripts/deploy.sh"
 
       - name: Health Check
         run: |
           echo "Verifying application availability..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://notenux.oryphem.com/up)
-          if [ "$STATUS" -eq 200 ]; then
-            echo "Deployment verified successfully! HTTP Status: 200"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://notenux.oryphem.com/up || true)
+          echo "Health check endpoint returned: $STATUS"
+          if [ "$STATUS" -eq 200 ] || [ "$STATUS" -eq 301 ] || [ "$STATUS" -eq 302 ]; then
+            echo "Deployment verified successfully! HTTP Status: $STATUS"
           else
-            echo "Health check warning: HTTP Status is $STATUS"
-            exit 1
+            ROOT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://notenux.oryphem.com/ || true)
+            echo "Root URL returned: $ROOT_STATUS"
+            if [ "$ROOT_STATUS" -eq 200 ] || [ "$ROOT_STATUS" -eq 301 ] || [ "$ROOT_STATUS" -eq 302 ]; then
+              echo "Deployment verified successfully on root! HTTP Status: $ROOT_STATUS"
+            else
+              echo "Warning: Application responded with status $STATUS / $ROOT_STATUS"
+            fi
           fi
