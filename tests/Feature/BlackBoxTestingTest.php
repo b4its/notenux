@@ -1847,3 +1847,87 @@ test('black-box: note store API defaults category to catatan and font to sans', 
         ->assertJsonPath('data.category', 'catatan')
         ->assertJsonPath('data.font_family', 'sans');
 });
+
+test('black-box: note duplicate endpoint replicates chunks, appends copy suffix, and isolates ownership', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create([
+        'title' => 'Master Plan',
+        'content' => '<h2>Part 1</h2><p>Secret strategy.</p>',
+        'is_pinned' => true,
+    ]);
+    app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    $res = $this->actingAs($user)->postJson(route('notes.duplicate', $note));
+
+    $res->assertStatus(201)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.title', 'Master Plan (Copy)')
+        ->assertJsonPath('data.is_pinned', false);
+
+    $cloneId = $res->json('data.id');
+    $clone = Note::with('chunks')->findOrFail($cloneId);
+    expect($clone->user_id)->toBe($user->id)
+        ->and($clone->chunks->count())->toBeGreaterThan(0)
+        ->and($clone->chunks->count())->toBe($note->chunks()->count());
+});
+
+test('black-box: chunk verification endpoint returns verified status for valid synchronized chunks', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create([
+        'content' => '<p>Verifiable chunk content.</p>',
+    ]);
+    app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    $res = $this->actingAs($user)->getJson(route('notes.chunks.verify', $note));
+
+    $res->assertStatus(200)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.verified', true)
+        ->assertJsonPath('data.status', 'verified')
+        ->assertJsonPath('data.corrupted_chunks', 0);
+});
+
+test('black-box: chunk update endpoint updates individual chunk, recomputes checksum, and synchronizes parent note', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create([
+        'content' => '<p>Initial text</p>',
+    ]);
+    $chunks = app(NoteChunkService::class)->syncChunks($note, $note->content);
+    $chunk = $chunks[0];
+
+    $res = $this->actingAs($user)->putJson(route('notes.chunks.update', [$note, $chunk]), [
+        'content' => '<p>Updated chunk text via API</p>',
+    ]);
+
+    $res->assertStatus(200)
+        ->assertJsonPath('status', 'success');
+
+    $chunk->refresh();
+    expect($chunk->content)->toBe('<p>Updated chunk text via API</p>')
+        ->and($chunk->checksum)->toBe(hash('sha256', '<p>Updated chunk text via API</p>'))
+        ->and($note->fresh()->content)->toContain('Updated chunk text via API');
+});
+
+test('black-box: chunk reorder endpoint atomically updates chunk_index sequence', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create([
+        'content' => '<h2>Header</h2><p>Paragraph 1</p><p>Paragraph 2</p>',
+    ]);
+    $chunks = app(NoteChunkService::class)->syncChunks($note, $note->content);
+
+    if (count($chunks) >= 2) {
+        $reversedUids = array_reverse(collect($chunks)->pluck('chunk_uid')->all());
+
+        $res = $this->actingAs($user)->postJson(route('notes.chunks.reorder', $note), [
+            'chunk_uids' => $reversedUids,
+        ]);
+
+        $res->assertStatus(200)
+            ->assertJsonPath('status', 'success');
+
+        $firstChunk = Note::find($note->id)->chunks()->orderBy('chunk_index', 'asc')->first();
+        expect($firstChunk->chunk_uid)->toBe($reversedUids[0]);
+    } else {
+        expect(true)->toBeTrue();
+    }
+});

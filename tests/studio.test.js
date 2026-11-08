@@ -2820,6 +2820,63 @@ test('white-box: saveActiveNote when activeNote is null does not perform network
     assert.ok(messages.some(m => m[0].includes('Pilih atau buat gulungan catatan')));
 });
 
+test('white-box: getFilteredNotes safely handles notes with null titles without throwing', () => {
+    const { panel } = harness(() => {});
+    panel.notes = [
+        { id: 1, title: null, content: 'alpha keyword', category: 'catatan' },
+        { id: 2, title: 'Beta', content: null, category: 'catatan' },
+    ];
+    panel.activeCategory = 'all';
+    panel.searchQuery = 'alpha';
+
+    const filtered = panel.getFilteredNotes();
+    assert.equal(filtered.length, 1);
+    assert.equal(filtered[0].id, 1);
+});
+
+test('white-box: renderNotesList sorts notes with null or undefined titles without throwing', () => {
+    const { panel } = harness(() => {});
+    delete panel.renderNotesList;
+    panel.categories = [];
+    panel.notes = [
+        { id: 1, title: null, content: '1', category: 'catatan', updated_at: '2026-01-01' },
+        { id: 2, title: 'Zeta', content: '2', category: 'catatan', updated_at: '2026-01-02' },
+        { id: 3, title: 'Alpha', content: '3', category: 'catatan', updated_at: '2026-01-03' },
+    ];
+    panel.activeCategory = 'all';
+    panel.currentSort = 'title_asc';
+    let renderedHtml = '';
+    panel.dom.notesList = {
+        set innerHTML(html) { renderedHtml = html; },
+        get innerHTML() { return renderedHtml; },
+        querySelectorAll: () => []
+    };
+
+    assert.doesNotThrow(() => {
+        panel.renderNotesList();
+    });
+    assert.ok(renderedHtml.length > 0);
+});
+
+test('white-box: togglePin, toggleFavorite, duplicate, and export warn user when activeNote is null', async () => {
+    const { panel, messages } = harness(() => {});
+    panel.activeNote = null;
+
+    await panel.togglePinActiveNote();
+    await panel.toggleFavoriteActiveNote();
+    await panel.duplicateActiveNote();
+    await panel.exportActiveNote('md');
+    await panel.openChunkInspector();
+    await panel.verifyChunksIntegrity();
+    panel.toggleMarkdownRawView();
+    panel.togglePlainTextMode();
+    panel.openDeleteConfirmModal();
+
+    const warningMessages = messages.filter(m => m[0]?.includes('Pilih atau buat gulungan catatan'));
+    assert.ok(warningMessages.length >= 7);
+});
+
+
 
 
 

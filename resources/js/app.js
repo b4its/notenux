@@ -1612,6 +1612,10 @@ class NotenuxPanel {
     }
 
     openMarkdownModal() {
+        if (!this.activeNote) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         if (!this.dom.markdownModal) return;
         this.audio.playClick();
         this.dom.markdownModal.classList.remove('hidden');
@@ -2430,6 +2434,13 @@ class NotenuxPanel {
             this.handleEditorInput();
         });
 
+        this.dom.editorArea?.addEventListener('click', (e) => {
+            if (e.target?.closest?.('#empty-state-new-btn') || e.target?.id === 'empty-state-new-btn') {
+                e.preventDefault();
+                this.createNewNote(true);
+            }
+        });
+
         // Interactive Checklist State Persistence
         this.dom.editorArea?.addEventListener('change', (e) => {
             if (e.target && e.target.type === 'checkbox') {
@@ -2514,13 +2525,19 @@ class NotenuxPanel {
         });
 
         this.dom.copyPlainBtn?.addEventListener('click', () => {
-            if (!this.activeNote) return;
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             this.dom.exportMenu?.classList.add('hidden');
             this.copyEntirePlainText();
         });
 
         this.dom.copyMarkdownBtn?.addEventListener('click', async () => {
-            if (!this.activeNote) return;
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             const md = MarkdownEngine.toMarkdown(this.dom.editorArea?.innerHTML || this.activeNote.content || '');
             await this.copyTextToClipboard(md, {
                 message: 'Scroll Markdown copied to clipboard!',
@@ -2532,7 +2549,10 @@ class NotenuxPanel {
         });
 
         this.dom.copyHtmlBtn?.addEventListener('click', async () => {
-            if (!this.activeNote) return;
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             const html = this.dom.editorArea?.innerHTML || this.activeNote.content || '';
             await this.copyTextToClipboard(html, {
                 message: 'Scroll HTML copied to clipboard!',
@@ -2544,7 +2564,10 @@ class NotenuxPanel {
         });
 
         this.dom.copyJsonBtn?.addEventListener('click', async () => {
-            if (!this.activeNote) return;
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             const data = {
                 id: this.activeNote.id,
                 uuid: this.activeNote.uuid,
@@ -2625,31 +2648,55 @@ class NotenuxPanel {
 
         this.dom.undoBtn?.addEventListener('click', (e) => {
             e.preventDefault();
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             this.undo();
         });
 
         this.dom.redoBtn?.addEventListener('click', (e) => {
             e.preventDefault();
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             this.redo();
         });
 
         this.dom.insertTableBtn?.addEventListener('click', (e) => {
             e.preventDefault();
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             this.insertRetroTable();
         });
 
         this.dom.insertTaskBtn?.addEventListener('click', (e) => {
             e.preventDefault();
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             this.insertInteractiveTask();
         });
 
         this.dom.insertMediaBtn?.addEventListener('click', (e) => {
             e.preventDefault();
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             this.insertMedia();
         });
 
         this.dom.markdownPasteBtn?.addEventListener('click', (e) => {
             e.preventDefault();
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
             this.promptMarkdownInput();
         });
 
@@ -2762,6 +2809,10 @@ class NotenuxPanel {
         document.querySelectorAll('[data-command]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                if (!this.activeNote) {
+                    this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                    return;
+                }
                 this.audio.playClick();
                 const command = btn.dataset.command;
                 const value = btn.dataset.value || null;
@@ -2804,6 +2855,10 @@ class NotenuxPanel {
         document.querySelectorAll('[data-color]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                if (!this.activeNote) {
+                    this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                    return;
+                }
                 this.audio.playClick();
                 this.pushUndoSnapshot();
                 const color = btn.dataset.color;
@@ -3750,6 +3805,10 @@ class NotenuxPanel {
     }
 
     toggleMarkdownRawView() {
+        if (!this.activeNote) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         this.toggleFindBar(false);
         this.audio?.playBlip?.();
 
@@ -3781,6 +3840,10 @@ class NotenuxPanel {
     }
 
     togglePlainTextMode(forceState = null) {
+        if (!this.activeNote && forceState !== false) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         this.toggleFindBar(false);
         this.audio?.playBlip?.();
 
@@ -4381,7 +4444,10 @@ class NotenuxPanel {
     }
 
     async togglePinActiveNote() {
-        if (!this.activeNote) return;
+        if (!this.activeNote) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         const note = this.activeNote;
         this.audio.playClick();
 
@@ -4415,7 +4481,10 @@ class NotenuxPanel {
     }
 
     async toggleFavoriteActiveNote() {
-        if (!this.activeNote) return;
+        if (!this.activeNote) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         const note = this.activeNote;
         this.audio.playClick();
 
@@ -4449,7 +4518,10 @@ class NotenuxPanel {
     }
 
     async duplicateActiveNote() {
-        if (!this.activeNote) return;
+        if (!this.activeNote) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         const note = this.activeNote;
         if (!await this.flushNote(note)) return;
         this.audio.playCoin();
@@ -4486,7 +4558,10 @@ class NotenuxPanel {
     }
 
     async exportActiveNote(format) {
-        if (!this.activeNote) return;
+        if (!this.activeNote) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         const note = this.activeNote;
         if (!await this.flushNote(note)) return;
         this.audio.playCoin();
@@ -4495,7 +4570,10 @@ class NotenuxPanel {
     }
 
     async archiveActiveNote() {
-        if (!this.activeNote) return;
+        if (!this.activeNote) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         if (this.categories && !this.categories.some(category => category.slug === 'archive')) {
             this.toast.show('Kategori arsip tidak tersedia. Buat kategori archive terlebih dahulu.', 'warning');
             return;
@@ -4519,7 +4597,7 @@ class NotenuxPanel {
 
     openDeleteConfirmModal() {
         if (!this.activeNote) {
-            this.toast.show('No active scroll selected to banish', 'warning');
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
             return;
         }
 
@@ -4757,13 +4835,18 @@ class NotenuxPanel {
         if (this.dom.noteTitleInput) {
             this.dom.noteTitleInput.value = '';
             this.dom.noteTitleInput.placeholder = 'Belum ada catatan dipilih...';
+            this.dom.noteTitleInput.readOnly = true;
         }
         if (this.dom.editorArea) {
+            this.dom.editorArea.setAttribute?.('contenteditable', 'false');
             this.dom.editorArea.innerHTML = `
                 <div class="flex flex-col items-center justify-center min-h-[300px] text-center text-slate-400 p-8 space-y-3 font-mono select-none">
                     <i class="fa-solid fa-scroll text-4xl text-blue-500/40"></i>
                     <p class="font-bold text-sm text-slate-600 dark:text-slate-300">Belum ada catatan.</p>
-                    <p class="text-xs">Klik tombol <strong>+ Scroll</strong> di bilah navigasi atau tekan <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border text-[10px]">Ctrl+N</kbd> untuk mulai membuat catatan baru.</p>
+                    <p class="text-xs">Klik tombol di bawah atau tekan <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border text-[10px]">Ctrl+N</kbd> untuk mulai membuat catatan baru.</p>
+                    <button type="button" id="empty-state-new-btn" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs px-4 py-2 rounded shadow-[2px_2px_0px_#000] cursor-pointer mt-2 inline-flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Buat Catatan Baru
+                    </button>
                 </div>
             `;
             if (this.dom.editorArea.style) {
@@ -4808,6 +4891,8 @@ class NotenuxPanel {
 
         if (this.dom.noteTitleInput) {
             this.dom.noteTitleInput.value = note.title;
+            this.dom.noteTitleInput.placeholder = 'Judul catatan...';
+            this.dom.noteTitleInput.readOnly = false;
         }
 
         if (this.dom.noteCategorySelect) {
@@ -4815,6 +4900,7 @@ class NotenuxPanel {
         }
 
         if (this.dom.editorArea) {
+            this.dom.editorArea.setAttribute?.('contenteditable', 'true');
             this.dom.editorArea.innerHTML = sanitizeHtml(note.content || '');
             this.initHistory(this.dom.editorArea.innerHTML);
         }
@@ -4919,7 +5005,7 @@ class NotenuxPanel {
         if (this.searchQuery) {
             filtered = filtered.filter(n =>
                 this.searchResultIds?.has(n.id) ||
-                n.title.toLowerCase().includes(this.searchQuery) ||
+                ((n.title || '').toLowerCase().includes(this.searchQuery)) ||
                 (n.content && n.content.toLowerCase().includes(this.searchQuery))
             );
         }
@@ -4939,9 +5025,9 @@ class NotenuxPanel {
 
             switch (this.currentSort) {
                 case 'title_asc':
-                    return a.title.localeCompare(b.title);
+                    return (a.title || '').localeCompare(b.title || '');
                 case 'title_desc':
-                    return b.title.localeCompare(a.title);
+                    return (b.title || '').localeCompare(a.title || '');
                 case 'word_count_desc':
                     return (b.word_count || 0) - (a.word_count || 0);
                 case 'level_desc':
@@ -4962,8 +5048,8 @@ class NotenuxPanel {
             this.dom.notesList.innerHTML = `
                 <div class="p-4 text-center text-xs font-mono text-blue-400/80 border-2 border-dashed border-blue-400/30 rounded-lg">
                     <i class="fa-solid fa-scroll text-xl mb-1 block opacity-50"></i>
-                    [ NO SCROLLS FOUND ]<br>
-                    <span class="text-[10px] opacity-75">Spawn a new scroll above</span>
+                    [ TIDAK ADA CATATAN ]<br>
+                    <span class="text-[10px] opacity-75">Klik + Scroll untuk membuat catatan baru</span>
                 </div>
             `;
             return;
@@ -5729,7 +5815,10 @@ class NotenuxPanel {
 
     /* ---------------- CHUNK INSPECTOR & INTEGRITY AUDITOR ---------------- */
     async openChunkInspector() {
-        if (!this.activeNote) return;
+        if (!this.activeNote) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         const noteId = this.activeNote.id;
         if (this.dirtyNotes.has(this.activeNote.id) && !await this.saveActiveNote()) return;
         if (this.activeNote?.id !== noteId) return;
@@ -5986,7 +6075,10 @@ class NotenuxPanel {
     }
 
     async verifyChunksIntegrity() {
-        if (!this.activeNote) return;
+        if (!this.activeNote) {
+            this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            return;
+        }
         const noteId = this.activeNote.id;
         this.audio.playClick();
 

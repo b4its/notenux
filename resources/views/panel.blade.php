@@ -832,6 +832,7 @@
                                id="note-title-input"
                                placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
                                value="{{ $activeNote->title ?? '' }}"
+                               {{ $activeNote ? '' : 'readonly' }}
                                class="w-full min-w-0 flex-1 text-base sm:text-2xl font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-1"
                                title="Scroll Title">
                     </div>
@@ -1249,7 +1250,7 @@
                     <div id="editor-zoom-wrapper" class="zoom-canvas-container min-h-full flex flex-col">
                         <!-- Rich Editable Canvas -->
                         <div id="editor-content"
-                             contenteditable="true"
+                             contenteditable="{{ $activeNote ? 'true' : 'false' }}"
                              spellcheck="false"
                              class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none min-h-[350px] flex-1 break-words overflow-x-hidden"
                              style="font-family: 'Modern Sans', sans-serif; font-size: 16px;">
@@ -1259,7 +1260,10 @@
                                 <div class="flex flex-col items-center justify-center min-h-[300px] text-center text-slate-400 p-8 space-y-3 font-mono select-none">
                                     <i class="fa-solid fa-scroll text-4xl text-blue-500/40"></i>
                                     <p class="font-bold text-sm text-slate-600 dark:text-slate-300">Belum ada catatan.</p>
-                                    <p class="text-xs">Klik tombol <strong>+ Scroll</strong> di bilah navigasi atau tekan <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border text-[10px]">Ctrl+N</kbd> untuk mulai membuat catatan baru.</p>
+                                    <p class="text-xs">Klik tombol di bawah atau tekan <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border text-[10px]">Ctrl+N</kbd> untuk mulai membuat catatan baru.</p>
+                                    <button type="button" id="empty-state-new-btn" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs px-4 py-2 rounded shadow-[2px_2px_0px_#000] cursor-pointer mt-2 inline-flex items-center gap-2">
+                                        <i class="fa-solid fa-plus"></i> Buat Catatan Baru
+                                    </button>
                                 </div>
                             @endif
                         </div>
