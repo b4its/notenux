@@ -1,11 +1,14 @@
 <?php
 
+use App\Models\Folder;
 use App\Models\Note;
 use App\Models\User;
 use App\Services\NoteChunkService;
 use App\Services\NoteContentSanitizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
@@ -18,7 +21,9 @@ test('security: responses include hardened security headers and omit x-powered-b
         ->assertHeader('X-Content-Type-Options', 'nosniff')
         ->assertHeader('X-XSS-Protection', '1; mode=block')
         ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
-        ->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+        ->assertHeader('Cross-Origin-Opener-Policy', 'same-origin')
+        ->assertHeader('Cross-Origin-Resource-Policy', 'same-origin')
+        ->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), usb=()');
 
     expect($response->headers->has('Content-Security-Policy'))->toBeTrue()
         ->and($response->headers->get('Content-Security-Policy'))->toContain("default-src 'self'")
@@ -82,7 +87,7 @@ test('security: links with target blank automatically receive noopener to preven
     $html = '<a href="https://example.com" target="_blank">External Link</a>';
     $clean = $sanitizer->sanitize($html);
 
-    expect($clean)->toContain('rel="noopener"');
+    expect($clean)->toContain('rel="noopener noreferrer"');
 });
 
 test('security: bulk operations reject arrays exceeding 100 items to prevent denial of service', function () {
@@ -224,4 +229,68 @@ test('performance: landing page does not perform unnecessary queries for private
     $response = $this->get('/');
     $response->assertOk()
         ->assertViewMissing('sampleNotes');
+});
+
+test('security: sensitive dynamic endpoints attach private no-store cache controls', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->getJson('/api/player-stats');
+    $response->assertOk();
+    $cacheHeader = (string) $response->headers->get('Cache-Control');
+    expect($cacheHeader)->toContain('no-store')
+        ->and($cacheHeader)->toContain('private');
+
+    $studioResponse = $this->actingAs($user)->get('/studio');
+    $studioResponse->assertOk();
+    $studioCache = (string) $studioResponse->headers->get('Cache-Control');
+    expect($studioCache)->toContain('no-store')
+        ->and($studioCache)->toContain('private');
+});
+
+test('performance: folder allDescendantIds resolves deep hierarchy in a single indexed query', function () {
+    $user = User::factory()->create();
+    $f1 = Folder::factory()->create(['user_id' => $user->id, 'name' => 'F1']);
+    $f2 = Folder::factory()->create(['user_id' => $user->id, 'parent_id' => $f1->id, 'name' => 'F2']);
+    $f3 = Folder::factory()->create(['user_id' => $user->id, 'parent_id' => $f2->id, 'name' => 'F3']);
+    $f4 = Folder::factory()->create(['user_id' => $user->id, 'parent_id' => $f3->id, 'name' => 'F4']);
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    $descendants = $f1->allDescendantIds();
+
+    $queryCount = count(DB::getQueryLog());
+    expect($queryCount)->toBe(1)
+        ->and($descendants)->toContain($f2->id, $f3->id, $f4->id);
+});
+
+test('security: ai assistant generic exception hides internal server trace and returns 502 with sanitized message', function () {
+    config(['services.ai.key' => 'secret-test', 'services.ai.model' => 'test-model', 'services.ai.base_url' => 'https://ai.example/v1']);
+    Http::preventStrayRequests();
+    Http::fake(function () {
+        throw new RuntimeException('Database server /var/run/mysqld.sock connection refused on internal IP 10.0.0.5');
+    });
+
+    $note = Note::factory()->create();
+    $response = $this->postJson(route('notes.assistant', $note), ['action' => 'improve', 'content' => 'Draft']);
+
+    $response->assertStatus(502)
+        ->assertJsonPath('status', 'error')
+        ->assertJsonPath('message', 'Layanan AI mengalami kendala internal. Silakan coba lagi nanti.')
+        ->assertDontSee('10.0.0.5')
+        ->assertDontSee('mysqld.sock');
+});
+
+test('performance: markdown import and json import default typography to sans', function () {
+    $user = User::factory()->create();
+    $service = app(NoteChunkService::class);
+
+    $mdNote = $service->importMarkdown("# Clean Typography\n\nDefault font test.", 'clean.md', 'catatan', $user);
+    expect($mdNote->font_family)->toBe('sans');
+
+    $jsonNote = $service->importMarkdown(json_encode([
+        'title' => 'JSON Typography Test',
+        'content' => '<p>Test</p>',
+    ]), null, 'catatan', $user);
+    expect($jsonNote->font_family)->toBe('sans');
 });

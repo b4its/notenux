@@ -36,8 +36,12 @@ class SecurityHeadersMiddleware
         // Prevent referrer leakage across domains
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
+        // Cross-Origin isolation headers (Spectre, timing attacks, window.opener protection)
+        $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
+        $response->headers->set('Cross-Origin-Resource-Policy', 'same-origin');
+
         // Restrict sensitive browser APIs
-        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+        $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), usb=()');
 
         // Content Security Policy
         $csp = "default-src 'self'; "
@@ -58,9 +62,12 @@ class SecurityHeadersMiddleware
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
-        // High-performance cache headers for immutable Vite assets
+        // Cache control: High-performance caching for immutable Vite assets, prevent caching of sensitive state
         if ($request->is('build/*')) {
             $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
+        } elseif ($request->is('studio*', 'profile*', 'api/*')) {
+            $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+            $response->headers->set('Pragma', 'no-cache');
         }
 
         return $response;

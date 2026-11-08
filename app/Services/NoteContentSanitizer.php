@@ -57,8 +57,10 @@ class NoteContentSanitizer
 
             if ($tag === 'a' && strtolower((string) $element->getAttribute('target')) === '_blank') {
                 $existingRel = trim((string) $element->getAttribute('rel'));
-                if (! str_contains($existingRel, 'noopener')) {
-                    $element->setAttribute('rel', $existingRel !== '' ? $existingRel.' noopener' : 'noopener');
+                if ($existingRel === '') {
+                    $element->setAttribute('rel', 'noopener noreferrer');
+                } elseif (! str_contains($existingRel, 'noopener')) {
+                    $element->setAttribute('rel', $existingRel.' noopener');
                 }
             }
 

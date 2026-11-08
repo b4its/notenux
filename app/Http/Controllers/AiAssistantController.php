@@ -8,6 +8,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AiAssistantController extends Controller
 {
@@ -64,7 +65,9 @@ class AiAssistantController extends Controller
         } catch (ConnectionException) {
             return response()->json(['status' => 'error', 'message' => 'Koneksi AI gagal atau melewati batas waktu. Silakan coba lagi.'], 504);
         } catch (\Throwable $e) {
-            return response()->json(['status' => 'error', 'message' => 'Layanan AI mengalami kendala: '.$e->getMessage()], 502);
+            Log::warning('AI assistant service error: '.$e->getMessage());
+
+            return response()->json(['status' => 'error', 'message' => 'Layanan AI mengalami kendala internal. Silakan coba lagi nanti.'], 502);
         }
 
         $text = $response->json('choices.0.message.content');

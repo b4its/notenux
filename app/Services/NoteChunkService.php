@@ -344,7 +344,7 @@ class NoteChunkService
                 if (is_array($decoded) && (isset($decoded['content']) || isset($decoded['title']))) {
                     $jsonTitle = ! empty($decoded['title']) ? trim((string) $decoded['title']) : null;
                     $jsonCategory = ! empty($decoded['category']) ? trim((string) $decoded['category']) : ($category ?: 'catatan');
-                    $jsonFont = in_array($decoded['font_family'] ?? '', ['pixel', 'arcade', 'mono', 'sans', 'serif'], true) ? $decoded['font_family'] : 'pixel';
+                    $jsonFont = in_array($decoded['font_family'] ?? '', ['pixel', 'arcade', 'mono', 'sans', 'serif'], true) ? $decoded['font_family'] : 'sans';
                     $jsonFontSize = ! empty($decoded['font_size']) ? (string) $decoded['font_size'] : '16px';
                     $jsonTheme = ! empty($decoded['theme_color']) ? (string) $decoded['theme_color'] : 'blue';
                     $rawHtml = (string) ($decoded['content'] ?? '');
@@ -396,7 +396,7 @@ class NoteChunkService
                 'title' => Str::limit($title, 120, ''),
                 'category' => $validCategory,
                 'content' => '',
-                'font_family' => 'pixel',
+                'font_family' => 'sans',
                 'font_size' => '16px',
                 'theme_color' => 'blue',
             ]);

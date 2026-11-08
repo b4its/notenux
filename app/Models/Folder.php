@@ -107,19 +107,40 @@ class Folder extends Model
     }
 
     /**
-     * Recursively retrieve all descendant folder IDs.
+     * Recursively retrieve all descendant folder IDs in a single indexed query.
      *
      * @return list<int>
      */
     public function allDescendantIds(): array
     {
-        $ids = [];
-        foreach ($this->children as $child) {
-            $ids[] = $child->id;
-            $ids = array_merge($ids, $child->allDescendantIds());
+        $userId = $this->user_id;
+        if (! $userId) {
+            return [];
         }
 
-        return $ids;
+        $allFolders = self::query()
+            ->where('user_id', $userId)
+            ->select('id', 'parent_id')
+            ->get();
+
+        $byParent = [];
+        foreach ($allFolders as $f) {
+            $byParent[$f->parent_id][] = (int) $f->id;
+        }
+
+        $descendants = [];
+        $queue = $byParent[$this->id] ?? [];
+        while (! empty($queue)) {
+            $current = array_shift($queue);
+            $descendants[] = $current;
+            if (isset($byParent[$current])) {
+                foreach ($byParent[$current] as $childId) {
+                    $queue[] = $childId;
+                }
+            }
+        }
+
+        return $descendants;
     }
 
     /**
