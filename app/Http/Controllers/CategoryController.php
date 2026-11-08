@@ -31,6 +31,17 @@ class CategoryController extends Controller
             ->orderBy('name', 'asc')
             ->get();
 
+        if ($categories->isEmpty()) {
+            foreach (Category::defaultCategories() as $def) {
+                Category::firstOrCreate(['slug' => $def['slug']], $def);
+            }
+            $categories = Category::forUser($user)
+                ->withCount('notes')
+                ->orderBy('is_system', 'desc')
+                ->orderBy('name', 'asc')
+                ->get();
+        }
+
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'status' => 'success',
@@ -310,6 +321,8 @@ class CategoryController extends Controller
             'total_words' => $totalWords,
             'total_xp' => $totalXP,
             'total_chunks' => $totalChunks,
+            'pinned_notes' => Note::where('is_pinned', true)->count(),
+            'favorite_notes' => Note::where('is_favorite', true)->count(),
             'level' => $level,
             'progress_percent' => max(5, $percent),
             'progress_xp' => $progressXP,

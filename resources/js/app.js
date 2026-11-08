@@ -2397,31 +2397,32 @@ class NotenuxPanel {
             this.copyEntirePlainText();
         });
 
-        this.dom.copyMarkdownBtn?.addEventListener('click', () => {
+        this.dom.copyMarkdownBtn?.addEventListener('click', async () => {
             if (!this.activeNote) return;
-            this.audio.playCoin();
             const md = MarkdownEngine.toMarkdown(this.dom.editorArea?.innerHTML || this.activeNote.content || '');
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(md);
-                this.toast.show('Scroll Markdown copied to clipboard!', 'success', 'Markdown Copied', 'fa-brands fa-markdown text-cyan-400');
-            }
+            await this.copyTextToClipboard(md, {
+                message: 'Scroll Markdown copied to clipboard!',
+                type: 'success',
+                title: 'Markdown Copied',
+                icon: 'fa-brands fa-markdown text-cyan-400',
+            });
             this.dom.exportMenu?.classList.add('hidden');
         });
 
-        this.dom.copyHtmlBtn?.addEventListener('click', () => {
+        this.dom.copyHtmlBtn?.addEventListener('click', async () => {
             if (!this.activeNote) return;
-            this.audio.playCoin();
             const html = this.dom.editorArea?.innerHTML || this.activeNote.content || '';
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(html);
-                this.toast.show('Scroll HTML copied to clipboard!', 'success', 'HTML Copied', 'fa-solid fa-code text-emerald-400');
-            }
+            await this.copyTextToClipboard(html, {
+                message: 'Scroll HTML copied to clipboard!',
+                type: 'success',
+                title: 'HTML Copied',
+                icon: 'fa-solid fa-code text-emerald-400',
+            });
             this.dom.exportMenu?.classList.add('hidden');
         });
 
-        this.dom.copyJsonBtn?.addEventListener('click', () => {
+        this.dom.copyJsonBtn?.addEventListener('click', async () => {
             if (!this.activeNote) return;
-            this.audio.playCoin();
             const data = {
                 id: this.activeNote.id,
                 uuid: this.activeNote.uuid,
@@ -2436,13 +2437,17 @@ class NotenuxPanel {
                 reading_time: this.activeNote.reading_time,
                 level: this.activeNote.level,
                 xp: this.activeNote.xp,
+                is_pinned: Boolean(this.activeNote.is_pinned),
+                is_favorite: Boolean(this.activeNote.is_favorite),
                 chunks: this.activeNote.chunks || [],
             };
             const jsonText = JSON.stringify(data, null, 2);
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(jsonText);
-                this.toast.show('Scroll JSON copied to clipboard!', 'success', 'JSON Copied', 'fa-solid fa-cube text-purple-400');
-            }
+            await this.copyTextToClipboard(jsonText, {
+                message: 'Scroll JSON copied to clipboard!',
+                type: 'success',
+                title: 'JSON Copied',
+                icon: 'fa-solid fa-cube text-purple-400',
+            });
             this.dom.exportMenu?.classList.add('hidden');
         });
 
@@ -3442,16 +3447,7 @@ class NotenuxPanel {
         }
     }
 
-    async copyEntirePlainText() {
-        let text = '';
-        if (this.isPlainTextMode && this.dom.plainTextEditor) {
-            text = this.dom.plainTextEditor.value;
-        } else if (this.dom.editorArea) {
-            text = this.htmlToPlainText(this.dom.editorArea.innerHTML);
-        } else if (this.activeNote) {
-            text = this.htmlToPlainText(this.activeNote.content || '');
-        }
-
+    async copyTextToClipboard(text, toastOptions = null) {
         let success = false;
         try {
             if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
@@ -3474,9 +3470,34 @@ class NotenuxPanel {
             success = false;
         }
 
-        if (success) {
+        if (success && toastOptions) {
             this.audio?.playCoin?.();
-            this.toast.show('Seluruh teks berhasil disalin ke clipboard!', 'success', 'Teks Disalin', 'fa-solid fa-copy text-emerald-400');
+            this.toast?.show?.(toastOptions.message, toastOptions.type || 'success', toastOptions.title || 'Disalin', toastOptions.icon || 'fa-solid fa-copy text-emerald-400');
+        } else if (!success && toastOptions) {
+            this.toast?.show?.('Gagal menyalin teks ke clipboard.', 'danger', 'Gagal Salin');
+        }
+
+        return success;
+    }
+
+    async copyEntirePlainText() {
+        let text = '';
+        if (this.isPlainTextMode && this.dom.plainTextEditor) {
+            text = this.dom.plainTextEditor.value;
+        } else if (this.dom.editorArea) {
+            text = this.htmlToPlainText(this.dom.editorArea.innerHTML);
+        } else if (this.activeNote) {
+            text = this.htmlToPlainText(this.activeNote.content || '');
+        }
+
+        const success = await this.copyTextToClipboard(text, {
+            message: 'Seluruh teks berhasil disalin ke clipboard!',
+            type: 'success',
+            title: 'Teks Disalin',
+            icon: 'fa-solid fa-copy text-emerald-400',
+        });
+
+        if (success) {
             if (this.dom.plainTextCopyBtn) {
                 const orig = this.dom.plainTextCopyBtn.innerHTML;
                 this.dom.plainTextCopyBtn.innerHTML = '<i class="fa-solid fa-check mr-1 text-white"></i><span>Tersalin!</span>';
@@ -3488,8 +3509,6 @@ class NotenuxPanel {
                     }
                 }, 1500);
             }
-        } else {
-            this.toast.show('Gagal menyalin teks ke clipboard.', 'danger', 'Gagal Salin');
         }
 
         return success;

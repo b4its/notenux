@@ -2126,5 +2126,62 @@ test('white-box: exportActiveNote flushes dirty state and assigns window.locatio
     assert.equal(assignedUrl, '/api/notes/1/export/json');
 });
 
+test('white-box: copyTextToClipboard copies via navigator.clipboard and presents notification toast', async () => {
+    let copiedText = null;
+    const { panel, messages, context } = harness(() => ({ ok: true }));
+    context.navigator = {
+        clipboard: {
+            writeText: async (text) => { copiedText = text; }
+        }
+    };
+
+    const result = await panel.copyTextToClipboard('Arcane Spell Matrix', {
+        message: 'Spells copied!',
+        title: 'Clipboard',
+        icon: 'fa-solid fa-magic'
+    });
+
+    assert.equal(result, true);
+    assert.equal(copiedText, 'Arcane Spell Matrix');
+    assert.ok(messages.some(m => m[0] === 'Spells copied!'));
+});
+
+test('white-box: copyTextToClipboard falls back to document.execCommand when navigator.clipboard is unavailable', async () => {
+    const { panel, messages, context } = harness(() => ({ ok: true }));
+    delete context.navigator;
+
+    let execCmd = null;
+    let appendedChild = null;
+    let removedChild = null;
+
+    context.document.createElement = (tag) => ({
+        tagName: tag,
+        value: '',
+        style: {},
+        focus() {},
+        select() {}
+    });
+    context.document.body = {
+        appendChild(el) { appendedChild = el; return el; },
+        removeChild(el) { removedChild = el; return el; }
+    };
+    context.document.execCommand = (cmd) => {
+        execCmd = cmd;
+        return true;
+    };
+
+    const result = await panel.copyTextToClipboard('Fallback Text', {
+        message: 'Fallback succeeded!',
+        title: 'Clipboard'
+    });
+
+    assert.equal(result, true);
+    assert.equal(execCmd, 'copy');
+    assert.equal(appendedChild.value, 'Fallback Text');
+    assert.equal(removedChild.value, 'Fallback Text');
+    assert.ok(messages.some(m => m[0] === 'Fallback succeeded!'));
+});
+
+
 
 

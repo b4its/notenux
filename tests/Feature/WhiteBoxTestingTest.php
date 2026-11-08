@@ -924,3 +924,38 @@ test('white-box: note controller export generates valid csv with metadata and pl
         ->and($content)->toContain('spellbook')
         ->and($content)->toContain('Yes,Yes');
 });
+
+test('white-box: category controller index seeds default categories when database has no categories', function () {
+    // Delete all categories directly to test auto-seeding
+    Category::query()->delete();
+    expect(Category::count())->toBe(0);
+
+    $controller = app(CategoryController::class);
+    $request = Request::create('/api/categories', 'GET');
+    $request->headers->set('Accept', 'application/json');
+
+    $response = $controller->index($request);
+    expect($response->getStatusCode())->toBe(200);
+
+    $data = $response->getData(true);
+    expect($data['status'])->toBe('success')
+        ->and(count($data['data']))->toBeGreaterThan(0)
+        ->and(Category::where('is_system', true)->count())->toBeGreaterThan(0);
+});
+
+test('white-box: category controller calculatePlayerStats includes pinned and favorite telemetry counts', function () {
+    Note::factory()->create(['is_pinned' => true, 'is_favorite' => false]);
+    Note::factory()->create(['is_pinned' => true, 'is_favorite' => true]);
+    Note::factory()->create(['is_pinned' => false, 'is_favorite' => false]);
+
+    $controller = app(CategoryController::class);
+    $reflection = new ReflectionClass($controller);
+    $method = $reflection->getMethod('calculatePlayerStats');
+    $method->setAccessible(true);
+
+    $stats = $method->invoke($controller);
+    expect($stats)->toHaveKey('pinned_notes')
+        ->and($stats)->toHaveKey('favorite_notes')
+        ->and($stats['pinned_notes'])->toBeGreaterThanOrEqual(2)
+        ->and($stats['favorite_notes'])->toBeGreaterThanOrEqual(1);
+});

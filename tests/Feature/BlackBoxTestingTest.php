@@ -1151,3 +1151,17 @@ test('black-box: user exports note to csv via api and receives downloadable spre
         ->and($csv)->toContain('Arcane Spell Matrix')
         ->and($csv)->toContain('Lightning Bolt');
 });
+
+test('black-box: user visits categories api with empty database and receives auto-seeded default categories', function () {
+    Category::query()->delete();
+    expect(Category::count())->toBe(0);
+
+    $res = $this->getJson('/api/categories');
+    $res->assertOk()
+        ->assertJsonPath('status', 'success');
+
+    $slugs = array_column($res->json('data'), 'slug');
+    expect($slugs)->toContain('catatan')
+        ->and($slugs)->toContain('quest')
+        ->and($slugs)->toContain('spellbook');
+});
