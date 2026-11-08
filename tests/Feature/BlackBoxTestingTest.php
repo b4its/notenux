@@ -2020,3 +2020,21 @@ test('black-box: studio layout incorporates responsive container constraints, to
         ->assertSee('delete-note-btn', false)
         ->assertSee('save-now-btn', false);
 });
+
+test('black-box: studio layout features dynamic island floating capsule, sliding tool tray, and full-size editor canvas', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('studio'));
+
+    $response->assertOk()
+        ->assertSee('studio-dynamic-island', false)
+        ->assertSee('dynamic-island-capsule', false)
+        ->assertSee('dynamic-island-toggle-btn', false)
+        ->assertSee('dynamic-island-tray', false)
+        ->assertSee('dynamic-island-slide-tray', false)
+        ->assertSee('island-chevron-icon', false)
+        ->assertSee('island-chips-track', false)
+        ->assertSee('island-chip-btn', false)
+        ->assertSee('editor-canvas-card', false)
+        ->assertSee('editor-deck-operations', false);
+});

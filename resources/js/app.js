@@ -1035,6 +1035,18 @@ class NotenuxPanel {
             markdownPasteBtn: document.getElementById('markdown-paste-btn'),
             markdownViewToggleBtn: document.getElementById('markdown-view-toggle-btn'),
             editorToolbarDecks: document.getElementById('editor-toolbar-decks'),
+            editorDeck1: document.getElementById('editor-deck-1'),
+            editorDeck2: document.getElementById('editor-deck-2'),
+            editorDeckOperations: document.getElementById('editor-deck-operations'),
+            dynamicIslandContainer: document.getElementById('studio-dynamic-island'),
+            dynamicIslandTray: document.getElementById('dynamic-island-tray'),
+            dynamicIslandToggleBtn: document.getElementById('dynamic-island-toggle-btn'),
+            islandChevronIcon: document.getElementById('island-chevron-icon'),
+            islandCloseBtn: document.getElementById('island-close-btn'),
+            islandChipsTrack: document.getElementById('island-chips-track'),
+            islandScrollLeftBtn: document.getElementById('island-scroll-left-btn'),
+            islandScrollRightBtn: document.getElementById('island-scroll-right-btn'),
+            editorCanvasCard: document.getElementById('editor-canvas-card'),
             plainTextToggleBtn: document.getElementById('plain-text-toggle-btn'),
             plainTextContainer: document.getElementById('plain-text-container'),
             plainTextEditor: document.getElementById('plain-text-editor'),
@@ -1170,6 +1182,7 @@ class NotenuxPanel {
         this.initSoundToggle();
         this.initZoom();
         this.initEditorToolbar();
+        this.initDynamicIsland();
         this.initPasteInterceptor();
         this.initTableToolkit();
         this.initImageToolkit();
@@ -1192,6 +1205,126 @@ class NotenuxPanel {
         });
         this.loadNotesFromDOM();
         this.refreshPlayerStats();
+    }
+
+    /* ---------------- DYNAMIC ISLAND ENGINE ---------------- */
+    initDynamicIsland() {
+        if (!this.dom.dynamicIslandToggleBtn || !this.dom.dynamicIslandTray) return;
+
+        this.dom.dynamicIslandToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggleDynamicIsland();
+        });
+
+        if (this.dom.islandCloseBtn) {
+            this.dom.islandCloseBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.closeDynamicIsland();
+            });
+        }
+
+        // Horizontal mouse wheel scrolling over tools and chips track ("munculnya digulir, dan itu interaktif")
+        const scrollableElements = [
+            this.dom.editorDeck1,
+            this.dom.editorDeck2,
+            this.dom.islandChipsTrack,
+            this.dom.editorDeckOperations,
+        ];
+        scrollableElements.forEach(el => {
+            if (!el) return;
+            el.addEventListener('wheel', (e) => {
+                if (e.deltaY !== 0 && !e.shiftKey) {
+                    e.preventDefault();
+                    el.scrollLeft += e.deltaY;
+                }
+            }, { passive: false });
+        });
+
+        // Horizontal scroll track buttons
+        if (this.dom.islandScrollLeftBtn) {
+            this.dom.islandScrollLeftBtn.addEventListener('click', () => {
+                if (this.dom.islandChipsTrack) this.dom.islandChipsTrack.scrollBy({ left: -160, behavior: 'smooth' });
+                if (this.dom.editorDeck1) this.dom.editorDeck1.scrollBy({ left: -160, behavior: 'smooth' });
+                if (this.dom.editorDeck2) this.dom.editorDeck2.scrollBy({ left: -160, behavior: 'smooth' });
+                if (this.dom.editorDeckOperations) this.dom.editorDeckOperations.scrollBy({ left: -160, behavior: 'smooth' });
+            });
+        }
+
+        if (this.dom.islandScrollRightBtn) {
+            this.dom.islandScrollRightBtn.addEventListener('click', () => {
+                if (this.dom.islandChipsTrack) this.dom.islandChipsTrack.scrollBy({ left: 160, behavior: 'smooth' });
+                if (this.dom.editorDeck1) this.dom.editorDeck1.scrollBy({ left: 160, behavior: 'smooth' });
+                if (this.dom.editorDeck2) this.dom.editorDeck2.scrollBy({ left: 160, behavior: 'smooth' });
+                if (this.dom.editorDeckOperations) this.dom.editorDeckOperations.scrollBy({ left: 160, behavior: 'smooth' });
+            });
+        }
+
+        // Chip navigation for quick section scrolling
+        const chips = document.querySelectorAll('.island-chip-btn');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const section = chip.getAttribute('data-island-section');
+                if (section === 'formatting' && this.dom.editorDeck1) {
+                    this.dom.editorDeck1.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                } else if (section === 'inserts') {
+                    const inserts = document.getElementById('editor-deck-2-inserts');
+                    if (inserts) {
+                        inserts.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                    } else if (this.dom.editorDeck2) {
+                        this.dom.editorDeck2.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                    }
+                } else if (section === 'studio') {
+                    const palette = document.getElementById('editor-deck-2-palette');
+                    if (palette) {
+                        palette.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                    } else if (this.dom.editorDeck2) {
+                        this.dom.editorDeck2.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                    }
+                } else if (section === 'operations' && this.dom.editorDeckOperations) {
+                    this.dom.editorDeckOperations.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                }
+            });
+        });
+    }
+
+    openDynamicIsland() {
+        if (!this.dom.dynamicIslandTray) return;
+        this.dom.dynamicIslandTray.classList.remove('collapsed');
+        if (this.dom.dynamicIslandToggleBtn) {
+            this.dom.dynamicIslandToggleBtn.setAttribute('aria-expanded', 'true');
+        }
+        if (this.dom.islandChevronIcon) {
+            this.dom.islandChevronIcon.classList.add('rotate-180');
+        }
+        if (this.dom.dynamicIslandContainer) {
+            this.dom.dynamicIslandContainer.classList.add('island-expanded');
+        }
+    }
+
+    closeDynamicIsland() {
+        if (!this.dom.dynamicIslandTray) return;
+        this.dom.dynamicIslandTray.classList.add('collapsed');
+        if (this.dom.dynamicIslandToggleBtn) {
+            this.dom.dynamicIslandToggleBtn.setAttribute('aria-expanded', 'false');
+        }
+        if (this.dom.islandChevronIcon) {
+            this.dom.islandChevronIcon.classList.remove('rotate-180');
+        }
+        if (this.dom.dynamicIslandContainer) {
+            this.dom.dynamicIslandContainer.classList.remove('island-expanded');
+        }
+    }
+
+    toggleDynamicIsland() {
+        if (!this.dom.dynamicIslandTray) return;
+        if (this.dom.dynamicIslandTray.classList.contains('collapsed')) {
+            this.openDynamicIsland();
+        } else {
+            this.closeDynamicIsland();
+        }
     }
 
     initAiAssistant() {
@@ -2199,6 +2332,13 @@ class NotenuxPanel {
                 return;
             }
 
+            // Toggle Dynamic Island Tools: Alt + T
+            if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 't') {
+                e.preventDefault();
+                this.toggleDynamicIsland();
+                return;
+            }
+
             // Chunk Inspector: Ctrl + Alt + C
             if ((e.ctrlKey || e.metaKey) && e.altKey && e.key.toLowerCase() === 'c') {
                 e.preventDefault();
@@ -2237,6 +2377,9 @@ class NotenuxPanel {
                 if (this.dom.exportMenu) this.dom.exportMenu.classList.add('hidden');
                 if (this.dom.imageToolkitBar) this.dom.imageToolkitBar.classList.add('hidden');
                 if (this.dom.tableToolkitBar) this.dom.tableToolkitBar.classList.add('hidden');
+                if (this.dom.dynamicIslandTray && !this.dom.dynamicIslandTray.classList.contains('collapsed')) {
+                    this.closeDynamicIsland();
+                }
                 if (document.body.classList.contains('zen-mode')) {
                     this.toggleZenMode();
                 }

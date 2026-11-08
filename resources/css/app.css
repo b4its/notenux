@@ -822,4 +822,91 @@ figcaption.retro-image-caption {
     }
 }
 
+/* ============================================================================== */
+/* DYNAMIC ISLAND COMPONENT & SLIDE ANIMATIONS */
+/* ============================================================================== */
+.dynamic-island-container {
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dynamic-island-capsule {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.dynamic-island-container.island-expanded .dynamic-island-capsule {
+    border-bottom-left-radius: 1rem;
+    border-bottom-right-radius: 1rem;
+}
+
+.dynamic-island-slide-tray {
+    transform-origin: top center;
+    transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.28s ease,
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                margin 0.3s ease,
+                padding 0.3s ease;
+    overflow: hidden;
+}
+
+.dynamic-island-slide-tray.collapsed {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    transform: translateY(-12px) scale(0.98) !important;
+    pointer-events: none !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-width: 0 !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.dynamic-island-slide-tray:not(.collapsed) {
+    max-height: 850px !important;
+    opacity: 1 !important;
+    transform: translateY(0) scale(1) !important;
+    pointer-events: auto !important;
+}
+
+/* Horizontal Chip Navigation ("munculnya digulir, dan itu interaktif") */
+.island-chip-btn {
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island-chip-btn:hover {
+    transform: translateY(-1px);
+}
+
+.island-chip-btn.active {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border-color: #1d4ed8 !important;
+    box-shadow: 2px 2px 0px #000 !important;
+}
+
+.dark .island-chip-btn.active {
+    background-color: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 2px 2px 0px #000 !important;
+}
+
+.island-tool-deck {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Dynamic Island Rotate Chevron Animation */
+#island-chevron-icon {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Full Size Canvas Card Transition */
+#editor-canvas-card {
+    transition: padding 0.25s ease, border-color 0.25s ease;
+}
+
 

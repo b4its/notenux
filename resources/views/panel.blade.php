@@ -360,8 +360,14 @@
                     </button>
                 </form>
 
-                <!-- Hidden inspect chunks button for test assertion compatibility -->
-                <button id="inspect-chunks-btn" class="hidden" style="display: none;" aria-hidden="true" tabindex="-1"></button>
+                <!-- Hidden inspect chunks button replaced with functional Shards button -->
+                <button type="button"
+                        id="inspect-chunks-btn"
+                        class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center border border-black/20 dark:border-blue-900"
+                        title="Database Shard Telemetry & Integrity Audit">
+                    <i class="fa-solid fa-cubes text-cyan-600 dark:text-cyan-400 sm:mr-1"></i>
+                    <span class="hidden sm:inline">CHUNKS</span>
+                </button>
             </div>
         </div>
     </header>
@@ -500,8 +506,6 @@
                                title="Tugas">
                                 <i class="fa-solid fa-list-check text-emerald-500 text-sm w-4 text-center shrink-0"></i>
                                 <span class="nav-text-label font-bold">Tugas</span>
-                            </a>
-                        </div>
                             </a>
                         </div>
                     @endif
@@ -679,468 +683,485 @@
         <!-- ============================================================================== -->
         <!-- MAIN PANEL & EDITABLE WORKSPACE WITH ZOOM & MARKDOWN SUPPORT -->
         <!-- ============================================================================== -->
-        <main class="flex-1 flex flex-col overflow-y-auto overflow-x-hidden p-2 sm:p-5 lg:p-6 bg-[var(--bg-main)] min-w-0 max-w-full">
-            <div class="max-w-5xl w-full mx-auto flex-1 flex flex-col space-y-2.5 sm:space-y-3 min-w-0 max-w-full">
+        <main class="flex-1 flex flex-col overflow-y-auto overflow-x-hidden p-2 sm:p-4 lg:p-6 bg-[var(--bg-main)] min-w-0 max-w-full">
+            <div class="w-full mx-auto flex-1 flex flex-col space-y-2.5 sm:space-y-3 min-w-0 max-w-full h-full">
 
                 <!-- ============================================================================== -->
-                <!-- COMMAND DECK: SCROLL IDENTITY & HUD TELEMETRY BAR -->
+                <!-- DYNAMIC ISLAND: FLOATING ADAPTIVE RETRO-MODERN HUD & COMMAND CAPSULE -->
                 <!-- ============================================================================== -->
-                <div class="arcade-card p-2.5 sm:p-4 rounded-xl flex flex-col gap-2.5 shadow-[4px_4px_0px_#000] min-w-0 max-w-full">
-                    <!-- Tier 1: Category Badge & Core Action Command Deck -->
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-black/10 dark:border-white/10 w-full min-w-0">
-                        <!-- Category Selector & Quick Actions -->
-                        <div class="flex items-center justify-between sm:justify-start gap-1.5 bg-surface-alt px-2 sm:px-2.5 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] w-full sm:w-auto min-w-0">
-                            <div class="flex items-center gap-1.5 min-w-0 flex-1 sm:flex-initial">
-                                <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
-                                <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer w-full sm:max-w-[200px] min-w-0 truncate">
-                                    @if(isset($categories) && $categories->isNotEmpty())
-                                        @foreach($categories as $category)
-                                            <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
-                                        @endforeach
-                                    @else
-                                        <option value="catatan">[CATATAN] Catatan</option>
-                                        <option value="tugas">[TUGAS] Tugas</option>
-                                    @endif
-                                </select>
+                <div id="studio-dynamic-island" class="dynamic-island-container sticky top-0 z-30 w-full transition-all duration-300">
+                    <!-- Island Capsule Pill (Compact Header / Always Visible & Interactive) -->
+                    <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex flex-col gap-2 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
+                        <!-- Capsule Main Row: Quick Identity, Live Telemetry & Island Controls -->
+                        <div class="flex items-center justify-between gap-2 w-full min-w-0">
+                            <!-- Left: Scroll Icon & Unconstrained Title & Category Pill -->
+                            <div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
+                                <!-- Retro Scroll Pill Icon -->
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
+                                    <i class="fa-solid fa-scroll text-sm text-blue-600 dark:text-cyan-400"></i>
+                                </div>
+
+                                <!-- Scroll Title (Full Width, Unconstrained & Interactive) -->
+                                <input type="text"
+                                       id="note-title-input"
+                                       placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
+                                       value="{{ $activeNote->title ?? '' }}"
+                                       {{ $activeNote ? '' : 'readonly' }}
+                                       class="min-w-0 flex-1 text-sm sm:text-lg font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-0.5 truncate"
+                                       title="Scroll Title">
+
+                                <!-- Compact Category Pill Dropdown -->
+                                <div class="hidden md:flex items-center gap-1 bg-surface-alt px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                    <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
+                                    <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer max-w-[140px] truncate">
+                                        @if(isset($categories) && $categories->isNotEmpty())
+                                            @foreach($categories as $category)
+                                                <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
+                                            @endforeach
+                                        @else
+                                            <option value="catatan">[CATATAN] Catatan</option>
+                                            <option value="tugas">[TUGAS] Tugas</option>
+                                        @endif
+                                    </select>
+                                </div>
                             </div>
 
-                            <!-- Quick Category Controls: Edit, Delete, Forge -->
-                            <div class="flex items-center gap-1 pl-1.5 border-l border-black/20 dark:border-blue-800 shrink-0">
-                                <button type="button"
-                                        id="quick-edit-category-btn"
-                                        class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-blue-900 text-cyan-600 dark:text-cyan-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
-                                        title="Edit Selected Category">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <button type="button"
-                                        id="quick-delete-category-btn"
-                                        class="arcade-btn bg-surface hover:bg-rose-200 dark:hover:bg-rose-950 text-rose-500 dark:text-rose-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
-                                        title="Delete Selected Category">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                                <button type="button"
-                                        id="quick-forge-category-btn"
-                                        class="arcade-btn bg-surface hover:bg-emerald-200 dark:hover:bg-emerald-950 text-emerald-600 dark:text-emerald-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
-                                        title="Forge New Category">
-                                    <i class="fa-solid fa-plus"></i>
+                            <!-- Center/Right: Live Telemetry HUD Badges -->
+                            <div class="hidden xl:flex items-center gap-1.5 font-mono text-xs shrink-0">
+                                <!-- Word & Reading Badges -->
+                                <span id="word-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold flex items-center shrink-0">
+                                    <i class="fa-solid fa-pen-nib mr-1 text-blue-600 dark:text-blue-400"></i> 0 Words
+                                </span>
+                                <span id="char-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold hidden 2xl:inline-flex items-center shrink-0">
+                                    <i class="fa-solid fa-font mr-1 text-blue-600 dark:text-blue-400"></i> 0 Chars
+                                </span>
+                                <span id="reading-time-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold flex items-center shrink-0">
+                                    <i class="fa-solid fa-clock mr-1 text-blue-600 dark:text-cyan-400"></i> 1m Read
+                                </span>
+
+                                <!-- Created & Updated Badges -->
+                                <span id="scroll-created-badge"
+                                      class="px-1.5 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[10px] hidden 2xl:inline-flex items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0"
+                                      title="Waktu Gulungan Ini Dibuat">
+                                    <i class="fa-solid fa-calendar-plus text-blue-600 dark:text-cyan-400"></i>
+                                    <span id="scroll-created-text">Dibuat: -</span>
+                                </span>
+                                <span id="scroll-updated-badge"
+                                      class="px-1.5 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[10px] inline-flex items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0"
+                                      title="Waktu Gulungan Ini Terakhir Diperbarui">
+                                    <i class="fa-solid fa-clock-rotate-left text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+                                    <span id="scroll-updated-text" class="truncate max-w-[130px]">Diperbarui: -</span>
+                                </span>
+
+                                <!-- Quest Goal Tracker Pill -->
+                                <div class="flex items-center gap-1 bg-surface-alt px-1.5 py-0.5 rounded border border-black/20 dark:border-blue-900 text-[11px] font-mono shadow-[1px_1px_0px_#000] shrink-0">
+                                    <i class="fa-solid fa-bullseye text-amber-600 dark:text-amber-400"></i>
+                                    <span id="quest-goal-text" class="font-bold text-slate-900 dark:text-slate-100">Goal: 0/250w</span>
+                                    <select id="quest-goal-select" class="no-retro-select bg-transparent border-0 text-[10px] focus:outline-none ml-0.5 cursor-pointer font-bold text-slate-900 dark:text-slate-100 opacity-90 hover:opacity-100">
+                                        <option value="100">100w</option>
+                                        <option value="250" selected>250w</option>
+                                        <option value="500">500w</option>
+                                        <option value="1000">1000w</option>
+                                    </select>
+                                </div>
+
+                                <!-- Save Status Indicator -->
+                                <span id="save-status-text" class="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 flex items-center gap-1 font-bold shrink-0">
+                                    <i class="fa-solid fa-circle-check"></i> Synchronized
+                                </span>
+                                <button id="chunk-count-badge"
+                                        type="button"
+                                        class="arcade-btn bg-surface hover:bg-cyan-100 dark:hover:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-black/20 dark:border-cyan-800 shadow-[1px_1px_0px_#000] cursor-pointer flex items-center gap-1 shrink-0"
+                                        title="Audit Database Chunks & Shards Telemetry">
+                                    <i class="fa-solid fa-cubes text-cyan-600 dark:text-cyan-400"></i>
+                                    <span>0 Chunks</span>
                                 </button>
                             </div>
-                        </div>
 
-                        <!-- Action Buttons -->
-                        <div class="flex flex-col xs:flex-row sm:flex-row items-stretch xs:items-center sm:items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto min-w-0">
-                            <!-- 6 Action Icons Group -->
-                            <div class="flex items-center justify-between sm:justify-start gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] w-full sm:w-auto overflow-x-auto no-scrollbar shrink-0">
+                            <!-- Right: Quick Essential Actions + Dynamic Island Toggle Button -->
+                            <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
                                 <!-- Favorite Bookmark -->
                                 <button id="favorite-note-btn"
-                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs flex items-center justify-center shrink-0"
+                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs flex items-center justify-center shrink-0"
                                         title="Toggle Favorite Bookmark">
                                     <i class="fa-regular fa-star text-amber-600 dark:text-yellow-400"></i>
                                 </button>
 
                                 <!-- Pin Button -->
                                 <button id="pin-note-btn"
-                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center shrink-0"
+                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs font-mono flex items-center justify-center shrink-0"
                                         title="Toggle Pinned Note">
                                     <i class="fa-solid fa-thumbtack"></i>
                                 </button>
 
-                                <!-- Duplicate Button -->
-                                <button id="duplicate-note-btn"
-                                        class="arcade-btn bg-surface hover:bg-cyan-100 dark:hover:bg-cyan-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Duplicate Scroll">
-                                    <i class="fa-solid fa-clone text-blue-600 dark:text-cyan-400"></i>
+                                <!-- Save Now Button -->
+                                <button id="save-now-btn"
+                                        class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center shrink-0"
+                                        title="Simpan naskah catatan sekarang">
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE
                                 </button>
 
-                                <!-- Export Dropdown -->
-                                <div class="relative inline-block text-left shrink-0" id="export-dropdown-wrapper">
-                                    <button id="export-note-btn"
-                                            class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center"
-                                            title="Export Scroll">
-                                        <i class="fa-solid fa-file-arrow-down text-blue-600 dark:text-blue-400"></i>
+                                <!-- Dynamic Island Slide Toggle Button -->
+                                <button type="button"
+                                        id="dynamic-island-toggle-btn"
+                                        class="arcade-btn bg-blue-700 hover:bg-blue-600 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 transition-colors"
+                                        title="Buka / Tutup Dynamic Island Tools (Alt+T)"
+                                        aria-expanded="false"
+                                        aria-controls="dynamic-island-tray">
+                                    <i class="fa-solid fa-layer-group text-cyan-300"></i>
+                                    <span class="hidden sm:inline font-pixel text-[10px]">TOOLS</span>
+                                    <i id="island-chevron-icon" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Island Sliding Tray (Animasi slide-down fluid & horizontal scrollable rails) -->
+                    <div id="dynamic-island-tray"
+                         class="collapsed dynamic-island-slide-tray arcade-card mt-2 p-2.5 sm:p-3 rounded-2xl flex flex-col gap-2.5 shadow-[4px_4px_0px_#000] backdrop-blur-lg bg-[var(--bg-surface)]/98 border-2 border-black dark:border-cyan-500/80 min-w-0 max-w-full">
+
+                        <!-- Interactive Category Chips ("munculnya digulir, dan itu interaktif") -->
+                        <div class="flex items-center justify-between gap-2 pb-2 border-b border-black/10 dark:border-white/10 w-full min-w-0">
+                            <!-- Category Chips Carousel / Track -->
+                            <div id="island-chips-track" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth touch-pan-x flex-1 min-w-0 py-0.5">
+                                <button type="button" data-island-section="all" class="island-chip-btn active px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-cyan-500/40 bg-blue-600 text-white shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-border-all text-[11px]"></i>
+                                    <span>Semua Tools</span>
+                                </button>
+                                <button type="button" data-island-section="formatting" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-font text-blue-600 dark:text-cyan-400 text-[11px]"></i>
+                                    <span>✍️ Teks & Format</span>
+                                </button>
+                                <button type="button" data-island-section="inserts" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-table-cells text-emerald-600 dark:text-emerald-400 text-[11px]"></i>
+                                    <span>🧱 Tabel & Sisipan</span>
+                                </button>
+                                <button type="button" data-island-section="studio" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-purple-600 dark:text-purple-400 text-[11px]"></i>
+                                    <span>⚡ Mode & Studio</span>
+                                </button>
+                                <button type="button" data-island-section="operations" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-box-archive text-amber-600 dark:text-amber-400 text-[11px]"></i>
+                                    <span>📊 Arsip & Operasi</span>
+                                </button>
+                            </div>
+
+                            <!-- Scroll Arrows & Close Island Button -->
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button type="button" id="island-scroll-left-btn" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded flex items-center justify-center text-[10px]" title="Scroll Tools Left">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button type="button" id="island-scroll-right-btn" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded flex items-center justify-center text-[10px]" title="Scroll Tools Right">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                                <button type="button" id="island-close-btn" class="arcade-btn bg-surface hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-500 w-6 h-6 rounded flex items-center justify-center text-[10px] ml-1" title="Tutup Dynamic Island (Esc / Alt+T)">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- The Horizontally Scrollable Tool Decks -->
+                        <div id="editor-toolbar-decks" class="flex flex-col gap-2 min-w-0 max-w-full">
+                            <!-- Toolbar Deck 1: Typography & Inline Formatting -->
+                            <div id="editor-deck-1" class="island-tool-deck flex items-center gap-1 sm:gap-1.5 pb-2 border-b border-black/10 dark:border-white/10 overflow-x-auto no-scrollbar scroll-smooth touch-pan-x flex-nowrap sm:flex-wrap w-full min-w-0">
+                                <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:flex-wrap">
+                                    <!-- Font Family & Size Combined Pill -->
+                                    <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                        <i class="fa-solid fa-font text-blue-500 dark:text-cyan-400 text-xs px-0.5 shrink-0"></i>
+                                        <select id="font-family-select"
+                                                class="bg-white dark:bg-black/50 border border-black/30 dark:border-blue-800 rounded px-1.5 py-0.5 text-xs font-mono focus:outline-none focus:border-cyan-400 max-w-[125px] sm:max-w-[145px]">
+                                            <option value="pixel">Pixel (Press Start 2P)</option>
+                                            <option value="arcade">Arcade (VT323)</option>
+                                            <option value="mono">Cyber Mono (Fira Code)</option>
+                                            <option value="sans">Modern Sans (Instrument)</option>
+                                            <option value="serif">Grimoire (Merriweather)</option>
+                                        </select>
+                                        <span class="text-black/30 dark:text-white/30 text-xs">|</span>
+                                        <select id="font-size-select"
+                                                class="bg-white dark:bg-black/50 border border-black/30 dark:border-blue-800 rounded px-1 py-0.5 text-xs font-mono focus:outline-none focus:border-cyan-400 w-16">
+                                            <option value="12px">12px</option>
+                                            <option value="14px">14px</option>
+                                            <option value="16px" selected>16px</option>
+                                            <option value="18px">18px</option>
+                                            <option value="20px">20px</option>
+                                            <option value="24px">24px</option>
+                                            <option value="28px">28px</option>
+                                            <option value="32px">32px</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Undo & Redo -->
+                                    <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                        <button id="editor-undo-btn" data-command="undo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Undo (Ctrl+Z)">
+                                            <i class="fa-solid fa-rotate-left"></i>
+                                        </button>
+                                        <button id="editor-redo-btn" data-command="redo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Redo (Ctrl+Y / Ctrl+Shift+Z)">
+                                            <i class="fa-solid fa-rotate-right"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Bold, Italic, Underline, Strikethrough, Link, Unlink -->
+                                    <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                        <button data-command="bold" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs font-bold flex items-center justify-center shrink-0" title="Bold (Ctrl+B)">
+                                            <i class="fa-solid fa-bold"></i>
+                                        </button>
+                                        <button data-command="italic" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs italic flex items-center justify-center shrink-0" title="Italic (Ctrl+I)">
+                                            <i class="fa-solid fa-italic"></i>
+                                        </button>
+                                        <button data-command="underline" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs underline flex items-center justify-center shrink-0" title="Underline (Ctrl+U)">
+                                            <i class="fa-solid fa-underline"></i>
+                                        </button>
+                                        <button data-command="strikeThrough" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs line-through flex items-center justify-center shrink-0" title="Strikethrough">
+                                            <i class="fa-solid fa-strikethrough"></i>
+                                        </button>
+                                        <button data-command="createLink" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Sisipkan Tautan / Hyperlink">
+                                            <i class="fa-solid fa-link"></i>
+                                        </button>
+                                        <button data-command="unlink" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Hapus Tautan">
+                                            <i class="fa-solid fa-link-slash"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Headings -->
+                                    <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                        <button data-command="formatBlock" data-value="h1" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 h-7 rounded text-xs font-bold shrink-0" title="Heading 1">H1</button>
+                                        <button data-command="formatBlock" data-value="h2" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 h-7 rounded text-xs font-bold shrink-0" title="Heading 2">H2</button>
+                                        <button data-command="formatBlock" data-value="h3" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 h-7 rounded text-xs font-bold shrink-0" title="Heading 3">H3</button>
+                                        <button data-command="formatBlock" data-value="p" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 h-7 rounded text-xs font-bold shrink-0" title="Paragraph">P</button>
+                                    </div>
+                                </div>
+
+                                <!-- Right: Alignment & Clear -->
+                                <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:ml-auto">
+                                    <!-- Alignment -->
+                                    <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                        <button data-command="justifyLeft" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Align Left">
+                                            <i class="fa-solid fa-align-left"></i>
+                                        </button>
+                                        <button data-command="justifyCenter" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Align Center">
+                                            <i class="fa-solid fa-align-center"></i>
+                                        </button>
+                                        <button data-command="justifyRight" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Align Right">
+                                            <i class="fa-solid fa-align-right"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Clear Formatting / Content -->
+                                    <button id="clear-editor-btn" type="button" class="arcade-btn bg-surface hover:bg-rose-200 dark:hover:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold px-2 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0" title="Bersihkan format teks atau kosongkan catatan">
+                                        <i class="fa-solid fa-broom mr-1"></i> CLEAR
                                     </button>
-                                    <div id="export-menu" class="hidden absolute right-0 mt-1 w-44 bg-[var(--bg-surface)] border-2 border-black rounded-lg shadow-[3px_3px_0px_#000] z-50 p-1 font-mono text-xs">
-                                        <button data-export-format="md" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-brands fa-markdown text-blue-600 dark:text-blue-400"></i> Markdown (.md)
+                                </div>
+                            </div>
+
+                            <!-- Toolbar Deck 2: Structural Blocks, Inserts, Studio Tools, Palette & Canvas Zoom -->
+                            <div id="editor-deck-2" class="island-tool-deck flex items-center gap-1 sm:gap-1.5 pb-2 border-b border-black/10 dark:border-white/10 overflow-x-auto no-scrollbar scroll-smooth touch-pan-x flex-nowrap sm:flex-wrap w-full min-w-0">
+                                <!-- Notepad Mode Active Banner (Visible only in Notepad mode) -->
+                                <div id="notepad-mode-banner" class="hidden items-center gap-2 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-500/60 rounded-lg px-2.5 py-1 text-xs font-mono text-emerald-900 dark:text-emerald-300 shadow-[1px_1px_0px_#000] w-full">
+                                    <i class="fa-solid fa-file-lines text-emerald-600 dark:text-emerald-400"></i>
+                                    <span class="font-bold">MODE NOTEPAD</span>
+                                    <span class="hidden md:inline text-black/60 dark:text-emerald-400/80">— Teks biasa murni tanpa format, siap disalin kapan saja.</span>
+                                </div>
+
+                                <div id="editor-deck-2-inserts" class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:flex-wrap">
+                                    <!-- Lists & Structure -->
+                                    <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                        <button data-command="insertUnorderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Bullet List">
+                                            <i class="fa-solid fa-list-ul"></i>
                                         </button>
-                                        <button data-export-format="html" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-code text-blue-600 dark:text-cyan-400"></i> HTML (.html)
+                                        <button data-command="insertOrderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Numbered List">
+                                            <i class="fa-solid fa-list-ol"></i>
                                         </button>
-                                        <button data-export-format="txt" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-file-lines text-amber-600 dark:text-amber-400"></i> Text (.txt)
+                                        <button data-command="formatBlock" data-value="blockquote" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Quote Block">
+                                            <i class="fa-solid fa-quote-left"></i>
                                         </button>
-                                        <button data-export-format="csv" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-file-csv text-emerald-600 dark:text-emerald-400"></i> CSV Table (.csv)
+                                        <button data-command="formatBlock" data-value="pre" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0" title="Code Block">
+                                            <i class="fa-solid fa-code"></i>
                                         </button>
-                                        <button data-export-format="json" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-file-code text-cyan-600 dark:text-cyan-400"></i> JSON Backup (.json)
+                                        <button data-command="insertHorizontalRule" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Divider Line">
+                                            <i class="fa-solid fa-minus"></i>
                                         </button>
-                                        <div class="border-t border-black/20 my-1"></div>
-                                        <button id="copy-plain-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-file-lines text-amber-600 dark:text-amber-400"></i> Copy Plain Text
+                                    </div>
+
+                                    <!-- Content Inserts -->
+                                    <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                        <button id="insert-table-btn"
+                                                class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
+                                                title="Insert 3x4 Retro Data Table">
+                                            <i class="fa-solid fa-table mr-1"></i> TABLE
                                         </button>
-                                        <button id="copy-markdown-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-copy text-blue-600 dark:text-cyan-400"></i> Copy Markdown
+                                        <button id="insert-task-btn"
+                                                class="arcade-btn bg-blue-700 hover:bg-blue-600 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
+                                                title="Insert Interactive Quest Checklist">
+                                            <i class="fa-solid fa-square-check mr-1"></i> TASK
                                         </button>
-                                        <button id="copy-html-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-code text-emerald-600 dark:text-emerald-400"></i> Copy HTML
-                                        </button>
-                                        <button id="copy-json-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
-                                            <i class="fa-solid fa-cube text-purple-600 dark:text-purple-400"></i> Copy JSON
+                                        <button id="insert-media-btn"
+                                                class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
+                                                title="Insert Image / Pixel Artifact">
+                                            <i class="fa-solid fa-image mr-1 text-blue-600 dark:text-cyan-400"></i> IMG
                                         </button>
                                     </div>
                                 </div>
 
-                                <!-- Zen Mode Toggle -->
-                                <button id="zen-mode-btn"
-                                        class="arcade-btn bg-surface hover:bg-purple-100 dark:hover:bg-purple-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Toggle Distraction-Free Zen Writing Mode">
-                                    <i class="fa-solid fa-expand text-purple-600 dark:text-purple-400"></i>
-                                </button>
+                                <!-- Right: Color Palette, Studio Tools & Canvas Zoom -->
+                                <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:ml-auto">
+                                    <!-- Color Palette Swatches -->
+                                    <div id="editor-deck-2-palette" class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] px-1.5 h-7 shrink-0">
+                                        <button data-color="#38bdf8" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-cyan-400 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Neon Cyan"></button>
+                                        <button data-color="#3b82f6" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-blue-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Arcade Blue"></button>
+                                        <button data-color="#10b981" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Emerald Glow"></button>
+                                        <button data-color="#f59e0b" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-amber-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Pixel Gold"></button>
+                                        <button data-color="#ef4444" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-rose-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Crimson"></button>
+                                        <button data-color="#f8fafc" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-slate-100 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="White"></button>
+                                    </div>
 
-                                <!-- Archive Button -->
-                                <button id="archive-note-btn"
-                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Archive Scroll to Library Vault">
-                                    <i class="fa-solid fa-box-archive text-amber-600 dark:text-amber-400"></i>
-                                </button>
+                                    <!-- Studio Markdown & Plain Text Tools -->
+                                    <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                        <button id="markdown-paste-btn"
+                                                class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
+                                                title="Paste or Convert Raw Markdown (.md)">
+                                            <i class="fa-solid fa-file-code mr-1"></i> MD
+                                        </button>
+                                        <button id="markdown-view-toggle-btn"
+                                                class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
+                                                title="Toggle Raw Markdown Textarea View">
+                                            <i class="fa-brands fa-markdown mr-1 text-blue-600 dark:text-cyan-400"></i> RAW
+                                        </button>
+                                        <button id="plain-text-toggle-btn"
+                                                class="arcade-btn bg-surface hover:bg-emerald-200 dark:hover:bg-emerald-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
+                                                title="Mode Teks Biasa / Notepad (Alt+N)">
+                                            <i class="fa-solid fa-file-lines mr-1 text-emerald-600 dark:text-emerald-400"></i> TXT
+                                        </button>
+                                        <button id="find-replace-toggle-btn"
+                                                class="arcade-btn bg-surface hover:bg-amber-200 dark:hover:bg-amber-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
+                                                title="Find & Replace in Scroll (Ctrl+F)">
+                                            <i class="fa-solid fa-magnifying-glass mr-1 text-amber-600 dark:text-yellow-400"></i> FIND
+                                        </button>
+                                        <button id="open-ai-modal-btn"
+                                                class="arcade-btn bg-purple-600 hover:bg-purple-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shadow-[1px_1px_0px_#000] shrink-0"
+                                                title="Arcane Scribe AI Assistant (Poles, Ringkas, Lanjutkan)">
+                                            <i class="fa-solid fa-wand-magic-sparkles mr-1 text-yellow-300"></i> AI
+                                        </button>
+                                    </div>
+
+                                    <!-- Canvas Zoom Widget -->
+                                    <div class="flex items-center bg-surface rounded border border-black/20 dark:border-blue-800 px-1 sm:px-1.5 h-7 shadow-[1px_1px_0px_#000] shrink-0">
+                                        <button id="zoom-out-btn"
+                                                class="text-xs hover:text-blue-600 dark:hover:text-cyan-400 px-1 cursor-pointer shrink-0"
+                                                title="Zoom Out Canvas">
+                                            <i class="fa-solid fa-minus text-[10px]"></i>
+                                        </button>
+                                        <button id="zoom-reset-btn"
+                                                class="px-1.5 text-[11px] font-mono font-bold hover:text-blue-600 dark:hover:text-cyan-400 cursor-pointer shrink-0"
+                                                title="Click to Reset Zoom (100%)">
+                                            <span id="zoom-level-display">100%</span>
+                                        </button>
+                                        <button id="zoom-in-btn"
+                                                class="text-xs hover:text-blue-600 dark:hover:text-cyan-400 px-1 cursor-pointer shrink-0"
+                                                title="Zoom In Canvas">
+                                            <i class="fa-solid fa-plus text-[10px]"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Delete Scroll Button (Opens Visual Interactive Modal) & Save Button -->
-                            <div class="flex items-center gap-1.5 w-full sm:w-auto shrink-0 justify-end">
-                                <button id="delete-note-btn"
-                                        class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white flex-1 sm:flex-initial px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center"
-                                        title="Banish Scroll to Digital Void">
-                                    <i class="fa-solid fa-trash-can mr-1"></i> DELETE
-                                </button>
+                            <!-- Toolbar Deck 3: Operations & Actions Deck (Arsip, Ekspor, Kategori & Manajemen) -->
+                            <div id="editor-deck-operations" class="island-tool-deck flex items-center justify-between gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth touch-pan-x flex-nowrap sm:flex-wrap w-full min-w-0 pt-0.5">
+                                <!-- Category Quick Tools -->
+                                <div class="flex items-center gap-1 bg-surface-alt px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                    <span class="text-[10px] font-mono font-bold text-slate-500 uppercase mr-1">Kategori:</span>
+                                    <button type="button"
+                                            id="quick-edit-category-btn"
+                                            class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-blue-900 text-cyan-600 dark:text-cyan-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
+                                            title="Edit Selected Category">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button"
+                                            id="quick-delete-category-btn"
+                                            class="arcade-btn bg-surface hover:bg-rose-200 dark:hover:bg-rose-950 text-rose-500 dark:text-rose-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
+                                            title="Delete Selected Category">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                    <button type="button"
+                                            id="quick-forge-category-btn"
+                                            class="arcade-btn bg-surface hover:bg-emerald-200 dark:hover:bg-emerald-950 text-emerald-600 dark:text-emerald-400 w-6 h-6 flex items-center justify-center rounded text-[10px]"
+                                            title="Forge New Category">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
 
-                                <!-- Inscribe / Save Now -->
-                                <button id="save-now-btn"
-                                        class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white flex-1 sm:flex-initial px-3 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center"
-                                        title="Simpan naskah catatan sekarang">
-                                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> SAVE
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                                <!-- Action Buttons Group: Duplicate, Export, Zen, Archive, Delete -->
+                                <div class="flex items-center gap-1.5 shrink-0 ml-auto">
+                                    <!-- Duplicate Button -->
+                                    <button id="duplicate-note-btn"
+                                            class="arcade-btn bg-surface hover:bg-cyan-100 dark:hover:bg-cyan-900/40 px-2 sm:px-2.5 h-7 rounded-lg text-xs font-mono flex items-center gap-1 shrink-0"
+                                            title="Duplicate Scroll">
+                                        <i class="fa-solid fa-clone text-blue-600 dark:text-cyan-400"></i>
+                                        <span class="hidden md:inline">Duplikat</span>
+                                    </button>
 
-                    <!-- Tier 2: Hero Scroll Title (100% Full Width, Unconstrained & Majestic) -->
-                    <div class="flex items-center gap-2 sm:gap-3 w-full py-0.5 min-w-0">
-                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
-                            <i class="fa-solid fa-scroll text-base sm:text-lg text-blue-600 dark:text-cyan-400"></i>
-                        </div>
-                        <input type="text"
-                               id="note-title-input"
-                               placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
-                               value="{{ $activeNote->title ?? '' }}"
-                               {{ $activeNote ? '' : 'readonly' }}
-                               class="w-full min-w-0 flex-1 text-base sm:text-2xl font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-1 truncate"
-                               title="Scroll Title">
-                    </div>
+                                    <!-- Export Dropdown -->
+                                    <div class="relative inline-block text-left shrink-0" id="export-dropdown-wrapper">
+                                        <button id="export-note-btn"
+                                                class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 sm:px-2.5 h-7 rounded-lg text-xs font-mono flex items-center gap-1"
+                                                title="Export Scroll">
+                                            <i class="fa-solid fa-file-arrow-down text-blue-600 dark:text-blue-400"></i>
+                                            <span class="hidden md:inline">Ekspor</span>
+                                        </button>
+                                        <div id="export-menu" class="hidden absolute right-0 mt-1 w-44 bg-[var(--bg-surface)] border-2 border-black rounded-lg shadow-[3px_3px_0px_#000] z-50 p-1 font-mono text-xs">
+                                            <button data-export-format="md" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                                <i class="fa-brands fa-markdown text-blue-600 dark:text-blue-400"></i> Markdown (.md)
+                                            </button>
+                                            <button data-export-format="html" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                                <i class="fa-solid fa-code text-blue-600 dark:text-cyan-400"></i> HTML (.html)
+                                            </button>
+                                            <button data-export-format="txt" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                                <i class="fa-solid fa-file-lines text-amber-600 dark:text-amber-400"></i> Text (.txt)
+                                            </button>
+                                            <button data-export-format="csv" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                                <i class="fa-solid fa-file-csv text-emerald-600 dark:text-emerald-400"></i> CSV Table (.csv)
+                                            </button>
+                                            <button data-export-format="json" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                                <i class="fa-solid fa-file-code text-cyan-600 dark:text-cyan-400"></i> JSON Backup (.json)
+                                            </button>
+                                            <div class="border-t border-black/20 my-1"></div>
+                                            <button id="copy-plain-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                                <i class="fa-solid fa-file-lines text-amber-600 dark:text-amber-400"></i> Copy Plain Text
+                                            </button>
+                                            <button id="copy-markdown-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                                <i class="fa-solid fa-copy text-blue-600 dark:text-cyan-400"></i> Copy Markdown
+                                            </button>
+                                            <button id="copy-html-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                                <i class="fa-solid fa-code text-emerald-600 dark:text-emerald-400"></i> Copy HTML
+                                            </button>
+                                            <button id="copy-json-btn" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                                <i class="fa-solid fa-cube text-purple-600 dark:text-purple-400"></i> Copy JSON
+                                            </button>
+                                        </div>
+                                    </div>
 
-                    <!-- Tier 3: HUD Telemetry Sub-bar -->
-                    <div class="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pt-2 border-t border-black/10 dark:border-white/10 text-xs font-mono min-w-0">
-                        <!-- Word & Character Badges -->
-                        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-                            <span id="word-count-badge" class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] sm:text-xs font-bold flex items-center shrink-0">
-                                <i class="fa-solid fa-pen-nib mr-1 text-blue-600 dark:text-blue-400"></i> 0 Words
-                            </span>
-                            <span id="char-count-badge" class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] sm:text-xs font-bold hidden sm:inline-flex items-center shrink-0">
-                                <i class="fa-solid fa-font mr-1 text-blue-600 dark:text-blue-400"></i> 0 Chars
-                            </span>
-                            <span id="reading-time-badge" class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] sm:text-xs font-bold flex items-center shrink-0">
-                                <i class="fa-solid fa-clock mr-1 text-blue-600 dark:text-cyan-400"></i> 1m Read
-                            </span>
+                                    <!-- Zen Mode Toggle -->
+                                    <button id="zen-mode-btn"
+                                            class="arcade-btn bg-surface hover:bg-purple-100 dark:hover:bg-purple-900/40 px-2 sm:px-2.5 h-7 rounded-lg text-xs font-mono flex items-center gap-1 shrink-0"
+                                            title="Toggle Distraction-Free Zen Writing Mode">
+                                        <i class="fa-solid fa-expand text-purple-600 dark:text-purple-400"></i>
+                                        <span class="hidden md:inline">Zen</span>
+                                    </button>
 
-                            <!-- Created At & Updated At Badges for Active Scroll -->
-                            <span id="scroll-created-badge"
-                                  class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[10px] sm:text-[11px] hidden sm:inline-flex items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0"
-                                  title="Waktu Gulungan Ini Dibuat">
-                                <i class="fa-solid fa-calendar-plus text-blue-600 dark:text-cyan-400"></i>
-                                <span id="scroll-created-text">Dibuat: -</span>
-                            </span>
-                            <span id="scroll-updated-badge"
-                                  class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[10px] sm:text-[11px] inline-flex items-center gap-1 shadow-[1px_1px_0px_#000] max-w-full shrink-0"
-                                  title="Waktu Gulungan Ini Terakhir Diperbarui">
-                                <i class="fa-solid fa-clock-rotate-left text-emerald-600 dark:text-emerald-400 shrink-0"></i>
-                                <span id="scroll-updated-text" class="truncate max-w-[150px] xs:max-w-[200px] sm:max-w-none">Diperbarui: -</span>
-                            </span>
-                        </div>
+                                    <!-- Archive Button -->
+                                    <button id="archive-note-btn"
+                                            class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 px-2 sm:px-2.5 h-7 rounded-lg text-xs font-mono flex items-center gap-1 shrink-0"
+                                            title="Archive Scroll to Library Vault">
+                                        <i class="fa-solid fa-box-archive text-amber-600 dark:text-amber-400"></i>
+                                        <span class="hidden md:inline">Arsip</span>
+                                    </button>
 
-                        <!-- Right: Goal Progress, Save Status -->
-                        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-                            <!-- Quest Goal Tracker Pill -->
-                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 text-[11px] sm:text-xs font-mono shadow-[1px_1px_0px_#000] shrink-0">
-                                <i class="fa-solid fa-bullseye text-amber-600 dark:text-amber-400"></i>
-                                <span id="quest-goal-text" class="font-bold text-slate-900 dark:text-slate-100">Goal: 0/250w</span>
-                                <select id="quest-goal-select" class="no-retro-select bg-transparent border-0 text-[10px] focus:outline-none ml-0.5 cursor-pointer font-bold text-slate-900 dark:text-slate-100 opacity-90 hover:opacity-100">
-                                    <option value="100">100w</option>
-                                    <option value="250" selected>250w</option>
-                                    <option value="500">500w</option>
-                                    <option value="1000">1000w</option>
-                                </select>
-                            </div>
-
-                            <!-- Synchronized indicator -->
-                            <span id="save-status-text" class="text-[11px] sm:text-xs font-mono text-emerald-700 dark:text-emerald-400 flex items-center gap-1 font-bold shrink-0">
-                                <i class="fa-solid fa-circle-check"></i> Synchronized
-                            </span>
-
-                            <!-- Hidden Chunk Badge for test & JS compatibility -->
-                            <button id="chunk-count-badge" class="hidden" style="display: none;" aria-hidden="true" tabindex="-1"></button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ============================================================================== -->
-                <!-- ARSENAL TOOLBAR: DEDICATED 2-ROW STUDIO CONSOLE -->
-                <!-- ============================================================================== -->
-                <div id="editor-toolbar-decks" class="arcade-card p-2 sm:p-2.5 rounded-xl flex flex-col gap-2 shadow-[3px_3px_0px_#000] min-w-0 max-w-full">
-                    <!-- Toolbar Deck 1: Typography & Inline Formatting -->
-                    <div id="editor-deck-1" class="flex items-center gap-1 sm:gap-1.5 pb-2 border-b border-black/10 dark:border-white/10 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap sm:flex-wrap sm:overflow-x-visible w-full min-w-0">
-                        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:flex-wrap">
-                            <!-- Font Family & Size Combined Pill -->
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
-                                <i class="fa-solid fa-font text-blue-500 dark:text-cyan-400 text-xs px-0.5 shrink-0"></i>
-                                <select id="font-family-select"
-                                        class="bg-white dark:bg-black/50 border border-black/30 dark:border-blue-800 rounded px-1.5 py-0.5 text-xs font-mono focus:outline-none focus:border-cyan-400 max-w-[125px] sm:max-w-[145px]">
-                                    <option value="pixel">Pixel (Press Start 2P)</option>
-                                    <option value="arcade">Arcade (VT323)</option>
-                                    <option value="mono">Cyber Mono (Fira Code)</option>
-                                    <option value="sans">Modern Sans (Instrument)</option>
-                                    <option value="serif">Grimoire (Merriweather)</option>
-                                </select>
-                                <span class="text-black/30 dark:text-white/30 text-xs">|</span>
-                                <select id="font-size-select"
-                                        class="bg-white dark:bg-black/50 border border-black/30 dark:border-blue-800 rounded px-1 py-0.5 text-xs font-mono focus:outline-none focus:border-cyan-400 w-16">
-                                    <option value="12px">12px</option>
-                                    <option value="14px">14px</option>
-                                    <option value="16px" selected>16px</option>
-                                    <option value="18px">18px</option>
-                                    <option value="20px">20px</option>
-                                    <option value="24px">24px</option>
-                                    <option value="28px">28px</option>
-                                    <option value="32px">32px</option>
-                                </select>
-                            </div>
-
-                            <!-- Undo & Redo -->
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
-                                <button id="editor-undo-btn" data-command="undo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Undo (Ctrl+Z)">
-                                    <i class="fa-solid fa-rotate-left"></i>
-                                </button>
-                                <button id="editor-redo-btn" data-command="redo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Redo (Ctrl+Y / Ctrl+Shift+Z)">
-                                    <i class="fa-solid fa-rotate-right"></i>
-                                </button>
-                            </div>
-
-                            <!-- Bold, Italic, Underline, Strikethrough -->
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
-                                <button data-command="bold" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs font-bold flex items-center justify-center shrink-0" title="Bold (Ctrl+B)">
-                                    <i class="fa-solid fa-bold"></i>
-                                </button>
-                                <button data-command="italic" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs italic flex items-center justify-center shrink-0" title="Italic (Ctrl+I)">
-                                    <i class="fa-solid fa-italic"></i>
-                                </button>
-                                <button data-command="underline" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs underline flex items-center justify-center shrink-0" title="Underline (Ctrl+U)">
-                                    <i class="fa-solid fa-underline"></i>
-                                </button>
-                                <button data-command="strikeThrough" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs line-through flex items-center justify-center shrink-0" title="Strikethrough">
-                                    <i class="fa-solid fa-strikethrough"></i>
-                                </button>
-                            </div>
-
-                            <!-- Headings -->
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
-                                <button data-command="formatBlock" data-value="h1" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 h-7 rounded text-xs font-bold shrink-0" title="Heading 1">H1</button>
-                                <button data-command="formatBlock" data-value="h2" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 h-7 rounded text-xs font-bold shrink-0" title="Heading 2">H2</button>
-                                <button data-command="formatBlock" data-value="h3" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 h-7 rounded text-xs font-bold shrink-0" title="Heading 3">H3</button>
-                                <button data-command="formatBlock" data-value="p" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-1.5 h-7 rounded text-xs font-bold shrink-0" title="Paragraph">P</button>
-                            </div>
-                        </div>
-
-                        <!-- Right: Alignment & Clear -->
-                        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:ml-auto">
-                            <!-- Alignment -->
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
-                                <button data-command="justifyLeft" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Align Left">
-                                    <i class="fa-solid fa-align-left"></i>
-                                </button>
-                                <button data-command="justifyCenter" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Align Center">
-                                    <i class="fa-solid fa-align-center"></i>
-                                </button>
-                                <button data-command="justifyRight" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Align Right">
-                                    <i class="fa-solid fa-align-right"></i>
-                                </button>
-                            </div>
-
-                            <!-- Clear Formatting / Content -->
-                            <button id="clear-editor-btn" type="button" class="arcade-btn bg-surface hover:bg-rose-200 dark:hover:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold px-2 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0" title="Bersihkan format teks atau kosongkan catatan">
-                                <i class="fa-solid fa-broom mr-1"></i> CLEAR
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Toolbar Deck 2: Structural Blocks, Inserts, Studio Tools, Palette & Canvas Zoom -->
-                    <div id="editor-deck-2" class="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap sm:flex-wrap sm:overflow-x-visible w-full min-w-0">
-                        <!-- Notepad Mode Active Banner (Visible only in Notepad mode) -->
-                        <div id="notepad-mode-banner" class="hidden items-center gap-2 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-500/60 rounded-lg px-2.5 py-1 text-xs font-mono text-emerald-900 dark:text-emerald-300 shadow-[1px_1px_0px_#000] w-full">
-                            <i class="fa-solid fa-file-lines text-emerald-600 dark:text-emerald-400"></i>
-                            <span class="font-bold">MODE NOTEPAD</span>
-                            <span class="hidden md:inline text-black/60 dark:text-emerald-400/80">— Teks biasa murni tanpa format, siap disalin kapan saja.</span>
-                        </div>
-
-                        <div id="editor-deck-2-inserts" class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:flex-wrap">
-                            <!-- Lists & Structure -->
-                            <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
-                                <button data-command="insertUnorderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Bullet List">
-                                    <i class="fa-solid fa-list-ul"></i>
-                                </button>
-                                <button data-command="insertOrderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Numbered List">
-                                    <i class="fa-solid fa-list-ol"></i>
-                                </button>
-                                <button data-command="formatBlock" data-value="blockquote" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Quote Block">
-                                    <i class="fa-solid fa-quote-left"></i>
-                                </button>
-                                <button data-command="formatBlock" data-value="pre" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0" title="Code Block">
-                                    <i class="fa-solid fa-code"></i>
-                                </button>
-                                <button data-command="insertHorizontalRule" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center shrink-0" title="Divider Line">
-                                    <i class="fa-solid fa-minus"></i>
-                                </button>
-                            </div>
-
-                            <!-- Content Inserts -->
-                            <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
-                                <button id="insert-table-btn"
-                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Insert 3x4 Retro Data Table">
-                                    <i class="fa-solid fa-table mr-1"></i> TABLE
-                                </button>
-                                <button id="insert-task-btn"
-                                        class="arcade-btn bg-blue-700 hover:bg-blue-600 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Insert Interactive Quest Checklist">
-                                    <i class="fa-solid fa-square-check mr-1"></i> TASK
-                                </button>
-                                <button id="insert-media-btn"
-                                        class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Insert Image / Pixel Artifact">
-                                    <i class="fa-solid fa-image mr-1 text-blue-600 dark:text-cyan-400"></i> IMG
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Right: Color Palette, Studio Tools & Canvas Zoom -->
-                        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:ml-auto">
-                            <!-- Color Palette Swatches -->
-                            <div id="editor-deck-2-palette" class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] px-1.5 h-7 shrink-0">
-                                <button data-color="#38bdf8" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-cyan-400 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Neon Cyan"></button>
-                                <button data-color="#3b82f6" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-blue-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Arcade Blue"></button>
-                                <button data-color="#10b981" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Emerald Glow"></button>
-                                <button data-color="#f59e0b" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-amber-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Pixel Gold"></button>
-                                <button data-color="#ef4444" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-rose-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Crimson"></button>
-                                <button data-color="#f8fafc" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-slate-100 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="White"></button>
-                            </div>
-
-                            <!-- Studio Markdown & Plain Text Tools -->
-                            <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
-                                <button id="markdown-paste-btn"
-                                        class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Paste or Convert Raw Markdown (.md)">
-                                    <i class="fa-solid fa-file-code mr-1"></i> MD
-                                </button>
-                                <button id="markdown-view-toggle-btn"
-                                        class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Toggle Raw Markdown Textarea View">
-                                    <i class="fa-brands fa-markdown mr-1 text-blue-600 dark:text-cyan-400"></i> RAW
-                                </button>
-                                <button id="plain-text-toggle-btn"
-                                        class="arcade-btn bg-surface hover:bg-emerald-200 dark:hover:bg-emerald-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Mode Teks Biasa / Notepad (Alt+N)">
-                                    <i class="fa-solid fa-file-lines mr-1 text-emerald-600 dark:text-emerald-400"></i> TXT
-                                </button>
-                                <button id="find-replace-toggle-btn"
-                                        class="arcade-btn bg-surface hover:bg-amber-200 dark:hover:bg-amber-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Find & Replace in Scroll (Ctrl+F)">
-                                    <i class="fa-solid fa-magnifying-glass mr-1 text-amber-600 dark:text-yellow-400"></i> FIND
-                                </button>
-                                <button id="open-ai-modal-btn"
-                                        class="arcade-btn bg-purple-600 hover:bg-purple-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shadow-[1px_1px_0px_#000] shrink-0"
-                                        title="Arcane Scribe AI Assistant (Poles, Ringkas, Lanjutkan)">
-                                    <i class="fa-solid fa-wand-magic-sparkles mr-1 text-yellow-300"></i> AI
-                                </button>
-                            </div>
-
-                            <!-- Canvas Zoom Widget -->
-                            <div class="flex items-center bg-surface rounded border border-black/20 dark:border-blue-800 px-1 sm:px-1.5 h-7 shadow-[1px_1px_0px_#000] shrink-0">
-                                <button id="zoom-out-btn"
-                                        class="text-xs hover:text-blue-600 dark:hover:text-cyan-400 px-1 cursor-pointer shrink-0"
-                                        title="Zoom Out Canvas">
-                                    <i class="fa-solid fa-minus text-[10px]"></i>
-                                </button>
-                                <button id="zoom-reset-btn"
-                                        class="px-1.5 text-[11px] font-mono font-bold hover:text-blue-600 dark:hover:text-cyan-400 cursor-pointer shrink-0"
-                                        title="Click to Reset Zoom (100%)">
-                                    <span id="zoom-level-display">100%</span>
-                                </button>
-                                <button id="zoom-in-btn"
-                                        class="text-xs hover:text-blue-600 dark:hover:text-cyan-400 px-1 cursor-pointer shrink-0"
-                                        title="Zoom In Canvas">
-                                    <i class="fa-solid fa-plus text-[10px]"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                                <button data-color="#f8fafc" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-slate-100 border border-black cursor-pointer hover:scale-110 transition-transform" title="White"></button>
-                            </div>
-
-                            <!-- Studio Markdown & Plain Text Tools -->
-                            <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
-                                <button id="markdown-paste-btn"
-                                        class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
-                                        title="Paste or Convert Raw Markdown (.md)">
-                                    <i class="fa-solid fa-file-code mr-1"></i> MD
-                                </button>
-                                <button id="markdown-view-toggle-btn"
-                                        class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
-                                        title="Toggle Raw Markdown Textarea View">
-                                    <i class="fa-brands fa-markdown mr-1 text-blue-600 dark:text-cyan-400"></i> RAW
-                                </button>
-                                <button id="plain-text-toggle-btn"
-                                        class="arcade-btn bg-surface hover:bg-emerald-200 dark:hover:bg-emerald-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
-                                        title="Mode Teks Biasa / Notepad (Alt+N)">
-                                    <i class="fa-solid fa-file-lines mr-1 text-emerald-600 dark:text-emerald-400"></i> TXT
-                                </button>
-                                <button id="find-replace-toggle-btn"
-                                        class="arcade-btn bg-surface hover:bg-amber-200 dark:hover:bg-amber-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
-                                        title="Find & Replace in Scroll (Ctrl+F)">
-                                    <i class="fa-solid fa-magnifying-glass mr-1 text-amber-600 dark:text-yellow-400"></i> FIND
-                                </button>
-                                <button id="open-ai-modal-btn"
-                                        class="arcade-btn bg-purple-600 hover:bg-purple-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shadow-[1px_1px_0px_#000]"
-                                        title="Arcane Scribe AI Assistant (Poles, Ringkas, Lanjutkan)">
-                                    <i class="fa-solid fa-wand-magic-sparkles mr-1 text-yellow-300"></i> AI
-                                </button>
-                            </div>
-
-                            <!-- Canvas Zoom Widget -->
-                            <div class="flex items-center bg-surface rounded border border-black/20 dark:border-blue-800 px-1 sm:px-1.5 h-7 shadow-[1px_1px_0px_#000]">
-                                <button id="zoom-out-btn"
-                                        class="text-xs hover:text-blue-600 dark:hover:text-cyan-400 px-1 cursor-pointer"
-                                        title="Zoom Out Canvas">
-                                    <i class="fa-solid fa-minus text-[10px]"></i>
-                                </button>
-                                <button id="zoom-reset-btn"
-                                        class="px-1.5 text-[11px] font-mono font-bold hover:text-blue-600 dark:hover:text-cyan-400 cursor-pointer"
-                                        title="Click to Reset Zoom (100%)">
-                                    <span id="zoom-level-display">100%</span>
-                                </button>
-                                <button id="zoom-in-btn"
-                                        class="text-xs hover:text-blue-600 dark:hover:text-cyan-400 px-1 cursor-pointer"
-                                        title="Zoom In Canvas">
-                                    <i class="fa-solid fa-plus text-[10px]"></i>
-                                </button>
+                                    <!-- Delete Scroll Button -->
+                                    <button id="delete-note-btn"
+                                            class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-2.5 sm:px-3 h-7 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center shrink-0"
+                                            title="Banish Scroll to Digital Void">
+                                        <i class="fa-solid fa-trash-can mr-1"></i> DELETE
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1299,8 +1320,8 @@
                     </div>
                 </div>
 
-                <!-- Zoomable Editable Content Area (The Core Canvas) -->
-                <div class="arcade-card flex-1 min-h-0 p-3 sm:p-6 rounded-xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000] bg-[var(--bg-surface)]">
+                <!-- Zoomable Editable Content Area (The Core Canvas - Full Size) -->
+                <div id="editor-canvas-card" class="arcade-card flex-1 min-h-[550px] lg:min-h-[700px] p-4 sm:p-6 lg:p-8 rounded-2xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000] bg-[var(--bg-surface)] flex flex-col">
                     <div id="editor-zoom-wrapper" class="zoom-canvas-container min-h-full flex flex-col">
                         <!-- Rich Editable Canvas -->
                         <div id="editor-content"

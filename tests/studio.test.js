@@ -2979,6 +2979,55 @@ test('white-box: Escape key dismisses retro searchable dropdowns alongside modal
     assert.equal(closedModals, 9);
 });
 
+test('white-box: dynamic island controls toggle open, close, and animate chevron state', () => {
+    const { panel } = harness(() => {});
+    const trayClasses = new Set(['collapsed']);
+    const chevronClasses = new Set();
+    const containerClasses = new Set();
+    let ariaExpanded = 'false';
+
+    panel.dom.dynamicIslandTray = {
+        classList: {
+            contains: c => trayClasses.has(c),
+            add: c => trayClasses.add(c),
+            remove: c => trayClasses.delete(c),
+        }
+    };
+    panel.dom.dynamicIslandToggleBtn = {
+        setAttribute: (attr, val) => { if (attr === 'aria-expanded') ariaExpanded = val; },
+        getAttribute: (attr) => attr === 'aria-expanded' ? ariaExpanded : null,
+    };
+    panel.dom.islandChevronIcon = {
+        classList: {
+            add: c => chevronClasses.add(c),
+            remove: c => chevronClasses.delete(c),
+        }
+    };
+    panel.dom.dynamicIslandContainer = {
+        classList: {
+            add: c => containerClasses.add(c),
+            remove: c => containerClasses.delete(c),
+        }
+    };
+
+    // Initial state: collapsed
+    assert.equal(trayClasses.has('collapsed'), true);
+
+    // Toggle open
+    panel.toggleDynamicIsland();
+    assert.equal(trayClasses.has('collapsed'), false);
+    assert.equal(ariaExpanded, 'true');
+    assert.equal(chevronClasses.has('rotate-180'), true);
+    assert.equal(containerClasses.has('island-expanded'), true);
+
+    // Toggle close
+    panel.toggleDynamicIsland();
+    assert.equal(trayClasses.has('collapsed'), true);
+    assert.equal(ariaExpanded, 'false');
+    assert.equal(chevronClasses.has('rotate-180'), false);
+    assert.equal(containerClasses.has('island-expanded'), false);
+});
+
 
 
 
