@@ -22,7 +22,9 @@ php artisan route:cache
 php artisan view:cache
 
 echo "--- Setting permissions & symlinks ---"
-php artisan storage:link || true
+if [ ! -e public/storage ] && [ ! -L public/storage ]; then
+    php artisan storage:link
+fi
 chmod -R 775 storage bootstrap/cache
 ln -sfn "$APP_DIR/public" "/home/u916682966/domains/notenux.oryphem.com/public_html"
 
