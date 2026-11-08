@@ -1194,3 +1194,32 @@ test('white-box: note chunk service detects and isolates corrupted chunks upon c
         ->and($reportCorrupted['verified'])->toBeFalse()
         ->and($reportCorrupted['corrupted_chunks'])->toBe(1);
 });
+
+test('white-box: auth controller updateProfile validates unique email and preserves other attributes', function () {
+    $user1 = User::factory()->create(['email' => 'hero1@notenux.dev']);
+    $user2 = User::factory()->create(['email' => 'hero2@notenux.dev']);
+
+    $controller = app(App\Http\Controllers\AuthController::class);
+
+    // Should fail when trying to take user2's email
+    $requestDuplicate = Illuminate\Http\Request::create('/profile', 'PUT', [
+        'name' => 'New Name',
+        'email' => 'hero2@notenux.dev',
+    ]);
+    $requestDuplicate->setUserResolver(fn () => $user1);
+
+    expect(fn () => $controller->updateProfile($requestDuplicate))
+        ->toThrow(Illuminate\Validation\ValidationException::class);
+
+    // Should succeed with valid new email
+    $requestValid = Illuminate\Http\Request::create('/profile', 'PUT', [
+        'name' => 'Grand Scribe',
+        'email' => 'grandscribe@notenux.dev',
+    ]);
+    $requestValid->setUserResolver(fn () => $user1);
+
+    $res = $controller->updateProfile($requestValid);
+    expect($res->getStatusCode())->toBe(200)
+        ->and($user1->fresh()->name)->toBe('Grand Scribe')
+        ->and($user1->fresh()->email)->toBe('grandscribe@notenux.dev');
+});

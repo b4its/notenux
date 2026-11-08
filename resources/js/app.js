@@ -1078,6 +1078,16 @@ class NotenuxPanel {
             questGoalText: document.getElementById('quest-goal-text'),
             questGoalSelect: document.getElementById('quest-goal-select'),
 
+            openProfileModalBtn: document.getElementById('open-profile-modal-btn'),
+            sidebarAvatarProfileBtn: document.getElementById('sidebar-avatar-profile-btn'),
+            profileSettingsModal: document.getElementById('profile-settings-modal'),
+            closeProfileModalX: document.getElementById('close-profile-modal-x'),
+            closeProfileModalBtn: document.getElementById('close-profile-modal-btn'),
+            saveProfileBtn: document.getElementById('save-profile-btn'),
+            profileSettingsForm: document.getElementById('profile-settings-form'),
+            profileFormError: document.getElementById('profile-form-error'),
+            topNavUsername: document.getElementById('top-nav-username'),
+
             playerLevelBadge: document.getElementById('player-level-badge'),
             playerRankTitle: document.getElementById('player-rank-title'),
             playerXpText: document.getElementById('player-xp-text'),
@@ -2152,6 +2162,7 @@ class NotenuxPanel {
                 this.closeClearModal();
                 this.closeMarkdownModal();
                 this.closeChunkInspector();
+                this.closeProfileModal();
                 this.toggleFindBar(false);
                 if (this.dom.importModal) this.dom.importModal.classList.add('hidden');
                 if (this.dom.shortcutsModal) this.dom.shortcutsModal.classList.add('hidden');
@@ -2542,6 +2553,29 @@ class NotenuxPanel {
         this.dom.deleteConfirmModal?.addEventListener('click', (e) => {
             if (e.target === this.dom.deleteConfirmModal) {
                 this.closeDeleteConfirmModal();
+            }
+        });
+
+        // Hero Profile & Security Modal Triggers
+        this.dom.openProfileModalBtn?.addEventListener('click', () => {
+            this.openProfileModal();
+        });
+        this.dom.sidebarAvatarProfileBtn?.addEventListener('click', () => {
+            this.openProfileModal();
+        });
+        this.dom.closeProfileModalX?.addEventListener('click', () => {
+            this.closeProfileModal();
+        });
+        this.dom.closeProfileModalBtn?.addEventListener('click', () => {
+            this.closeProfileModal();
+        });
+        this.dom.saveProfileBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.saveProfile();
+        });
+        this.dom.profileSettingsModal?.addEventListener('click', (e) => {
+            if (e.target === this.dom.profileSettingsModal) {
+                this.closeProfileModal();
             }
         });
 
@@ -4444,6 +4478,120 @@ class NotenuxPanel {
         this.pendingDeleteNoteId = null;
         if (this.dom.deleteConfirmModal) {
             this.dom.deleteConfirmModal.classList.add('hidden');
+        }
+    }
+
+    openProfileModal() {
+        if (!this.dom.profileSettingsModal) return;
+        this.dom.profileSettingsModal.classList.remove('hidden');
+        if (this.dom.profileFormError) {
+            this.dom.profileFormError.classList.add('hidden');
+            this.dom.profileFormError.textContent = '';
+        }
+        this.audio?.playBlip?.();
+    }
+
+    closeProfileModal() {
+        if (!this.dom.profileSettingsModal) return;
+        this.dom.profileSettingsModal.classList.add('hidden');
+        if (this.dom.profileFormError) {
+            this.dom.profileFormError.classList.add('hidden');
+            this.dom.profileFormError.textContent = '';
+        }
+    }
+
+    async saveProfile() {
+        const nameInput = document.getElementById('profile-name-input');
+        const emailInput = document.getElementById('profile-email-input');
+        const curPassInput = document.getElementById('profile-current-password-input');
+        const newPassInput = document.getElementById('profile-new-password-input');
+        const confPassInput = document.getElementById('profile-confirm-password-input');
+
+        if (!nameInput || !emailInput) return;
+
+        const name = nameInput.value.trim();
+        const email = emailInput.value.trim();
+        const current_password = curPassInput?.value || '';
+        const password = newPassInput?.value || '';
+        const password_confirmation = confPassInput?.value || '';
+
+        if (!name) {
+            this.showProfileError('Nama Adventurer tidak boleh kosong.');
+            return;
+        }
+
+        if (!email) {
+            this.showProfileError('Email Arcane tidak boleh kosong.');
+            return;
+        }
+
+        if (password && !current_password) {
+            this.showProfileError('Password saat ini wajib diisi jika ingin mengubah password.');
+            return;
+        }
+
+        if (password && password !== password_confirmation) {
+            this.showProfileError('Konfirmasi password baru tidak cocok.');
+            return;
+        }
+
+        const payload = { name, email };
+        if (password) {
+            payload.current_password = current_password;
+            payload.password = password;
+            payload.password_confirmation = password_confirmation;
+        }
+
+        const btn = this.dom.saveProfileBtn;
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> MENYIMPAN...';
+        }
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const res = await fetch('/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                this.toast.show(data.message || 'Profil berhasil diperbarui!', 'success', 'Hero Identity');
+                this.audio?.playLevelUp?.();
+                if (this.dom.topNavUsername && data.data?.name) {
+                    this.dom.topNavUsername.textContent = data.data.name.length > 10 ? data.data.name.substring(0, 10) + '...' : data.data.name;
+                }
+                if (curPassInput) curPassInput.value = '';
+                if (newPassInput) newPassInput.value = '';
+                if (confPassInput) confPassInput.value = '';
+                this.closeProfileModal();
+            } else {
+                const errorMsg = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Gagal memperbarui profil.');
+                this.showProfileError(errorMsg);
+                this.toast.show(errorMsg, 'danger', 'Gagal');
+            }
+        } catch (err) {
+            this.showProfileError('Terjadi kesalahan koneksi saat memperbarui profil.');
+            this.toast.show('Gagal menghubungi server.', 'danger', 'Error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+    }
+
+    showProfileError(msg) {
+        if (this.dom.profileFormError) {
+            this.dom.profileFormError.textContent = msg;
+            this.dom.profileFormError.classList.remove('hidden');
         }
     }
 

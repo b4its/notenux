@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" data-theme="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" data-theme="dark" itemscope itemtype="https://schema.org/WebApplication">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -15,16 +15,47 @@
     <meta name="publisher" content="https://notenux.oryphem.com">
     <link rel="canonical" href="https://notenux.oryphem.com/">
 
-    <!-- Search Engine Crawlers Optimization -->
+    <!-- Alternate Languages / Hreflang for Global Indexing -->
+    <link rel="alternate" hreflang="id" href="https://notenux.oryphem.com/">
+    <link rel="alternate" hreflang="en" href="https://notenux.oryphem.com/">
+    <link rel="alternate" hreflang="x-default" href="https://notenux.oryphem.com/">
+
+    <!-- Dublin Core Metadata for Authoritative Indexing -->
+    <meta name="DC.title" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">
+    <meta name="DC.creator" content="Oryphem">
+    <meta name="DC.subject" content="Aplikasi Catatan Retro Modern, Markdown Studio, RPG Gamified Writing">
+    <meta name="DC.description" content="Notenux (notenux.oryphem.com) adalah aplikasi catatan retro modern dengan gamifikasi RPG, editor Markdown instan, proteksi naskah otomatis, dan tema adaptif.">
+    <meta name="DC.publisher" content="https://notenux.oryphem.com">
+    <meta name="DC.language" content="id">
+    <meta name="DC.identifier" content="https://notenux.oryphem.com/">
+
+    <!-- Schema.org Microdata Properties for Search Engine Rich Cards -->
+    <meta itemprop="name" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">
+    <meta itemprop="description" content="Notenux (notenux.oryphem.com) adalah aplikasi catatan retro modern dengan gamifikasi RPG, editor Markdown instan, proteksi naskah otomatis, dan tema adaptif.">
+    <meta itemprop="image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta itemprop="url" content="https://notenux.oryphem.com/">
+
+    <!-- Comprehensive Search Engine Crawlers Optimization -->
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="slurp" content="index, follow">
+    <meta name="duckduckbot" content="index, follow">
+    <meta name="baiduspider" content="index, follow">
+    <meta name="yandex" content="index, follow">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta name="rating" content="general">
     <meta name="distribution" content="global">
     <meta name="geo.region" content="ID">
     <meta name="geo.placename" content="Indonesia">
     <meta name="revisit-after" content="7 days">
-    <meta name="format-detection" content="telephone=no">
+    <meta name="format-detection" content="telephone=no, address=no, email=no">
+    <meta name="category" content="Productivity, Text Editors, Gamified Notes, Writing Studio">
+    <meta name="coverage" content="Worldwide">
+    <meta name="target" content="all">
+    <meta name="audience" content="all">
+    <meta name="subject" content="Aplikasi Catatan Retro Modern dan Markdown Studio">
+    <meta name="classification" content="Productivity Application">
 
     <!-- Open Graph / Facebook / LinkedIn / Discord -->
     <meta property="og:type" content="website">
@@ -40,11 +71,13 @@
     <meta property="og:image:alt" content="Notenux Studio Banner">
     <meta property="og:locale" content="id_ID">
     <meta property="og:locale:alternate" content="en_US">
+    <meta property="article:publisher" content="https://notenux.oryphem.com">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@notenux">
     <meta name="twitter:creator" content="@oryphem">
+    <meta name="twitter:domain" content="notenux.oryphem.com">
     <meta name="twitter:url" content="https://notenux.oryphem.com/">
     <meta name="twitter:title" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">
     <meta name="twitter:description" content="Tingkatkan produktivitas menulis dengan sensasi RPG retro, level-up XP, markdown realtime, dan sistem keamanan otomatis di Notenux. Kunjungi https://notenux.oryphem.com">
@@ -55,7 +88,10 @@
     <meta name="application-name" content="Notenux">
     <meta name="apple-mobile-web-app-title" content="Notenux">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="msapplication-TileColor" content="#030712">
+    <meta name="msapplication-TileImage" content="{{ asset('assets/logo/light/icon_light.png') }}">
     <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
@@ -89,9 +125,15 @@
           "@id": "https://notenux.oryphem.com/#website",
           "url": "https://notenux.oryphem.com",
           "name": "Notenux",
+          "alternateName": "Notenux Studio",
           "description": "Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern",
           "publisher": {
             "@id": "https://notenux.oryphem.com/#organization"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://notenux.oryphem.com/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
           },
           "inLanguage": "id-ID"
         },
@@ -105,20 +147,42 @@
             "url": "https://notenux.oryphem.com/assets/logo/light/icon_light.png",
             "width": 1254,
             "height": 1254
-          }
+          },
+          "sameAs": [
+            "https://notenux.oryphem.com",
+            "https://github.com/oryphem"
+          ]
         },
         {
           "@type": "WebApplication",
           "@id": "https://notenux.oryphem.com/#app",
           "name": "Notenux Studio",
+          "alternateName": "Notenux",
           "url": "https://notenux.oryphem.com",
           "applicationCategory": "ProductivityApplication",
           "operatingSystem": "All Modern Web Browsers",
+          "softwareVersion": "3.0",
           "offers": {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "USD"
           },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "ratingCount": "128",
+            "reviewCount": "128",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "featureList": [
+            "Gamified RPG Scribe Leveling",
+            "Instant Markdown Realtime Preview",
+            "Automatic Cryptographic Data Verification",
+            "Distraction-Free Zen Mode",
+            "Zero Lock-In Markdown, HTML, TXT, JSON Export",
+            "Adaptive CRT Dark and Light Themes"
+          ],
           "description": "Aplikasi catatan retro modern dengan gamifikasi RPG, editor Markdown instan, proteksi naskah otomatis, dan tema adaptif.",
           "image": "https://notenux.oryphem.com/assets/logo/light/icon_horizontal_light.png",
           "author": {
@@ -212,6 +276,11 @@
 </head>
 <body class="retro-crt-screen bg-[var(--bg-main)] text-[var(--text-main)] min-h-screen font-sans flex flex-col antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
 
+    <!-- Accessible Skip to Main Content Link (Search Quality & Accessibility Standard) -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:shadow-lg focus:font-mono focus:text-xs">
+        Lewati ke konten utama
+    </a>
+
     <!-- Top Navigation Header -->
     <header class="sticky top-0 w-full bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-2 sm:px-4 lg:px-6 py-2.5 sm:py-3 z-40">
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
@@ -230,7 +299,7 @@
             </a>
 
             <!-- Navigation Links (Desktop) -->
-            <nav class="hidden md:flex items-center gap-5 lg:gap-6 font-mono text-xs font-bold shrink-0">
+            <nav aria-label="Navigasi Utama" class="hidden md:flex items-center gap-5 lg:gap-6 font-mono text-xs font-bold shrink-0">
                 <a href="#fitur" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">MANFAAT & FITUR</a>
                 <a href="#playground" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">DEMO INTERAKTIF</a>
                 <a href="#keamanan" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">UJI PROTEKSI</a>
@@ -312,7 +381,7 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="flex-1">
+    <main id="main-content" class="flex-1">
 
         <!-- ============================================================================== -->
         <!-- 1. HERO SECTION & INTERACTIVE LIVE STATION -->

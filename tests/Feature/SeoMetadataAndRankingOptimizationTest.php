@@ -15,15 +15,28 @@ test('landing page includes comprehensive seo meta tags, open graph, twitter car
         ->assertSee('<meta name="keywords"', false)
         ->assertSee('https://notenux.oryphem.com', false)
         ->assertSee('<link rel="canonical" href="https://notenux.oryphem.com/">', false)
+        ->assertSee('<link rel="alternate" hreflang="id" href="https://notenux.oryphem.com/">', false)
+        ->assertSee('<link rel="alternate" hreflang="en" href="https://notenux.oryphem.com/">', false)
+        ->assertSee('<link rel="alternate" hreflang="x-default" href="https://notenux.oryphem.com/">', false)
+        ->assertSee('<meta name="DC.title"', false)
+        ->assertSee('<meta name="DC.creator" content="Oryphem">', false)
+        ->assertSee('<meta name="DC.publisher" content="https://notenux.oryphem.com">', false)
+        ->assertSee('<meta itemprop="name"', false)
+        ->assertSee('<meta itemprop="url" content="https://notenux.oryphem.com/">', false)
         ->assertSee('<meta name="robots" content="index, follow', false)
         ->assertSee('<meta name="googlebot" content="index, follow', false)
+        ->assertSee('<meta name="bingbot" content="index, follow', false)
+        ->assertSee('<meta name="slurp" content="index, follow">', false)
+        ->assertSee('<meta name="duckduckbot" content="index, follow">', false)
         ->assertSee('<meta property="og:type" content="website">', false)
         ->assertSee('<meta property="og:site_name" content="Notenux">', false)
         ->assertSee('<meta property="og:url" content="https://notenux.oryphem.com/">', false)
         ->assertSee('<meta property="og:title" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">', false)
         ->assertSee('<meta property="og:image"', false)
         ->assertSee('<meta name="twitter:card" content="summary_large_image">', false)
+        ->assertSee('<meta name="twitter:domain" content="notenux.oryphem.com">', false)
         ->assertSee('<meta name="twitter:url" content="https://notenux.oryphem.com/">', false)
+        ->assertSee('<meta name="msapplication-TileColor" content="#030712">', false)
         ->assertSee('<link rel="manifest"', false)
         ->assertSee('site.webmanifest', false);
 });
@@ -35,8 +48,11 @@ test('landing page contains valid json-ld schema.org structured data for rich sn
         ->assertSee('<script type="application/ld+json">', false)
         ->assertSee('"@context": "https://schema.org"', false)
         ->assertSee('"@type": "WebSite"', false)
+        ->assertSee('"@type": "SearchAction"', false)
         ->assertSee('"@type": "Organization"', false)
         ->assertSee('"@type": "WebApplication"', false)
+        ->assertSee('"@type": "AggregateRating"', false)
+        ->assertSee('"ratingValue": "4.9"', false)
         ->assertSee('"@type": "FAQPage"', false)
         ->assertSee('https://notenux.oryphem.com', false)
         ->assertSee('Mengapa saya perlu login untuk membuka Studio Notenux?', false);
@@ -46,6 +62,9 @@ test('landing page primary heading optimizes brand keyword and scribe rank value
     $response = $this->get(route('landing'));
 
     $response->assertOk()
+        ->assertSee('Lewati ke konten utama', false)
+        ->assertSee('id="main-content"', false)
+        ->assertSee('aria-label="Navigasi Utama"', false)
         ->assertSee('Notenux</span> — Abadikan Pemikiran', false)
         ->assertSee('Tingkatkan Level Scribe', false);
 });
@@ -56,6 +75,9 @@ test('guest authentication pages contain optimized seo meta tags and breadcrumb 
     $loginResponse->assertOk()
         ->assertSee('<title>Masuk ke Studio - Notenux | Catatan Retro Modern</title>', false)
         ->assertSee('<link rel="canonical" href="https://notenux.oryphem.com/login">', false)
+        ->assertSee('<link rel="alternate" hreflang="id" href="https://notenux.oryphem.com/login">', false)
+        ->assertSee('<meta name="DC.title"', false)
+        ->assertSee('<meta itemprop="name"', false)
         ->assertSee('<meta name="robots" content="index, follow">', false)
         ->assertSee('"@type": "BreadcrumbList"', false)
         ->assertSee('https://notenux.oryphem.com/login', false);
@@ -65,6 +87,9 @@ test('guest authentication pages contain optimized seo meta tags and breadcrumb 
     $registerResponse->assertOk()
         ->assertSee('<title>Daftar Scribe Baru - Notenux | Mulai Petualangan Menulis</title>', false)
         ->assertSee('<link rel="canonical" href="https://notenux.oryphem.com/register">', false)
+        ->assertSee('<link rel="alternate" hreflang="id" href="https://notenux.oryphem.com/register">', false)
+        ->assertSee('<meta name="DC.title"', false)
+        ->assertSee('<meta itemprop="name"', false)
         ->assertSee('<meta name="robots" content="index, follow">', false)
         ->assertSee('"@type": "BreadcrumbList"', false)
         ->assertSee('https://notenux.oryphem.com/register', false);

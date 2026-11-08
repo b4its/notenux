@@ -57,9 +57,10 @@ class NoteController extends Controller
         ])->withCount('chunks');
 
         if ($search = $request->input('q')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('content', 'like', "%{$search}%");
+            $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
+            $query->where(function ($q) use ($escaped) {
+                $q->where('title', 'like', "%{$escaped}%")
+                    ->orWhere('content', 'like', "%{$escaped}%");
             });
         }
 

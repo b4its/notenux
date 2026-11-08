@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\NoteChunkService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
@@ -1702,4 +1703,86 @@ test('black-box: note export endpoint produces clean and secure csv, json, txt, 
     $htmlRes->assertStatus(200)
         ->assertHeader('Content-Type', 'text/html; charset=UTF-8');
     expect($htmlRes->getContent())->toContain('Secret Formulas');
+});
+
+test('black-box: user profile endpoints return hero telemetry and allow updating name and email', function () {
+    $user = User::factory()->create([
+        'name' => 'Original Hero',
+        'email' => 'hero@original.dev',
+    ]);
+
+    // Read profile
+    $getRes = $this->actingAs($user)->getJson('/api/profile');
+    $getRes->assertStatus(200)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.name', 'Original Hero')
+        ->assertJsonPath('data.email', 'hero@original.dev');
+
+    // Update profile name and email
+    $updateRes = $this->actingAs($user)->putJson('/profile', [
+        'name' => 'Arch-Mage Eldrin',
+        'email' => 'eldrin@notenux.dev',
+    ]);
+
+    $updateRes->assertStatus(200)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.name', 'Arch-Mage Eldrin')
+        ->assertJsonPath('data.email', 'eldrin@notenux.dev');
+
+    $this->assertDatabaseHas('users', [
+        'id' => $user->id,
+        'name' => 'Arch-Mage Eldrin',
+        'email' => 'eldrin@notenux.dev',
+    ]);
+});
+
+test('black-box: user can update password with valid current password and fails when current password is wrong', function () {
+    $user = User::factory()->create([
+        'password' => bcrypt('old-secret-password'),
+    ]);
+
+    // Attempt with incorrect current password
+    $badRes = $this->actingAs($user)->putJson('/profile', [
+        'name' => $user->name,
+        'email' => $user->email,
+        'current_password' => 'wrong-current-password',
+        'password' => 'new-secret-password-123',
+        'password_confirmation' => 'new-secret-password-123',
+    ]);
+
+    $badRes->assertStatus(422)
+        ->assertJsonValidationErrors(['current_password']);
+
+    // Attempt with valid current password
+    $goodRes = $this->actingAs($user)->putJson('/profile', [
+        'name' => $user->name,
+        'email' => $user->email,
+        'current_password' => 'old-secret-password',
+        'password' => 'new-secret-password-123',
+        'password_confirmation' => 'new-secret-password-123',
+    ]);
+
+    $goodRes->assertStatus(200)
+        ->assertJsonPath('status', 'success');
+
+    expect(Hash::check('new-secret-password-123', $user->fresh()->password))->toBeTrue();
+});
+
+test('black-box: notes search query escapes sql like wildcards percent and underscore', function () {
+    $user = User::factory()->create();
+    $noteMatch = Note::factory()->forUser($user)->create([
+        'title' => 'Completion 100% Guaranteed',
+        'content' => 'Full progress',
+    ]);
+    $noteOther = Note::factory()->forUser($user)->create([
+        'title' => 'Completion 1000 Guaranteed',
+        'content' => 'Full progress',
+    ]);
+
+    $res = $this->actingAs($user)->getJson('/api/notes?q=100%');
+    $res->assertStatus(200);
+
+    $ids = collect($res->json('data'))->pluck('id')->all();
+    expect($ids)->toContain($noteMatch->id)
+        ->and($ids)->not->toContain($noteOther->id);
 });

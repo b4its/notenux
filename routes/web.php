@@ -47,6 +47,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/studio', [NoteController::class, 'index'])->name('studio');
     Route::get('/panel', fn () => redirect()->route('studio'))->name('panel');
 
+    Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile.show');
+    Route::put('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/api/profile', [AuthController::class, 'showProfile'])->name('api.profile.show');
+    Route::put('/api/profile', [AuthController::class, 'updateProfile'])->name('api.profile.update');
+
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::post('/categories/bulk-delete', [CategoryController::class, 'bulkDestroy'])->name('categories.bulk-delete');

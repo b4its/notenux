@@ -2677,6 +2677,40 @@ test('white-box: Escape key dismisses bulk delete modal, quick category modals, 
     assert.equal(markdownClosed, true);
 });
 
+test('white-box: openProfileModal and closeProfileModal manage profile modal visibility and reset errors', () => {
+    const { panel } = harness(() => {});
+    const modalClasses = new Set(['hidden']);
+    const errorClasses = new Set();
+    let errorText = 'Old error';
+
+    panel.dom.profileSettingsModal = {
+        classList: {
+            add(c) { modalClasses.add(c); },
+            remove(c) { modalClasses.delete(c); },
+            contains(c) { return modalClasses.has(c); }
+        }
+    };
+    panel.dom.profileFormError = {
+        classList: {
+            add(c) { errorClasses.add(c); },
+            remove(c) { errorClasses.delete(c); },
+            contains(c) { return errorClasses.has(c); }
+        },
+        get textContent() { return errorText; },
+        set textContent(v) { errorText = v; }
+    };
+    panel.audio = { playBlip: () => {} };
+
+    panel.openProfileModal();
+    assert.equal(panel.dom.profileSettingsModal.classList.contains('hidden'), false);
+    assert.equal(panel.dom.profileFormError.classList.contains('hidden'), true);
+    assert.equal(panel.dom.profileFormError.textContent, '');
+
+    panel.closeProfileModal();
+    assert.equal(panel.dom.profileSettingsModal.classList.contains('hidden'), true);
+});
+
+
 
 
 

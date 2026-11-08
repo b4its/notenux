@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" data-theme="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" data-theme="dark" itemscope itemtype="https://schema.org/WebPage">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,9 +12,34 @@
     <meta name="description" content="Masuk ke Notenux Studio (notenux.oryphem.com/login). Lanjutkan petualangan menulis catatan retro, kelola naskah gamifikasi, dan kembangkan rank Scribe pribadimu.">
     <meta name="keywords" content="login notenux, masuk studio notenux, notenux oryphem, https://notenux.oryphem.com/login, catatan retro, markdown login, aplikasi catatan online">
     <meta name="author" content="Oryphem & Notenux Team">
+    <meta name="publisher" content="https://notenux.oryphem.com">
+    <link rel="canonical" href="https://notenux.oryphem.com/login">
+
+    <!-- Alternate Languages / Hreflang -->
+    <link rel="alternate" hreflang="id" href="https://notenux.oryphem.com/login">
+    <link rel="alternate" hreflang="en" href="https://notenux.oryphem.com/login">
+    <link rel="alternate" hreflang="x-default" href="https://notenux.oryphem.com/login">
+
+    <!-- Dublin Core Metadata -->
+    <meta name="DC.title" content="Masuk ke Studio - Notenux | Catatan Retro Modern">
+    <meta name="DC.creator" content="Oryphem">
+    <meta name="DC.description" content="Masuk ke Notenux Studio (notenux.oryphem.com/login). Lanjutkan petualangan menulis catatan retro dan kembangkan rank Scribe.">
+    <meta name="DC.publisher" content="https://notenux.oryphem.com">
+    <meta name="DC.language" content="id">
+    <meta name="DC.identifier" content="https://notenux.oryphem.com/login">
+
+    <!-- Schema.org Microdata -->
+    <meta itemprop="name" content="Masuk ke Studio - Notenux | Catatan Retro Modern">
+    <meta itemprop="description" content="Masuk ke Notenux Studio (notenux.oryphem.com/login). Lanjutkan petualangan menulis catatan retro.">
+    <meta itemprop="image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta itemprop="url" content="https://notenux.oryphem.com/login">
+
+    <!-- Search Engine Crawlers Optimization -->
     <meta name="robots" content="index, follow">
     <meta name="googlebot" content="index, follow">
-    <link rel="canonical" href="https://notenux.oryphem.com/login">
+    <meta name="bingbot" content="index, follow">
+    <meta name="slurp" content="index, follow">
+    <meta name="duckduckbot" content="index, follow">
 
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
@@ -27,20 +52,27 @@
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="2059">
     <meta property="og:image:height" content="764">
+    <meta property="og:locale" content="id_ID">
+    <meta property="og:locale:alternate" content="en_US">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@notenux">
+    <meta name="twitter:creator" content="@oryphem">
+    <meta name="twitter:domain" content="notenux.oryphem.com">
     <meta name="twitter:url" content="https://notenux.oryphem.com/login">
     <meta name="twitter:title" content="Masuk ke Studio - Notenux | Catatan Retro Modern">
     <meta name="twitter:description" content="Masuk ke Notenux Studio dan lanjutkan petualangan menulis catatan retro modern.">
     <meta name="twitter:image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
 
-    <!-- Mobile App Settings -->
+    <!-- Mobile & PWA Settings -->
     <meta name="application-name" content="Notenux">
     <meta name="apple-mobile-web-app-title" content="Notenux">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="msapplication-TileColor" content="#030712">
+    <meta name="msapplication-TileImage" content="{{ asset('assets/logo/light/icon_light.png') }}">
     <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">

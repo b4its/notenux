@@ -11,15 +11,25 @@
     <meta name="title" content="Notenux Studio - Editor Catatan & Markdown Gamifikasi">
     <meta name="description" content="Notenux Studio adalah editor naskah dan catatan retro modern dengan dukungan Markdown, mode mesin tik, dan gamifikasi rank Scribe.">
     <meta name="author" content="Oryphem & Notenux Team">
+    <meta name="publisher" content="https://notenux.oryphem.com">
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="googlebot" content="noindex, nofollow, noarchive">
+    <meta name="bingbot" content="noindex, nofollow, noarchive">
     <link rel="canonical" href="https://notenux.oryphem.com/studio">
+
+    <!-- Alternate Languages / Hreflang -->
+    <link rel="alternate" hreflang="id" href="https://notenux.oryphem.com/studio">
+    <link rel="alternate" hreflang="en" href="https://notenux.oryphem.com/studio">
+    <link rel="alternate" hreflang="x-default" href="https://notenux.oryphem.com/studio">
 
     <!-- Mobile & PWA Settings -->
     <meta name="application-name" content="Notenux">
     <meta name="apple-mobile-web-app-title" content="Notenux">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="msapplication-TileColor" content="#030712">
+    <meta name="msapplication-TileImage" content="{{ asset('assets/logo/light/icon_light.png') }}">
     <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
@@ -330,6 +340,15 @@
                     <i class="fa-solid fa-house"></i>
                 </a>
 
+                <!-- Hero Profile & Settings Button -->
+                <button type="button"
+                        id="open-profile-modal-btn"
+                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-950 dark:text-cyan-300 p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center border border-blue-400/50"
+                        title="Profil Hero & Keamanan Akun">
+                    <i class="fa-solid fa-user-shield sm:mr-1 text-blue-600 dark:text-cyan-400"></i>
+                    <span class="hidden sm:inline" id="top-nav-username">{{ Str::limit($user->name ?? 'HERO', 10) }}</span>
+                </button>
+
                 <!-- Logout Button -->
                 <form method="POST" action="{{ route('logout') }}" class="inline">
                     @csrf
@@ -378,8 +397,9 @@
                 <div class="arcade-card player-status-card p-2.5 rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/40 shadow-[2px_2px_0px_#000]">
                     <div class="player-avatar-row flex items-center gap-2.5 mb-2">
                         <!-- Pixel Wizard Avatar with FA icon -->
-                        <div class="player-avatar-box w-9 h-9 rounded border-2 border-black bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#000] relative"
-                             title="{{ $stats['rank_title'] ?? 'Novice Scribe' }} (LV.{{ $stats['level'] ?? 1 }})">
+                        <div class="player-avatar-box w-9 h-9 rounded border-2 border-black bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#000] relative cursor-pointer hover:bg-blue-500 transition-colors"
+                             id="sidebar-avatar-profile-btn"
+                             title="Kelola Profil & Keamanan ({{ $user->name ?? 'Hero' }})">
                             <i class="fa-solid fa-hat-wizard text-sm"></i>
                             <span class="collapsed-level-badge hidden font-pixel text-[8px] bg-amber-400 text-black px-1 rounded border border-black absolute -bottom-1 -right-1 shadow-[1px_1px_0px_#000]">
                                 LV.{{ $stats['level'] ?? 1 }}
@@ -1929,6 +1949,149 @@
             <div class="p-3 border-t-2 border-black/10 dark:border-white/10 bg-[var(--bg-surface-alt)] flex justify-end">
                 <button type="button" id="cancel-clear-modal-btn" class="arcade-btn bg-[var(--bg-surface)] px-4 py-1.5 rounded text-xs font-mono font-bold">
                     Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- HERO PROFILE & SECURITY SETTINGS MODAL -->
+    <!-- ============================================================================== -->
+    <div id="profile-settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="arcade-card bg-[var(--bg-surface)] border-2 border-black dark:border-blue-700 w-full max-w-lg rounded-xl overflow-hidden shadow-[6px_6px_0px_#000] flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="p-3.5 bg-blue-600 dark:bg-blue-900 border-b-2 border-black text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-user-shield text-base text-yellow-300"></i>
+                    <h2 class="font-pixel text-xs sm:text-sm tracking-wider uppercase">HERO GUILD IDENTITY & SECURITY</h2>
+                </div>
+                <button type="button" id="close-profile-modal-x" class="arcade-btn bg-black text-white hover:bg-gray-800 px-2 py-0.5 rounded text-xs font-mono" title="Tutup (ESC)">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs font-mono">
+                <!-- Hero Gamification HUD Card -->
+                <div class="arcade-card p-3 rounded-lg border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/40 shadow-[2px_2px_0px_#000] flex items-center gap-3">
+                    <div class="w-12 h-12 rounded border-2 border-black bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#000]">
+                        <i class="fa-solid fa-hat-wizard text-xl"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-pixel text-xs text-blue-900 dark:text-cyan-300 font-bold" id="profile-modal-rank-title">{{ $stats['rank_title'] ?? 'Novice Scribe' }}</span>
+                            <span class="font-pixel text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded border border-black" id="profile-modal-level">LV.{{ $stats['level'] ?? 1 }}</span>
+                        </div>
+                        <div class="flex items-center justify-between mt-1 text-[11px] text-slate-700 dark:text-gray-300">
+                            <span><i class="fa-solid fa-scroll mr-1 text-blue-600 dark:text-cyan-400"></i>{{ $stats['total_notes'] ?? 0 }} Catatan</span>
+                            <span><i class="fa-solid fa-feather-pointed mr-1 text-purple-600 dark:text-purple-400"></i>{{ $stats['total_words'] ?? 0 }} Kata</span>
+                            <span class="text-amber-600 dark:text-yellow-400 font-bold">{{ $stats['total_xp'] ?? 10 }} XP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Form -->
+                <form id="profile-settings-form" class="space-y-3.5">
+                    <!-- Name Field -->
+                    <div>
+                        <label for="profile-name-input" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
+                            <i class="fa-solid fa-user mr-1 text-blue-600 dark:text-cyan-400"></i> Nama Adventurer:
+                        </label>
+                        <input type="text"
+                               id="profile-name-input"
+                               name="name"
+                               value="{{ $user->name ?? '' }}"
+                               required
+                               maxlength="255"
+                               class="retro-input w-full p-2.5 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Email Field -->
+                    <div>
+                        <label for="profile-email-input" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
+                            <i class="fa-solid fa-envelope mr-1 text-blue-600 dark:text-cyan-400"></i> Email Arcane:
+                        </label>
+                        <input type="email"
+                               id="profile-email-input"
+                               name="email"
+                               value="{{ $user->email ?? '' }}"
+                               required
+                               maxlength="255"
+                               class="retro-input w-full p-2.5 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Password Section Divider -->
+                    <div class="pt-2 border-t-2 border-dashed border-black/20 dark:border-blue-900/40">
+                        <span class="font-bold text-[11px] text-blue-700 dark:text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-key"></i> Ubah Password Kredensial (Opsional)
+                        </span>
+                        <p class="text-[10px] opacity-70 mt-0.5">Biarkan kosong jika tidak ingin mengubah password akun.</p>
+                    </div>
+
+                    <!-- Current Password -->
+                    <div>
+                        <label for="profile-current-password-input" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
+                            Password Saat Ini:
+                        </label>
+                        <div class="relative">
+                            <input type="password"
+                                   id="profile-current-password-input"
+                                   name="current_password"
+                                   placeholder="Masukkan password saat ini..."
+                                   class="retro-input w-full p-2.5 pr-9 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs">
+                            <button type="button" class="password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" data-target="profile-current-password-input">
+                                <i class="fa-solid fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- New Password & Confirmation -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label for="profile-new-password-input" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
+                                Password Baru:
+                            </label>
+                            <div class="relative">
+                                <input type="password"
+                                       id="profile-new-password-input"
+                                       name="password"
+                                       placeholder="Minimal 8 karakter..."
+                                       class="retro-input w-full p-2.5 pr-9 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs">
+                                <button type="button" class="password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" data-target="profile-new-password-input">
+                                    <i class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="profile-confirm-password-input" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
+                                Konfirmasi Password:
+                            </label>
+                            <div class="relative">
+                                <input type="password"
+                                       id="profile-confirm-password-input"
+                                       name="password_confirmation"
+                                       placeholder="Ulangi password..."
+                                       class="retro-input w-full p-2.5 pr-9 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs">
+                                <button type="button" class="password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" data-target="profile-confirm-password-input">
+                                    <i class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error feedback element -->
+                    <div id="profile-form-error" class="hidden p-2.5 rounded bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border-2 border-rose-500 text-[11px]"></div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-3 border-t-2 border-black/10 dark:border-white/10 bg-[var(--bg-surface-alt)] flex items-center justify-between gap-2">
+                <button type="button" id="close-profile-modal-btn" class="arcade-btn bg-[var(--bg-surface)] hover:bg-gray-200 dark:hover:bg-slate-800 px-4 py-2 rounded text-xs font-mono font-bold shadow-[2px_2px_0px_#000]">
+                    Batal
+                </button>
+                <button type="button" id="save-profile-btn" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded text-xs font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#000]">
+                    <i class="fa-solid fa-floppy-disk"></i> SIMPAN PERUBAHAN
                 </button>
             </div>
         </div>
