@@ -1,0 +1,86 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & Deploy to Hostinger
+    runs-on: ubuntu-latest
+
+    env:
+      HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_HOST || '82.180.152.46' }}
+      HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT != '' && secrets.HOSTINGER_PORT || '65002' }}
+      HOSTINGER_USER: ${{ secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_USER || 'u916682966' }}
+      TARGET_PATH: /home/u916682966/domains/notenux.oryphem.com/notenux
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install NPM Dependencies
+        run: npm ci
+
+      - name: Build Production Assets
+        run: npm run build
+
+      - name: Setup SSH Connection
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -p "${HOSTINGER_PORT}" -H "${HOSTINGER_HOST}" >> ~/.ssh/known_hosts 2>/dev/null
+
+          if [ -n "${{ secrets.HOSTINGER_SSH_KEY }}" ]; then
+            echo "Using SSH Key Authentication"
+            echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+            echo "SSH_AUTH_METHOD=key" >> $GITHUB_ENV
+          elif [ -n "${{ secrets.HOSTINGER_SSH_PASSWORD }}" ]; then
+            echo "Using SSH Password Authentication"
+            sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+            echo "SSH_AUTH_METHOD=password" >> $GITHUB_ENV
+          else
+            echo "::error::Neither HOSTINGER_SSH_KEY nor HOSTINGER_SSH_PASSWORD secret is configured in repository secrets."
+            exit 1
+          fi
+
+      - name: Sync Frontend Build to Hostinger
+        run: |
+          if [ "${SSH_AUTH_METHOD}" = "key" ]; then
+            rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key -p ${HOSTINGER_PORT}" public/build/ "${HOSTINGER_USER}@${HOSTINGER_HOST}:${TARGET_PATH}/public/build/"
+          else
+            sshpass -p "${{ secrets.HOSTINGER_SSH_PASSWORD }}" rsync -avz --delete -e "ssh -p ${HOSTINGER_PORT}" public/build/ "${HOSTINGER_USER}@${HOSTINGER_HOST}:${TARGET_PATH}/public/build/"
+          fi
+
+      - name: Execute Server Deployment
+        run: |
+          REMOTE_COMMAND="bash /home/u916682966/domains/notenux.oryphem.com/deploy.sh"
+          if [ "${SSH_AUTH_METHOD}" = "key" ]; then
+            ssh -i ~/.ssh/deploy_key -p "${HOSTINGER_PORT}" "${HOSTINGER_USER}@${HOSTINGER_HOST}" "${REMOTE_COMMAND}"
+          else
+            sshpass -p "${{ secrets.HOSTINGER_SSH_PASSWORD }}" ssh -p "${HOSTINGER_PORT}" "${HOSTINGER_USER}@${HOSTINGER_HOST}" "${REMOTE_COMMAND}"
+          fi
+
+      - name: Health Check
+        run: |
+          echo "Verifying application availability..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://notenux.oryphem.com/up)
+          if [ "$STATUS" -eq 200 ]; then
+            echo "Deployment verified successfully! HTTP Status: 200"
+          else
+            echo "Health check warning: HTTP Status is $STATUS"
+            exit 1
+          fi
