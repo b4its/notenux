@@ -426,3 +426,19 @@ test('performance: player stats telemetry computes total chunks via direct index
 
     expect($hasCorrelatedWhereHas)->toBeFalse();
 });
+
+test('security: login endpoint throttles brute force attempts after 10 requests', function () {
+    for ($i = 0; $i < 10; $i++) {
+        $this->post(route('login'), [
+            'email' => 'attacker@notenux.dev',
+            'password' => 'wrong-pass-'.$i,
+        ]);
+    }
+
+    $response = $this->post(route('login'), [
+        'email' => 'attacker@notenux.dev',
+        'password' => 'wrong-pass-11',
+    ]);
+
+    $response->assertStatus(429);
+});
