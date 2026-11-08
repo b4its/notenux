@@ -3010,6 +3010,87 @@ test('white-box: dynamic island controls toggle open, close, and animate chevron
     assert.equal(containerClasses.has('island-expanded'), false);
 });
 
+test('white-box: insertHtmlAtCursor inserts content at saved cursor selection instead of document top', () => {
+    const { panel, context } = harness(() => {});
+    panel.activeNote = { id: 1, title: 'Quest Log', content: '<p>Initial text</p>' };
+
+    let editorHtml = '<p>Initial text</p>';
+    panel.dom.editorArea = {
+        get innerHTML() { return editorHtml; },
+        set innerHTML(val) { editorHtml = val; },
+        focus: () => {},
+        contains: () => true,
+        cloneNode: () => ({ innerHTML: editorHtml, querySelectorAll: () => [] }),
+        insertAdjacentHTML: (pos, html) => {
+            if (pos === 'beforeend') editorHtml += html;
+        }
+    };
+
+    let insertedNode = null;
+    let deletedContents = false;
+    const mockRange = {
+        commonAncestorContainer: panel.dom.editorArea,
+        deleteContents: () => { deletedContents = true; },
+        insertNode: (node) => { insertedNode = node; }
+    };
+
+    panel.savedEditorRange = mockRange;
+    panel.insertHtmlAtCursor('<blockquote>Inserted at cursor marked position</blockquote>');
+
+    assert.equal(deletedContents, true);
+    assert.ok(insertedNode !== null);
+});
+
+test('white-box: updateAdaptiveColorPalette dynamically switches text colors between bright in dark mode and deep in light mode', () => {
+    const { panel, context } = harness(() => {});
+
+    const mockSwatches = [
+        {
+            dataset: {
+                color: '#ef4444',
+                colorLight: '#991b1b',
+                colorDark: '#f87171',
+                colorName: 'Merah'
+            },
+            style: { backgroundColor: '', borderColor: '' },
+            getAttribute: (attr) => attr === 'data-color-name' ? 'Merah' : null,
+            setAttribute: (attr, val) => {}
+        },
+        {
+            dataset: {
+                color: '#06b6d4',
+                colorLight: '#0e7490',
+                colorDark: '#38bdf8',
+                colorName: 'Cyan'
+            },
+            style: { backgroundColor: '', borderColor: '' },
+            getAttribute: (attr) => attr === 'data-color-name' ? 'Cyan' : null,
+            setAttribute: (attr, val) => {}
+        }
+    ];
+
+    context.document.querySelectorAll = (sel) => {
+        if (sel.includes('adaptive-color-swatch') || sel.includes('[data-color]')) {
+            return mockSwatches;
+        }
+        return [];
+    };
+
+    // Test dark mode -> bright luminous colors
+    panel.updateAdaptiveColorPalette('dark');
+    assert.equal(mockSwatches[0].dataset.color, '#f87171'); // bright red in dark mode
+    assert.equal(mockSwatches[1].dataset.color, '#38bdf8'); // bright cyan in dark mode
+    assert.equal(mockSwatches[0].style.backgroundColor, '#f87171');
+    assert.equal(mockSwatches[1].style.backgroundColor, '#38bdf8');
+
+    // Test light mode -> deep rich colors
+    panel.updateAdaptiveColorPalette('light');
+    assert.equal(mockSwatches[0].dataset.color, '#991b1b'); // deep red in light mode
+    assert.equal(mockSwatches[1].dataset.color, '#0e7490'); // deep cyan in light mode
+    assert.equal(mockSwatches[0].style.backgroundColor, '#991b1b');
+    assert.equal(mockSwatches[1].style.backgroundColor, '#0e7490');
+});
+
 
 
 

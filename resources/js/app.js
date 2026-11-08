@@ -944,6 +944,9 @@ class NotenuxPanel {
 
         this.isBulkSelectNotes = false;
         this.selectedNoteIds = new Set();
+        this.savedEditorRange = null;
+        this.savedTextareaSelection = null;
+        this.currentTheme = 'dark';
 
         this.dom = {
             undoBtn: document.getElementById('editor-undo-btn'),
@@ -1360,21 +1363,30 @@ class NotenuxPanel {
     }
 
     setTheme(theme, notify = false) {
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-            document.documentElement.setAttribute('data-theme', 'dark');
-            if (this.dom.themeToggleBtn) {
-                this.dom.themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon text-cyan-300 mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>';
+        this.currentTheme = theme;
+        if (typeof document !== 'undefined' && document.documentElement) {
+            if (theme === 'dark') {
+                document.documentElement.classList?.add?.('dark');
+                document.documentElement.setAttribute?.('data-theme', 'dark');
+            } else {
+                document.documentElement.classList?.remove?.('dark');
+                document.documentElement.setAttribute?.('data-theme', 'light');
             }
-        } else {
-            document.documentElement.classList.remove('dark');
-            document.documentElement.setAttribute('data-theme', 'light');
-            if (this.dom.themeToggleBtn) {
+        }
+        if (this.dom.themeToggleBtn) {
+            if (theme === 'dark') {
+                this.dom.themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon text-cyan-300 mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>';
+            } else {
                 this.dom.themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun text-amber-800 mr-1.5"></i> <span class="hidden sm:inline">DAY</span>';
             }
         }
-        localStorage.setItem('notenux_theme', theme);
-        this.updateFavicon(theme);
+        if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+            localStorage.setItem('notenux_theme', theme);
+        }
+        if (typeof this.updateFavicon === 'function') {
+            this.updateFavicon(theme);
+        }
+        this.updateAdaptiveColorPalette(theme);
 
         if (notify) {
             this.toast.show(
@@ -1384,6 +1396,32 @@ class NotenuxPanel {
                 theme === 'dark' ? 'fa-solid fa-moon text-cyan-400' : 'fa-solid fa-sun text-amber-400'
             );
         }
+    }
+
+    updateAdaptiveColorPalette(theme = null) {
+        const isDark = (theme || this.currentTheme || (document.documentElement?.classList?.contains ? document.documentElement.classList.contains('dark') : false)) === 'dark';
+        const swatches = document.querySelectorAll ? document.querySelectorAll('.adaptive-color-swatch, [data-color]') : [];
+        swatches.forEach(btn => {
+            if (!btn.dataset) return;
+            const lightColor = btn.dataset.colorLight;
+            const darkColor = btn.dataset.colorDark;
+            if (!lightColor || !darkColor) return;
+
+            const targetColor = isDark ? darkColor : lightColor;
+            btn.dataset.color = targetColor;
+            if (btn.style) {
+                btn.style.backgroundColor = targetColor;
+                if (targetColor.toLowerCase() === '#f8fafc' || targetColor.toLowerCase() === '#ffffff') {
+                    btn.style.borderColor = 'rgba(0,0,0,0.4)';
+                } else if (targetColor.toLowerCase() === '#000000' || targetColor.toLowerCase() === '#0f172a') {
+                    btn.style.borderColor = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.6)';
+                }
+            }
+            const baseName = btn.getAttribute ? btn.getAttribute('data-color-name') : '';
+            if (baseName && btn.setAttribute) {
+                btn.setAttribute('title', isDark ? `${baseName} (Mode Gelap: Terang)` : `${baseName} (Mode Terang: Gelap)`);
+            }
+        });
     }
 
     updateFavicon(theme) {
@@ -1626,16 +1664,20 @@ class NotenuxPanel {
                 const modeInput = document.querySelector('input[name="md_apply_mode"]:checked');
                 const mode = modeInput ? modeInput.value : 'cursor';
 
-                if (mode === 'replace' && this.dom.editorArea) {
-                    this.dom.editorArea.innerHTML = html;
-                } else if (this.dom.editorArea) {
-                    this.dom.editorArea.focus();
-                    const sel = window.getSelection();
-                    if (sel && sel.rangeCount > 0 && this.dom.editorArea.contains(sel.anchorNode)) {
-                        document.execCommand('insertHTML', false, html);
-                    } else {
-                        this.dom.editorArea.innerHTML += html;
+                if (mode === 'replace') {
+                    if (this.isPlainTextMode && this.dom.plainTextEditor) {
+                        this.dom.plainTextEditor.value = PlainTextEngine ? PlainTextEngine.toPlainText(html) : html.replace(/<[^>]+>/g, '');
+                        this.dom.plainTextEditor.dispatchEvent(new Event('input'));
+                    } else if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+                        this.dom.markdownRawEditor.value = html;
+                        this.dom.markdownRawEditor.dispatchEvent(new Event('input'));
+                    } else if (this.dom.editorArea) {
+                        this.dom.editorArea.innerHTML = html;
+                        this.handleEditorInput();
+                        this.pushUndoSnapshot();
                     }
+                } else {
+                    this.insertHtmlAtCursor(html);
                 }
 
                 this.handleEditorInput();
@@ -1650,6 +1692,7 @@ class NotenuxPanel {
             this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
             return;
         }
+        this.saveEditorSelection();
         if (!this.dom.markdownModal) return;
         this.audio.playClick();
         this.dom.markdownModal.classList.remove('hidden');
@@ -2913,10 +2956,40 @@ class NotenuxPanel {
                 }
 
                 this.dom.editorArea.focus();
+                this.saveEditorSelection();
                 this.handleEditorInput();
                 this.pushUndoSnapshot();
             });
         });
+
+        document.querySelectorAll('#editor-toolbar-decks button, [data-command], [data-color]').forEach(btn => {
+            btn.addEventListener('mousedown', (e) => {
+                if (e.target && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+                    this.saveEditorSelection();
+                    e.preventDefault();
+                }
+            });
+        });
+
+        this.dom.editorArea?.addEventListener('keyup', () => this.saveEditorSelection());
+        this.dom.editorArea?.addEventListener('mouseup', () => this.saveEditorSelection());
+        this.dom.editorArea?.addEventListener('pointerup', () => this.saveEditorSelection());
+        this.dom.editorArea?.addEventListener('focus', () => this.saveEditorSelection());
+
+        document.addEventListener('selectionchange', () => {
+            const sel = window.getSelection ? window.getSelection() : null;
+            if (sel && sel.rangeCount > 0 && this.dom.editorArea && (this.dom.editorArea.contains(sel.anchorNode) || this.dom.editorArea === sel.anchorNode)) {
+                this.saveEditorSelection();
+            }
+        });
+
+        this.dom.plainTextEditor?.addEventListener('keyup', () => this.saveEditorSelection());
+        this.dom.plainTextEditor?.addEventListener('mouseup', () => this.saveEditorSelection());
+        this.dom.plainTextEditor?.addEventListener('select', () => this.saveEditorSelection());
+
+        this.dom.markdownRawEditor?.addEventListener('keyup', () => this.saveEditorSelection());
+        this.dom.markdownRawEditor?.addEventListener('mouseup', () => this.saveEditorSelection());
+        this.dom.markdownRawEditor?.addEventListener('select', () => this.saveEditorSelection());
 
         document.querySelectorAll('[data-color]').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -2927,10 +3000,18 @@ class NotenuxPanel {
                 }
                 this.audio.playClick();
                 this.pushUndoSnapshot();
-                const color = btn.dataset.color;
+
+                const isDark = (this.currentTheme || (document.documentElement?.classList?.contains ? document.documentElement.classList.contains('dark') : false)) === 'dark';
+                let color = btn.dataset.color;
+                if (btn.dataset.colorLight && btn.dataset.colorDark) {
+                    color = isDark ? btn.dataset.colorDark : btn.dataset.colorLight;
+                }
                 const type = btn.dataset.colorType || 'foreColor';
+
+                this.restoreEditorSelection();
                 document.execCommand(type, false, color);
                 this.dom.editorArea.focus();
+                this.saveEditorSelection();
                 this.handleEditorInput();
                 this.pushUndoSnapshot();
             });
@@ -2943,8 +3024,10 @@ class NotenuxPanel {
                     return;
                 }
                 this.pushUndoSnapshot();
+                this.restoreEditorSelection();
                 document.execCommand('foreColor', false, e.target.value);
                 this.dom.editorArea.focus();
+                this.saveEditorSelection();
                 this.handleEditorInput();
                 this.pushUndoSnapshot();
             };
@@ -2959,8 +3042,10 @@ class NotenuxPanel {
                     return;
                 }
                 this.pushUndoSnapshot();
+                this.restoreEditorSelection();
                 document.execCommand('hiliteColor', false, e.target.value);
                 this.dom.editorArea.focus();
+                this.saveEditorSelection();
                 this.handleEditorInput();
                 this.pushUndoSnapshot();
             };
@@ -3182,6 +3267,166 @@ class NotenuxPanel {
         }
     }
 
+    saveEditorSelection() {
+        if (this.isPlainTextMode && this.dom.plainTextEditor) {
+            this.savedTextareaSelection = {
+                start: this.dom.plainTextEditor.selectionStart !== undefined ? this.dom.plainTextEditor.selectionStart : 0,
+                end: this.dom.plainTextEditor.selectionEnd !== undefined ? this.dom.plainTextEditor.selectionEnd : 0,
+                target: 'plain'
+            };
+            return;
+        }
+        if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+            this.savedTextareaSelection = {
+                start: this.dom.markdownRawEditor.selectionStart !== undefined ? this.dom.markdownRawEditor.selectionStart : 0,
+                end: this.dom.markdownRawEditor.selectionEnd !== undefined ? this.dom.markdownRawEditor.selectionEnd : 0,
+                target: 'raw'
+            };
+            return;
+        }
+        const sel = window.getSelection ? window.getSelection() : null;
+        if (sel && sel.rangeCount > 0 && this.dom.editorArea) {
+            const range = sel.getRangeAt(0);
+            if (this.dom.editorArea.contains(range.commonAncestorContainer) || this.dom.editorArea === range.commonAncestorContainer) {
+                this.savedEditorRange = range.cloneRange();
+            }
+        }
+    }
+
+    restoreEditorSelection() {
+        if (this.isPlainTextMode && this.dom.plainTextEditor) {
+            this.dom.plainTextEditor.focus();
+            if (this.savedTextareaSelection && this.savedTextareaSelection.target === 'plain') {
+                try {
+                    this.dom.plainTextEditor.setSelectionRange(this.savedTextareaSelection.start, this.savedTextareaSelection.end);
+                } catch (_) {}
+            }
+            return;
+        }
+        if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+            this.dom.markdownRawEditor.focus();
+            if (this.savedTextareaSelection && this.savedTextareaSelection.target === 'raw') {
+                try {
+                    this.dom.markdownRawEditor.setSelectionRange(this.savedTextareaSelection.start, this.savedTextareaSelection.end);
+                } catch (_) {}
+            }
+            return;
+        }
+        if (!this.dom.editorArea) return;
+        this.dom.editorArea.focus();
+        if (this.savedEditorRange && window.getSelection) {
+            const sel = window.getSelection();
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(this.savedEditorRange);
+            }
+        }
+    }
+
+    insertHtmlAtCursor(html) {
+        if (!html) return;
+        this.pushUndoSnapshot();
+
+        if (this.isPlainTextMode && this.dom.plainTextEditor) {
+            this.dom.plainTextEditor.focus();
+            const ta = this.dom.plainTextEditor;
+            const start = (this.savedTextareaSelection?.target === 'plain' && this.savedTextareaSelection.start !== undefined)
+                ? this.savedTextareaSelection.start
+                : (ta.selectionStart || 0);
+            const end = (this.savedTextareaSelection?.target === 'plain' && this.savedTextareaSelection.end !== undefined)
+                ? this.savedTextareaSelection.end
+                : (ta.selectionEnd || 0);
+            const plainText = PlainTextEngine ? PlainTextEngine.toPlainText(html) : html.replace(/<[^>]+>/g, '');
+            if (typeof ta.setRangeText === 'function') {
+                ta.setRangeText(plainText, start, end, 'end');
+            } else {
+                ta.value = ta.value.substring(0, start) + plainText + ta.value.substring(end);
+            }
+            ta.dispatchEvent(new Event('input'));
+            this.savedTextareaSelection = {
+                start: start + plainText.length,
+                end: start + plainText.length,
+                target: 'plain'
+            };
+            return;
+        }
+
+        if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+            this.dom.markdownRawEditor.focus();
+            const ta = this.dom.markdownRawEditor;
+            const start = (this.savedTextareaSelection?.target === 'raw' && this.savedTextareaSelection.start !== undefined)
+                ? this.savedTextareaSelection.start
+                : (ta.selectionStart || 0);
+            const end = (this.savedTextareaSelection?.target === 'raw' && this.savedTextareaSelection.end !== undefined)
+                ? this.savedTextareaSelection.end
+                : (ta.selectionEnd || 0);
+            if (typeof ta.setRangeText === 'function') {
+                ta.setRangeText(html, start, end, 'end');
+            } else {
+                ta.value = ta.value.substring(0, start) + html + ta.value.substring(end);
+            }
+            ta.dispatchEvent(new Event('input'));
+            this.savedTextareaSelection = {
+                start: start + html.length,
+                end: start + html.length,
+                target: 'raw'
+            };
+            return;
+        }
+
+        if (!this.dom.editorArea) return;
+        this.dom.editorArea.focus();
+
+        const sel = window.getSelection ? window.getSelection() : null;
+        let range = null;
+
+        if (this.savedEditorRange && this.dom.editorArea.contains(this.savedEditorRange.commonAncestorContainer)) {
+            range = this.savedEditorRange;
+            if (sel) {
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+        } else if (sel && sel.rangeCount > 0 && (this.dom.editorArea.contains(sel.anchorNode) || this.dom.editorArea === sel.anchorNode)) {
+            range = sel.getRangeAt(0);
+        }
+
+        if (range && typeof range.deleteContents === 'function' && typeof range.insertNode === 'function') {
+            range.deleteContents();
+            if (typeof document !== 'undefined' && typeof document.createElement === 'function' && typeof document.createDocumentFragment === 'function') {
+                const tempEl = document.createElement('div');
+                tempEl.innerHTML = html;
+                const frag = document.createDocumentFragment();
+                let lastNode = null;
+                while (tempEl.firstChild) {
+                    lastNode = tempEl.firstChild;
+                    frag.appendChild(lastNode);
+                }
+                range.insertNode(frag);
+
+                if (lastNode && sel && typeof document.createRange === 'function') {
+                    const newRange = document.createRange();
+                    newRange.setStartAfter(lastNode);
+                    newRange.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(newRange);
+                    this.savedEditorRange = newRange.cloneRange();
+                }
+            } else {
+                range.insertNode(html);
+            }
+        } else if (typeof document !== 'undefined' && typeof document.execCommand === 'function') {
+            const success = document.execCommand('insertHTML', false, html);
+            if (!success && this.dom.editorArea) {
+                this.dom.editorArea.insertAdjacentHTML('beforeend', html);
+            }
+        } else if (this.dom.editorArea) {
+            this.dom.editorArea.insertAdjacentHTML('beforeend', html);
+        }
+
+        this.handleEditorInput();
+        this.pushUndoSnapshot();
+    }
+
     insertRetroTable() {
         this.audio.playCoin();
         this.pushUndoSnapshot();
@@ -3212,7 +3457,7 @@ class NotenuxPanel {
             </table>
             <p><br></p>
         `;
-        document.execCommand('insertHTML', false, tableHtml);
+        this.insertHtmlAtCursor(tableHtml);
         this.dom.editorArea.focus();
         this.handleEditorInput();
         this.toast.show('3x4 Retro Data Table inserted into editor', 'success', 'Table Added', 'fa-solid fa-table text-cyan-400');
@@ -3850,13 +4095,14 @@ class NotenuxPanel {
             </ul>
             <p><br></p>
         `;
-        document.execCommand('insertHTML', false, taskHtml);
+        this.insertHtmlAtCursor(taskHtml);
         this.dom.editorArea.focus();
         this.handleEditorInput();
         this.toast.show('Interactive quest task item added', 'info', 'Checklist');
     }
 
     insertMedia() {
+        this.saveEditorSelection();
         this.audio.playClick();
         const choice = prompt('Enter Image URL (or type "sword", "crystal", "shield" for retro presets):', 'crystal');
         if (!choice) return;
@@ -3909,7 +4155,7 @@ class NotenuxPanel {
         const breakP = document.createElement('p');
         breakP.innerHTML = '<br>';
         const imgHtml = figure.outerHTML + breakP.outerHTML;
-        document.execCommand('insertHTML', false, imgHtml);
+        this.insertHtmlAtCursor(imgHtml);
         this.dom.editorArea.focus();
         this.handleEditorInput();
         const insertedImg = this.dom.editorArea?.querySelector ? (this.dom.editorArea.querySelector(`img[src="${src}"]`) || image) : image;
