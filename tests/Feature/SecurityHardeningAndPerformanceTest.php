@@ -2,6 +2,7 @@
 
 use App\Models\Note;
 use App\Models\User;
+use App\Services\NoteChunkService;
 use App\Services\NoteContentSanitizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -172,4 +173,55 @@ test('security: category bulk delete rejects arrays exceeding 100 items', functi
 test('performance: composite indexes exist on notes table for user_id, pinned, and category', function () {
     expect(Schema::hasIndex('notes', 'notes_user_id_pinned_updated_index'))->toBeTrue()
         ->and(Schema::hasIndex('notes', 'notes_user_id_category_updated_index'))->toBeTrue();
+});
+
+test('security: dom clobbering defense removes reserved system ids from note content', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+
+    $clobberingHtml = '<div id="save-now-btn"><span id="note-title-input">Sneaky</span><p id="section-safe-1">Safe</p></div>';
+    $clean = $sanitizer->sanitize($clobberingHtml);
+
+    expect($clean)->not->toContain('id="save-now-btn"')
+        ->and($clean)->not->toContain('id="note-title-input"')
+        ->and($clean)->toContain('id="section-safe-1"');
+});
+
+test('security: note title sanitizes null bytes and control characters', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->postJson('/api/notes', [
+        'title' => "Dangerous\0Null\x07Byte\tTitle",
+        'content' => '<p>Normal text</p>',
+    ]);
+
+    $response->assertStatus(201);
+    $createdNote = Note::find($response->json('data.id'));
+
+    expect($createdNote->title)->not->toContain("\0")
+        ->and($createdNote->title)->not->toContain("\x07");
+});
+
+test('security: chunk verification uses constant-time hash comparison and flags tampered chunks', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->create(['user_id' => $user->id]);
+    $chunkService = app(NoteChunkService::class);
+    $chunkService->syncChunks($note, '<p>Original text shard</p>');
+
+    $verifyRes = $this->actingAs($user)->getJson("/api/notes/{$note->id}/chunks/verify");
+    $verifyRes->assertOk()
+        ->assertJsonPath('data.status', 'verified');
+
+    // Tamper with chunk checksum
+    $chunk = $note->chunks()->first();
+    $chunk->update(['checksum' => hash('sha256', 'tampered')]);
+
+    $tamperedRes = $this->actingAs($user)->getJson("/api/notes/{$note->id}/chunks/verify");
+    $tamperedRes->assertOk()
+        ->assertJsonPath('data.status', 'corrupted');
+});
+
+test('performance: landing page does not perform unnecessary queries for private note titles', function () {
+    $response = $this->get('/');
+    $response->assertOk()
+        ->assertViewMissing('sampleNotes');
 });

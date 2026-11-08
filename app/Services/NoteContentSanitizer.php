@@ -6,6 +6,17 @@ use Dom\HTMLDocument;
 
 class NoteContentSanitizer
 {
+    /**
+     * Critical studio element IDs that must not be clobbered by user content (CWE-79 / DOM Clobbering).
+     */
+    public const RESERVED_DOM_IDS = [
+        'editorarea', 'plain-text-editor', 'markdownraweditor', 'note-title-input',
+        'note-category-select', 'save-now-btn', 'delete-note-btn', 'save-status-text',
+        'app-favicon', 'csrf-token', 'studio-dynamic-island', 'dynamic-island-tray',
+        'dynamic-island-toggle-btn', 'favorite-note-btn', 'pin-note-btn', 'location',
+        'window', 'document', 'form', 'body', 'cookie',
+    ];
+
     public function sanitize(?string $content): string
     {
         if (! $content || ! preg_match('/<[a-z!]/i', $content)) {
@@ -26,7 +37,8 @@ class NoteContentSanitizer
             foreach (iterator_to_array($element->attributes) as $attribute) {
                 $name = strtolower($attribute->name);
                 $value = $attribute->value;
-                $safe = in_array($name, ['class', 'title', 'alt', 'id', 'data-align', 'data-placeholder', 'contenteditable'], true)
+                $safe = in_array($name, ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable'], true)
+                    || ($name === 'id' && preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*$/', $value) && ! in_array(strtolower($value), self::RESERVED_DOM_IDS, true))
                     || (in_array($name, ['checked', 'disabled'], true) && $tag === 'input')
                     || ($name === 'type' && $tag === 'input' && $value === 'checkbox')
                     || (in_array($name, ['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'], true) && ctype_digit($value))

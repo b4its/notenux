@@ -178,6 +178,10 @@ class NoteController extends Controller
             'is_favorite' => ['nullable', 'boolean'],
         ]);
 
+        if (array_key_exists('title', $validated)) {
+            $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
+        }
+
         $note = DB::transaction(function () use ($validated, $user): Note {
             $note = Note::create([
                 'user_id' => $user->id,
@@ -236,6 +240,10 @@ class NoteController extends Controller
             'is_pinned' => ['sometimes', 'boolean'],
             'is_favorite' => ['sometimes', 'boolean'],
         ]);
+
+        if (array_key_exists('title', $validated)) {
+            $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
+        }
 
         DB::transaction(function () use ($note, $validated): void {
             if (array_key_exists('content', $validated)) {

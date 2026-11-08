@@ -16,12 +16,10 @@ class LandingController extends Controller
     {
         $noteCount = Note::count();
         $chunkCount = NoteChunk::count();
-        $sampleNotes = Note::latest()->take(3)->get(['id', 'uuid', 'title', 'category', 'word_count', 'level']);
 
         return view('landing', [
             'noteCount' => max($noteCount, 12),
             'chunkCount' => max($chunkCount, 48),
-            'sampleNotes' => $sampleNotes,
             'user' => $request->user(),
         ]);
     }

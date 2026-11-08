@@ -220,7 +220,7 @@ class NoteChunkService
         foreach ($chunks as $chunk) {
             $expectedChecksum = hash('sha256', $chunk->content);
             $expectedBytes = strlen($chunk->content);
-            $checksumMatches = ($chunk->checksum === $expectedChecksum);
+            $checksumMatches = hash_equals((string) $expectedChecksum, (string) $chunk->checksum);
             $bytesMatch = ($chunk->byte_size === $expectedBytes);
             $isChunkValid = $checksumMatches && $bytesMatch;
 

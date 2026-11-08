@@ -22,7 +22,9 @@ function sanitizeHtml(html) {
         }
         for (const attribute of [...element.attributes]) {
             const { name, value } = attribute;
-            const safe = ['class', 'title', 'alt', 'id', 'data-align', 'data-placeholder', 'contenteditable'].includes(name)
+            const isReservedId = name === 'id' && ['editorarea', 'plain-text-editor', 'markdownraweditor', 'note-title-input', 'note-category-select', 'save-now-btn', 'delete-note-btn', 'save-status-text', 'app-favicon', 'csrf-token', 'studio-dynamic-island', 'dynamic-island-tray', 'dynamic-island-toggle-btn', 'favorite-note-btn', 'pin-note-btn', 'location', 'window', 'document', 'form', 'body', 'cookie'].includes((value || '').toLowerCase());
+            const safe = (!isReservedId && ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable'].includes(name))
+                || (name === 'id' && !isReservedId && /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(value))
                 || (name === 'type' && element.localName === 'input' && value === 'checkbox')
                 || (['checked', 'disabled'].includes(name) && element.localName === 'input')
                 || (['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'].includes(name) && /^\d+$/.test(value))
