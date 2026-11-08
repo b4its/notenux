@@ -372,3 +372,57 @@ test('security: bulk operations reject duplicate ids in payload using distinct v
     $response->assertStatus(422)
         ->assertJsonValidationErrors('ids.0');
 });
+
+test('performance: reordering chunks avoids redundant updates on unchanged positions', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->create(['user_id' => $user->id]);
+    $service = app(NoteChunkService::class);
+    $text = str_repeat('A', 1005)."\n\n".str_repeat('B', 1005)."\n\n".str_repeat('C', 1005);
+    $chunks = $service->syncChunks($note, $text);
+
+    expect(count($chunks))->toBeGreaterThanOrEqual(3);
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    // Swap only first two chunks: [1, 0, 2, 3, ...]
+    $order = array_map(fn ($c) => $c->id, $chunks);
+    $temp = $order[0];
+    $order[0] = $order[1];
+    $order[1] = $temp;
+
+    $service->reorderChunks($note, $order);
+
+    $queries = DB::getQueryLog();
+    $updateChunkQueries = array_filter($queries, function ($q) {
+        return str_contains(strtolower($q['query']), 'update') && str_contains(strtolower($q['query']), 'note_chunks');
+    });
+
+    // Only chunks 0 and 1 needed index updates, remaining chunks were skipped
+    expect(count($updateChunkQueries))->toBe(2);
+});
+
+test('performance: player stats telemetry computes total chunks via direct indexed join', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->create(['user_id' => $user->id]);
+    $text = str_repeat('X', 1005)."\n\n".str_repeat('Y', 1005);
+    $chunks = app(NoteChunkService::class)->syncChunks($note, $text);
+    $expectedCount = count($chunks);
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    $response = $this->actingAs($user)->getJson('/api/player-stats');
+    $response->assertOk()
+        ->assertJsonPath('data.total_chunks', $expectedCount);
+
+    $queries = DB::getQueryLog();
+    $hasCorrelatedWhereHas = false;
+    foreach ($queries as $q) {
+        if (str_contains(strtolower($q['query']), 'exists') && str_contains(strtolower($q['query']), 'note_chunks')) {
+            $hasCorrelatedWhereHas = true;
+        }
+    }
+
+    expect($hasCorrelatedWhereHas)->toBeFalse();
+});

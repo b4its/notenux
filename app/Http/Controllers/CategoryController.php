@@ -325,7 +325,7 @@ class CategoryController extends Controller
         $favoriteNotes = (int) ($aggregates->favorite_notes ?? 0);
 
         $totalChunks = $userId
-            ? NoteChunk::whereHas('note', fn (Builder $q) => $q->where('user_id', $userId))->count()
+            ? NoteChunk::join('notes', 'notes.id', '=', 'note_chunks.note_id')->where('notes.user_id', $userId)->count('note_chunks.id')
             : 0;
 
         $level = max(1, (int) floor($totalXP / 150) + 1);

@@ -317,7 +317,7 @@ class NoteChunkService
             foreach ($orderedIdentities as $index => $identity) {
                 $strIdentity = (string) $identity;
                 $chunk = $chunks->get($strIdentity) ?? $chunksByUid->get($strIdentity);
-                if ($chunk) {
+                if ($chunk && $chunk->chunk_index !== $index) {
                     $chunk->update(['chunk_index' => $index]);
                 }
             }
