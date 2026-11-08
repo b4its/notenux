@@ -691,128 +691,85 @@
                 <!-- ============================================================================== -->
                 <div id="studio-dynamic-island" class="dynamic-island-container sticky top-0 z-30 w-full transition-all duration-300">
                     <!-- Island Capsule Pill (Compact Header / Always Visible & Interactive) -->
-                    <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex flex-col gap-2 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
-                        <!-- Capsule Main Row: Quick Identity, Live Telemetry & Island Controls -->
-                        <div class="flex items-center justify-between gap-2 w-full min-w-0">
-                            <!-- Left: Scroll Icon & Unconstrained Title & Category Pill -->
-                            <div class="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
-                                <!-- Retro Scroll Pill Icon -->
-                                <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
-                                    <i class="fa-solid fa-scroll text-sm text-blue-600 dark:text-cyan-400"></i>
-                                </div>
-
-                                <!-- Scroll Title (Full Width, Unconstrained & Interactive) -->
-                                <input type="text"
-                                       id="note-title-input"
-                                       placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
-                                       value="{{ $activeNote->title ?? '' }}"
-                                       {{ $activeNote ? '' : 'readonly' }}
-                                       class="min-w-0 flex-1 text-sm sm:text-lg font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-0.5 truncate"
-                                       title="Scroll Title">
-
-                                <!-- Compact Category Pill Dropdown -->
-                                <div class="hidden md:flex items-center gap-1 bg-surface-alt px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
-                                    <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
-                                    <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer max-w-[140px] truncate">
-                                        @if(isset($categories) && $categories->isNotEmpty())
-                                            @foreach($categories as $category)
-                                                <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="catatan">[CATATAN] Catatan</option>
-                                            <option value="tugas">[TUGAS] Tugas</option>
-                                        @endif
-                                    </select>
-                                </div>
+                    <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex items-center justify-between gap-2 sm:gap-3 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
+                        <!-- Left: Scroll Icon & Prominent Scroll Title (Generous Breathing Room!) -->
+                        <div class="flex items-center gap-2 min-w-0 flex-1">
+                            <!-- Retro Scroll Pill Icon -->
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
+                                <i class="fa-solid fa-scroll text-sm text-blue-600 dark:text-cyan-400"></i>
                             </div>
 
-                            <!-- Center/Right: Live Telemetry HUD Badges -->
-                            <div class="hidden xl:flex items-center gap-1.5 font-mono text-xs shrink-0">
-                                <!-- Word & Reading Badges -->
-                                <span id="word-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold flex items-center shrink-0">
-                                    <i class="fa-solid fa-pen-nib mr-1 text-blue-600 dark:text-blue-400"></i> 0 Words
-                                </span>
-                                <span id="char-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold hidden 2xl:inline-flex items-center shrink-0">
-                                    <i class="fa-solid fa-font mr-1 text-blue-600 dark:text-blue-400"></i> 0 Chars
-                                </span>
-                                <span id="reading-time-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold flex items-center shrink-0">
-                                    <i class="fa-solid fa-clock mr-1 text-blue-600 dark:text-cyan-400"></i> 1m Read
-                                </span>
+                            <!-- Scroll Title (Always 100% visible, wide, prominent and editable) -->
+                            <input type="text"
+                                   id="note-title-input"
+                                   placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
+                                   value="{{ $activeNote->title ?? '' }}"
+                                   {{ $activeNote ? '' : 'readonly' }}
+                                   class="min-w-[140px] sm:min-w-[220px] flex-1 text-sm sm:text-lg font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-0.5 truncate"
+                                   title="Scroll Title">
 
-                                <!-- Created & Updated Badges -->
-                                <span id="scroll-created-badge"
-                                      class="px-1.5 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[10px] hidden 2xl:inline-flex items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0"
-                                      title="Waktu Gulungan Ini Dibuat">
-                                    <i class="fa-solid fa-calendar-plus text-blue-600 dark:text-cyan-400"></i>
-                                    <span id="scroll-created-text">Dibuat: -</span>
-                                </span>
-                                <span id="scroll-updated-badge"
-                                      class="px-1.5 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[10px] inline-flex items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0"
-                                      title="Waktu Gulungan Ini Terakhir Diperbarui">
-                                    <i class="fa-solid fa-clock-rotate-left text-emerald-600 dark:text-emerald-400 shrink-0"></i>
-                                    <span id="scroll-updated-text" class="truncate max-w-[130px]">Diperbarui: -</span>
-                                </span>
-
-                                <!-- Quest Goal Tracker Pill -->
-                                <div class="flex items-center gap-1 bg-surface-alt px-1.5 py-0.5 rounded border border-black/20 dark:border-blue-900 text-[11px] font-mono shadow-[1px_1px_0px_#000] shrink-0">
-                                    <i class="fa-solid fa-bullseye text-amber-600 dark:text-amber-400"></i>
-                                    <span id="quest-goal-text" class="font-bold text-slate-900 dark:text-slate-100">Goal: 0/250w</span>
-                                    <select id="quest-goal-select" class="no-retro-select bg-transparent border-0 text-[10px] focus:outline-none ml-0.5 cursor-pointer font-bold text-slate-900 dark:text-slate-100 opacity-90 hover:opacity-100">
-                                        <option value="100">100w</option>
-                                        <option value="250" selected>250w</option>
-                                        <option value="500">500w</option>
-                                        <option value="1000">1000w</option>
-                                    </select>
-                                </div>
-
-                                <!-- Save Status Indicator -->
-                                <span id="save-status-text" class="text-[11px] font-mono text-emerald-700 dark:text-emerald-400 flex items-center gap-1 font-bold shrink-0">
-                                    <i class="fa-solid fa-circle-check"></i> Synchronized
-                                </span>
-                                <button id="chunk-count-badge"
-                                        type="button"
-                                        class="arcade-btn bg-surface hover:bg-cyan-100 dark:hover:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-black/20 dark:border-cyan-800 shadow-[1px_1px_0px_#000] cursor-pointer flex items-center gap-1 shrink-0"
-                                        title="Audit Database Chunks & Shards Telemetry">
-                                    <i class="fa-solid fa-cubes text-cyan-600 dark:text-cyan-400"></i>
-                                    <span>0 Chunks</span>
-                                </button>
+                            <!-- Compact Category Pill Dropdown -->
+                            <div class="hidden md:flex items-center gap-1 bg-surface-alt px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                                <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
+                                <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer max-w-[130px] truncate">
+                                    @if(isset($categories) && $categories->isNotEmpty())
+                                        @foreach($categories as $category)
+                                            <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
+                                        @endforeach
+                                    @else
+                                        <option value="catatan">[CATATAN] Catatan</option>
+                                        <option value="tugas">[TUGAS] Tugas</option>
+                                    @endif
+                                </select>
                             </div>
+                        </div>
 
-                            <!-- Right: Quick Essential Actions + Dynamic Island Toggle Button -->
-                            <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                                <!-- Favorite Bookmark -->
-                                <button id="favorite-note-btn"
-                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs flex items-center justify-center shrink-0"
-                                        title="Toggle Favorite Bookmark">
-                                    <i class="fa-regular fa-star text-amber-600 dark:text-yellow-400"></i>
-                                </button>
+                        <!-- Center: Live Synchronized Status & Word Count Quick Pill -->
+                        <div class="hidden lg:flex items-center gap-1.5 font-mono text-xs shrink-0">
+                            <!-- Live Synchronized Status -->
+                            <span id="save-status-text" class="px-2 py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-surface-alt text-emerald-700 dark:text-emerald-400 text-[11px] font-bold flex items-center gap-1.5 shadow-[1px_1px_0px_#000] shrink-0">
+                                <i class="fa-solid fa-circle-check"></i> Synchronized
+                            </span>
+                            <!-- Word Count Quick Badge -->
+                            <span id="word-count-badge" class="px-2 py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold flex items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0">
+                                <i class="fa-solid fa-pen-nib text-blue-600 dark:text-blue-400"></i> 0 Words
+                            </span>
+                        </div>
 
-                                <!-- Pin Button -->
-                                <button id="pin-note-btn"
-                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Toggle Pinned Note">
-                                    <i class="fa-solid fa-thumbtack"></i>
-                                </button>
+                        <!-- Right: Quick Essential Actions + Dynamic Island Toggle Button -->
+                        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                            <!-- Favorite Bookmark -->
+                            <button id="favorite-note-btn"
+                                    class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs flex items-center justify-center shrink-0"
+                                    title="Toggle Favorite Bookmark">
+                                <i class="fa-regular fa-star text-amber-600 dark:text-yellow-400"></i>
+                            </button>
 
-                                <!-- Save Now Button -->
-                                <button id="save-now-btn"
-                                        class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center shrink-0"
-                                        title="Simpan naskah catatan sekarang">
-                                    <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE
-                                </button>
+                            <!-- Pin Button -->
+                            <button id="pin-note-btn"
+                                    class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs font-mono flex items-center justify-center shrink-0"
+                                    title="Toggle Pinned Note">
+                                <i class="fa-solid fa-thumbtack"></i>
+                            </button>
 
-                                <!-- Dynamic Island Slide Toggle Button -->
-                                <button type="button"
-                                        id="dynamic-island-toggle-btn"
-                                        class="arcade-btn bg-blue-700 hover:bg-blue-600 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 transition-colors"
-                                        title="Buka / Tutup Dynamic Island Tools (Alt+T)"
-                                        aria-expanded="false"
-                                        aria-controls="dynamic-island-tray">
-                                    <i class="fa-solid fa-layer-group text-cyan-300"></i>
-                                    <span class="hidden sm:inline font-pixel text-[10px]">TOOLS</span>
-                                    <i id="island-chevron-icon" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
-                                </button>
-                            </div>
+                            <!-- Save Now Button -->
+                            <button id="save-now-btn"
+                                    class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]"
+                                    title="Simpan naskah catatan sekarang">
+                                <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE
+                            </button>
+
+                            <!-- Dynamic Island Slide Toggle Button -->
+                            <button type="button"
+                                    id="dynamic-island-toggle-btn"
+                                    class="arcade-btn bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95"
+                                    title="Buka / Tutup Dynamic Island Tools (Alt+T)"
+                                    aria-expanded="false"
+                                    aria-controls="dynamic-island-tray">
+                                <i class="fa-solid fa-layer-group text-cyan-300"></i>
+                                <span class="hidden sm:inline font-pixel text-[10px]">TOOLS</span>
+                                <i id="island-chevron-icon" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -820,7 +777,51 @@
                     <div id="dynamic-island-tray"
                          class="collapsed dynamic-island-slide-tray arcade-card mt-2 p-2.5 sm:p-3 rounded-2xl flex flex-col gap-2.5 shadow-[4px_4px_0px_#000] backdrop-blur-lg bg-[var(--bg-surface)]/98 border-2 border-black dark:border-cyan-500/80 min-w-0 max-w-full">
 
-                        <!-- Interactive Category Chips ("munculnya digulir, dan itu interaktif") -->
+                        <!-- Tier 1: Horizontally Scrollable HUD Telemetry Rail ("munculnya digulir, dan itu interaktif") -->
+                        <div class="flex items-center gap-2 p-1.5 bg-surface-alt rounded-xl border border-black/15 dark:border-blue-900 overflow-x-auto no-scrollbar scroll-smooth touch-pan-x w-full min-w-0 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.1)]">
+                            <span class="text-[10px] font-mono font-bold text-slate-500 uppercase px-1 shrink-0 flex items-center gap-1">
+                                <i class="fa-solid fa-chart-simple text-blue-500"></i> STATS:
+                            </span>
+                            <span id="reading-time-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold flex items-center shrink-0">
+                                <i class="fa-solid fa-clock mr-1 text-blue-600 dark:text-cyan-400"></i> 1m Read
+                            </span>
+                            <span id="char-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold flex items-center shrink-0">
+                                <i class="fa-solid fa-font mr-1 text-blue-600 dark:text-blue-400"></i> 0 Chars
+                            </span>
+                            <span id="scroll-created-badge"
+                                  class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface text-slate-700 dark:text-slate-300 font-mono text-[10px] sm:text-[11px] inline-flex items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0"
+                                  title="Waktu Gulungan Ini Dibuat">
+                                <i class="fa-solid fa-calendar-plus text-blue-600 dark:text-cyan-400"></i>
+                                <span id="scroll-created-text">Dibuat: -</span>
+                            </span>
+                            <span id="scroll-updated-badge"
+                                  class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface text-slate-700 dark:text-slate-300 font-mono text-[10px] sm:text-[11px] inline-flex items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0"
+                                  title="Waktu Gulungan Ini Terakhir Diperbarui">
+                                <i class="fa-solid fa-clock-rotate-left text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+                                <span id="scroll-updated-text">Diperbarui: -</span>
+                            </span>
+                            <!-- Quest Goal Tracker Pill -->
+                            <div class="flex items-center gap-1 bg-surface px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 text-[11px] font-mono shadow-[1px_1px_0px_#000] shrink-0">
+                                <i class="fa-solid fa-bullseye text-amber-600 dark:text-amber-400"></i>
+                                <span id="quest-goal-text" class="font-bold text-slate-900 dark:text-slate-100">Goal: 0/250w</span>
+                                <select id="quest-goal-select" class="no-retro-select bg-transparent border-0 text-[10px] focus:outline-none ml-0.5 cursor-pointer font-bold text-slate-900 dark:text-slate-100 opacity-90 hover:opacity-100">
+                                    <option value="100">100w</option>
+                                    <option value="250" selected>250w</option>
+                                    <option value="500">500w</option>
+                                    <option value="1000">1000w</option>
+                                </select>
+                            </div>
+                            <!-- Audit Chunks Badge -->
+                            <button id="chunk-count-badge"
+                                    type="button"
+                                    class="arcade-btn bg-surface hover:bg-cyan-100 dark:hover:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 px-2 py-0.5 rounded text-[10px] font-mono font-bold border border-black/20 dark:border-cyan-800 shadow-[1px_1px_0px_#000] cursor-pointer flex items-center gap-1 shrink-0"
+                                    title="Audit Database Chunks & Shards Telemetry">
+                                <i class="fa-solid fa-cubes text-cyan-600 dark:text-cyan-400"></i>
+                                <span>0 Chunks</span>
+                            </button>
+                        </div>
+
+                        <!-- Tier 2: Horizontally Scrollable Category Chips & Scroll Controls ("munculnya digulir, dan itu interaktif") -->
                         <div class="flex items-center justify-between gap-2 pb-2 border-b border-black/10 dark:border-white/10 w-full min-w-0">
                             <!-- Category Chips Carousel / Track -->
                             <div id="island-chips-track" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth touch-pan-x flex-1 min-w-0 py-0.5">
@@ -828,6 +829,37 @@
                                     <i class="fa-solid fa-border-all text-[11px]"></i>
                                     <span>Semua Tools</span>
                                 </button>
+                                <button type="button" data-island-section="formatting" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-font text-blue-600 dark:text-cyan-400 text-[11px]"></i>
+                                    <span>✍️ Teks & Format</span>
+                                </button>
+                                <button type="button" data-island-section="inserts" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-table-cells text-emerald-600 dark:text-emerald-400 text-[11px]"></i>
+                                    <span>🧱 Tabel & Sisipan</span>
+                                </button>
+                                <button type="button" data-island-section="studio" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-purple-600 dark:text-purple-400 text-[11px]"></i>
+                                    <span>⚡ Mode & Studio</span>
+                                </button>
+                                <button type="button" data-island-section="operations" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-box-archive text-amber-600 dark:text-amber-400 text-[11px]"></i>
+                                    <span>📊 Arsip & Operasi</span>
+                                </button>
+                            </div>
+
+                            <!-- Scroll Arrows & Close Island Button -->
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button type="button" id="island-scroll-left-btn" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded flex items-center justify-center text-[10px]" title="Scroll Tools Left">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button type="button" id="island-scroll-right-btn" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded flex items-center justify-center text-[10px]" title="Scroll Tools Right">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                                <button type="button" id="island-close-btn" class="arcade-btn bg-surface hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-500 w-6 h-6 rounded flex items-center justify-center text-[10px] ml-1" title="Tutup Dynamic Island (Esc / Alt+T)">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
                                 <button type="button" data-island-section="formatting" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
                                     <i class="fa-solid fa-font text-blue-600 dark:text-cyan-400 text-[11px]"></i>
                                     <span>✍️ Teks & Format</span>

@@ -1219,6 +1219,16 @@ class NotenuxPanel {
             this.toggleDynamicIsland();
         });
 
+        // Allow clicking on capsule padding/background to toggle island
+        const capsule = document.querySelector('.dynamic-island-capsule');
+        if (capsule) {
+            capsule.addEventListener('click', (e) => {
+                if (['INPUT', 'SELECT', 'BUTTON', 'A', 'I', 'OPTION', 'TEXTAREA'].includes(e.target.tagName)) return;
+                if (e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) return;
+                this.toggleDynamicIsland();
+            });
+        }
+
         if (this.dom.islandCloseBtn) {
             this.dom.islandCloseBtn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1226,12 +1236,14 @@ class NotenuxPanel {
             });
         }
 
-        // Horizontal mouse wheel scrolling over tools and chips track ("munculnya digulir, dan itu interaktif")
+        // Horizontal mouse wheel scrolling over tools, chips, and stats rail ("munculnya digulir, dan itu interaktif")
+        const statsRail = document.querySelector('#dynamic-island-tray .overflow-x-auto');
         const scrollableElements = [
             this.dom.editorDeck1,
             this.dom.editorDeck2,
             this.dom.islandChipsTrack,
             this.dom.editorDeckOperations,
+            statsRail,
         ];
         scrollableElements.forEach(el => {
             if (!el) return;
