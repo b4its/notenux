@@ -235,7 +235,7 @@ class CategoryController extends Controller
         $candidate = $base;
         $suffix = 1;
 
-        while ($candidate === 'all' || Category::where('slug', $candidate)->when($exceptId !== null, fn (Builder $query): Builder => $query->where('id', '!=', $exceptId))->exists()) {
+        while (in_array($candidate, ['all', 'pinned', 'favorites'], true) || Category::where('slug', $candidate)->when($exceptId !== null, fn (Builder $query): Builder => $query->where('id', '!=', $exceptId))->exists()) {
             $ending = '-'.++$suffix;
             $candidate = substr($base, 0, 64 - strlen($ending)).$ending;
         }

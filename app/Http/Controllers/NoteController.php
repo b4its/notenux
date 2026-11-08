@@ -341,13 +341,39 @@ class NoteController extends Controller
     }
 
     /**
-     * Export note in Markdown (.md), Plain Text (.txt), HTML (.html), or JSON (.json) format.
+     * Export note in Markdown (.md), Plain Text (.txt), CSV (.csv), HTML (.html), or JSON (.json) format.
      */
     public function export(Note $note, string $format = 'md'): Response
     {
         $note->content = $this->sanitizer->sanitize($note->content);
         $format = strtolower($format);
         $filename = Str::slug($note->title) ?: 'scroll';
+
+        if ($format === 'csv') {
+            $stream = fopen('php://memory', 'r+');
+            fputcsv($stream, ['Title', 'Category', 'Level', 'XP', 'Words', 'Chars', 'Pinned', 'Favorite', 'Created', 'Updated', 'Content']);
+            fputcsv($stream, [
+                $note->title,
+                $note->category,
+                $note->level,
+                $note->xp,
+                $note->word_count,
+                $note->char_count,
+                $note->is_pinned ? 'Yes' : 'No',
+                $note->is_favorite ? 'Yes' : 'No',
+                $note->created_at?->toIso8601String() ?? '',
+                $note->updated_at?->toIso8601String() ?? '',
+                $this->convertToPlainText($note->content),
+            ]);
+            rewind($stream);
+            $csv = stream_get_contents($stream);
+            fclose($stream);
+
+            return response((string) $csv, 200, [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => "attachment; filename=\"{$filename}.csv\"",
+            ]);
+        }
 
         if ($format === 'txt') {
             $text = "TITLE: {$note->title}\n";
@@ -770,6 +796,8 @@ class NoteController extends Controller
             'total_words' => $totalWords,
             'total_chunks' => $totalChunks,
             'total_xp' => $totalXP,
+            'pinned_notes' => Note::where('is_pinned', true)->count(),
+            'favorite_notes' => Note::where('is_favorite', true)->count(),
             'level' => $level,
             'rank_title' => $rankInfo['title'],
             'rank_badge' => $rankInfo['badge'],

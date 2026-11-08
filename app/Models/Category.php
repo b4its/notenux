@@ -50,7 +50,8 @@ class Category extends Model
     {
         static::creating(function (Category $category): void {
             if (empty($category->slug)) {
-                $category->slug = Str::slug($category->name);
+                $base = Str::slug($category->name) ?: 'cat';
+                $category->slug = in_array($base, ['all', 'pinned', 'favorites'], true) ? $base.'-1' : $base;
             }
         });
 

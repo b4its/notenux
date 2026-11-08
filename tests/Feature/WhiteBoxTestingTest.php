@@ -883,3 +883,44 @@ test('white-box: note chunk service importMarkdown preserves is_pinned and is_fa
         ->and($note->is_favorite)->toBeTrue()
         ->and($note->chunks()->count())->toBeGreaterThan(0);
 });
+
+test('white-box: category controller allocateSlug prevents collision with virtual filter slugs', function () {
+    $controller = app(CategoryController::class);
+    $reflection = new ReflectionClass($controller);
+    $method = $reflection->getMethod('allocateSlug');
+    $method->setAccessible(true);
+
+    $pinnedSlug = $method->invoke($controller, 'pinned');
+    expect($pinnedSlug)->toBe('pinned-2');
+
+    $favoritesSlug = $method->invoke($controller, 'favorites');
+    expect($favoritesSlug)->toBe('favorites-2');
+
+    $allSlug = $method->invoke($controller, 'all');
+    expect($allSlug)->toBe('all-2');
+});
+
+test('white-box: note controller export generates valid csv with metadata and plain text content', function () {
+    $note = Note::factory()->create([
+        'title' => 'Ancient Alchemy Recipes',
+        'category' => 'spellbook',
+        'content' => '<h2>Potion of Invisibility</h2><p>Mix moonflower and stardust.</p>',
+        'is_pinned' => true,
+        'is_favorite' => true,
+        'word_count' => 8,
+        'char_count' => 45,
+    ]);
+
+    $controller = app(NoteController::class);
+    $response = $controller->export($note, 'csv');
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->headers->get('Content-Type'))->toContain('text/csv')
+        ->and($response->headers->get('Content-Disposition'))->toContain('ancient-alchemy-recipes.csv');
+
+    $content = $response->getContent();
+    expect($content)->toContain('Title,Category,Level,XP,Words,Chars,Pinned,Favorite,Created,Updated,Content')
+        ->and($content)->toContain('Ancient Alchemy Recipes')
+        ->and($content)->toContain('spellbook')
+        ->and($content)->toContain('Yes,Yes');
+});

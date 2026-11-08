@@ -1113,3 +1113,41 @@ test('black-box: user exports note to json and imports back with full fidelity',
         'is_favorite' => true,
     ]);
 });
+
+test('black-box: user creates category with reserved name and receives safe suffixed slug', function () {
+    $user = User::factory()->create();
+
+    $resPinned = $this->actingAs($user)->postJson('/api/categories', [
+        'name' => 'Pinned',
+    ]);
+    $resPinned->assertCreated()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.slug', 'pinned-2');
+
+    $resFavorites = $this->actingAs($user)->postJson('/api/categories', [
+        'name' => 'Favorites',
+    ]);
+    $resFavorites->assertCreated()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.slug', 'favorites-2');
+});
+
+test('black-box: user exports note to csv via api and receives downloadable spreadsheet data', function () {
+    $note = Note::factory()->create([
+        'title' => 'Arcane Spell Matrix',
+        'category' => 'spellbook',
+        'content' => '<h2>Lightning Bolt</h2><p>Inflicts 50 lightning damage to enemies in line.</p>',
+        'is_pinned' => true,
+        'is_favorite' => false,
+    ]);
+
+    $res = $this->get("/api/notes/{$note->id}/export/csv");
+    $res->assertOk();
+    $res->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    $res->assertHeader('Content-Disposition', 'attachment; filename="arcane-spell-matrix.csv"');
+
+    $csv = $res->getContent();
+    expect($csv)->toContain('Title,Category,Level,XP,Words,Chars,Pinned,Favorite,Created,Updated,Content')
+        ->and($csv)->toContain('Arcane Spell Matrix')
+        ->and($csv)->toContain('Lightning Bolt');
+});

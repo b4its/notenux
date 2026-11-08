@@ -727,6 +727,9 @@
                                         <button data-export-format="txt" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
                                             <i class="fa-solid fa-file-lines text-amber-600 dark:text-amber-400"></i> Text (.txt)
                                         </button>
+                                        <button data-export-format="csv" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
+                                            <i class="fa-solid fa-file-csv text-emerald-600 dark:text-emerald-400"></i> CSV Table (.csv)
+                                        </button>
                                         <button data-export-format="json" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
                                             <i class="fa-solid fa-file-code text-cyan-600 dark:text-cyan-400"></i> JSON Backup (.json)
                                         </button>

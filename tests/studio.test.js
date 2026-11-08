@@ -2112,4 +2112,19 @@ test('white-box: getFilteredNotes filters by pinned and favorites flags', () => 
     assert.equal(lore[1].id, 4);
 });
 
+test('white-box: exportActiveNote flushes dirty state and assigns window.location with target format', async () => {
+    let assignedUrl = null;
+    const { panel, context } = harness(() => ({ ok: true }));
+    panel.flushNote = async () => true;
+    panel.audio = { playCoin() {} };
+    context.window.location = { assign: (url) => { assignedUrl = url; } };
+
+    await panel.exportActiveNote('csv');
+    assert.equal(assignedUrl, '/api/notes/1/export/csv');
+
+    await panel.exportActiveNote('json');
+    assert.equal(assignedUrl, '/api/notes/1/export/json');
+});
+
+
 
