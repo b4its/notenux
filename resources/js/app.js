@@ -3887,7 +3887,9 @@ class NotenuxPanel {
             const count = this.notes.length + 1;
             const payload = {
                 title: `Quest Scroll #${count}: Arcane Expedition`,
-                category: this.activeCategory !== 'all' ? this.activeCategory : (this.categories?.find(category => category.slug === 'quest')?.slug || this.categories?.[0]?.slug || 'quest'),
+                category: (this.activeCategory !== 'all' && this.activeCategory !== 'pinned' && this.activeCategory !== 'favorites') ? this.activeCategory : (this.categories?.find(category => category.slug === 'quest')?.slug || this.categories?.[0]?.slug || 'quest'),
+                is_pinned: this.activeCategory === 'pinned',
+                is_favorite: this.activeCategory === 'favorites',
                 content: `<h2>Chapter ${count}</h2><p>Inscribe your thoughts, strategic lore, or arcane spells here...</p>`,
                 font_family: 'pixel',
                 font_size: '16px',
@@ -4299,7 +4301,11 @@ class NotenuxPanel {
     getFilteredNotes() {
         let filtered = [...this.notes];
 
-        if (this.activeCategory !== 'all') {
+        if (this.activeCategory === 'pinned') {
+            filtered = filtered.filter(n => Boolean(n.is_pinned));
+        } else if (this.activeCategory === 'favorites') {
+            filtered = filtered.filter(n => Boolean(n.is_favorite));
+        } else if (this.activeCategory !== 'all') {
             filtered = filtered.filter(n => n.category === this.activeCategory);
         }
 
@@ -4912,6 +4918,16 @@ class NotenuxPanel {
                 <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 ${this.activeCategory === 'all' ? 'bg-blue-600 text-white active-category' : 'bg-surface'} whitespace-nowrap shadow-[1px_1px_0px_#000]"
                         data-category="all">
                     ALL
+                </button>
+                <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 ${this.activeCategory === 'pinned' ? 'bg-blue-600 text-white active-category' : 'bg-surface hover:bg-amber-100 dark:hover:bg-amber-950/60'} text-amber-700 dark:text-amber-400 whitespace-nowrap shadow-[1px_1px_0px_#000]"
+                        data-category="pinned"
+                        title="Filter hanya catatan yang disematkan (Pinned)">
+                    <i class="fa-solid fa-thumbtack mr-1"></i>PINNED
+                </button>
+                <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 ${this.activeCategory === 'favorites' ? 'bg-blue-600 text-white active-category' : 'bg-surface hover:bg-yellow-100 dark:hover:bg-yellow-950/60'} text-yellow-700 dark:text-yellow-400 whitespace-nowrap shadow-[1px_1px_0px_#000]"
+                        data-category="favorites"
+                        title="Filter hanya catatan favorit (Favorites)">
+                    <i class="fa-solid fa-star mr-1"></i>FAV
                 </button>
             `;
 

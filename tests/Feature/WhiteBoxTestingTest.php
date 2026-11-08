@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\NoteController;
 use App\Models\Category;
@@ -765,4 +766,52 @@ test('white-box: category controller bulkDestroy cascades deletion to categories
         ->and(Category::whereIn('id', [$cat1->id, $cat2->id])->exists())->toBeFalse()
         ->and(Note::whereIn('id', [$note1->id, $note2->id])->exists())->toBeFalse()
         ->and(NoteChunk::whereIn('note_id', [$note1->id, $note2->id])->exists())->toBeFalse();
+});
+
+test('white-box: note controller store accepts and persists initial is_pinned and is_favorite flags', function () {
+    $controller = app(NoteController::class);
+
+    $request = Request::create('/api/notes', 'POST', [
+        'title' => 'Legendary Star Scroll',
+        'category' => 'spellbook',
+        'content' => '<p>Ancient incantation</p>',
+        'is_pinned' => true,
+        'is_favorite' => true,
+    ]);
+
+    $response = $controller->store($request);
+    expect($response->getStatusCode())->toBe(201);
+
+    $data = $response->getData(true);
+    expect($data['status'])->toBe('success')
+        ->and($data['data']['is_pinned'])->toBeTrue()
+        ->and($data['data']['is_favorite'])->toBeTrue();
+});
+
+test('white-box: chunk service detectChunkType detects html checklist items with checkbox inputs as task', function () {
+    $service = app(NoteChunkService::class);
+
+    expect($service->detectChunkType('<li><input type="checkbox"> Slay dungeon beast</li>'))->toBe('task')
+        ->and($service->detectChunkType('<p><input type="checkbox" checked> Gather red herbs</p>'))->toBe('task')
+        ->and($service->detectChunkType('<ul class="task-list"><li>Item</li></ul>'))->toBe('task')
+        ->and($service->detectChunkType('- [ ] Simple markdown task'))->toBe('task')
+        ->and($service->detectChunkType('<p>Regular paragraph text</p>'))->toBe('paragraph');
+});
+
+test('white-box: ai assistant controller returns 503 when ai credentials are not configured', function () {
+    config(['services.ai.key' => null, 'services.ai.model' => null]);
+    $note = Note::factory()->create(['title' => 'Quest Journal']);
+
+    $controller = app(AiAssistantController::class);
+    $request = Request::create("/api/notes/{$note->id}/assistant", 'POST', [
+        'action' => 'improve',
+        'content' => 'Improve this text please.',
+    ]);
+
+    $response = $controller->store($request, $note);
+    expect($response->getStatusCode())->toBe(503);
+
+    $data = $response->getData(true);
+    expect($data['status'])->toBe('error')
+        ->and($data['message'])->toContain('AI assistant belum dikonfigurasi');
 });

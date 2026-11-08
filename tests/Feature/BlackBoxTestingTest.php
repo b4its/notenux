@@ -1009,3 +1009,36 @@ test('black-box: user bulk deletes multiple categories and their associated note
     $this->assertDatabaseMissing('notes', ['id' => $note2->id]);
     $this->assertDatabaseHas('notes', ['id' => $note3->id]);
 });
+
+test('black-box: user creates note with initial pinned and favorite flags and retrieves it via api', function () {
+    $res = $this->postJson('/api/notes', [
+        'title' => 'Top Priority Chronicle',
+        'category' => 'strategy',
+        'content' => '<h2>High Tier Strategy</h2><p>Execute flanking maneuvers.</p>',
+        'is_pinned' => true,
+        'is_favorite' => true,
+    ]);
+
+    $res->assertCreated()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.title', 'Top Priority Chronicle')
+        ->assertJsonPath('data.is_pinned', true)
+        ->assertJsonPath('data.is_favorite', true);
+
+    $id = $res->json('data.id');
+    $this->assertDatabaseHas('notes', [
+        'id' => $id,
+        'is_pinned' => true,
+        'is_favorite' => true,
+    ]);
+});
+
+test('black-box: studio view renders category filter pills including pinned and favorites filters', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('studio'));
+    $response->assertOk()
+        ->assertSee('data-category="pinned"', false)
+        ->assertSee('data-category="favorites"', false)
+        ->assertSee('data-category="all"', false);
+});

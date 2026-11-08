@@ -169,7 +169,7 @@ class NoteChunkService
             return 'table';
         }
 
-        if (preg_match('/^[-*]\s+\[[ xX]\]/', $trimmed) || preg_match('/class=["\'][^"\']*task/i', $trimmed)) {
+        if (preg_match('/^[-*]\s+\[[ xX]\]/', $trimmed) || preg_match('/class=["\'][^"\']*task/i', $trimmed) || preg_match('/<input[^>]+type=["\']checkbox["\']/i', $trimmed)) {
             return 'task';
         }
 

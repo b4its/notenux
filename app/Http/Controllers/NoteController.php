@@ -158,6 +158,8 @@ class NoteController extends Controller
             'font_family' => ['nullable', 'string', 'in:pixel,arcade,mono,sans,serif'],
             'font_size' => ['nullable', 'string', 'max:16'],
             'theme_color' => ['nullable', 'string', 'max:32'],
+            'is_pinned' => ['nullable', 'boolean'],
+            'is_favorite' => ['nullable', 'boolean'],
         ]);
 
         $note = DB::transaction(function () use ($validated): Note {
@@ -167,6 +169,8 @@ class NoteController extends Controller
                 'font_family' => $validated['font_family'] ?? 'pixel',
                 'font_size' => $validated['font_size'] ?? '16px',
                 'theme_color' => $validated['theme_color'] ?? 'blue',
+                'is_pinned' => $validated['is_pinned'] ?? false,
+                'is_favorite' => $validated['is_favorite'] ?? false,
                 'content' => $this->sanitizer->sanitize($validated['content'] ?? ''),
             ]);
 

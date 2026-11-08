@@ -2076,4 +2076,40 @@ test('white-box: RetroSearchableSelect ignores dropdown internal clicks and prev
     assert.equal(instance.isOpen, false);
 });
 
+test('white-box: getFilteredNotes filters by pinned and favorites flags', () => {
+    const { panel } = harness(() => {});
+    panel.notes = [
+        { id: 1, title: 'Note 1', category: 'quest', is_pinned: true, is_favorite: false },
+        { id: 2, title: 'Note 2', category: 'quest', is_pinned: false, is_favorite: true },
+        { id: 3, title: 'Note 3', category: 'lore', is_pinned: true, is_favorite: true },
+        { id: 4, title: 'Note 4', category: 'lore', is_pinned: false, is_favorite: false },
+    ];
+    panel.searchQuery = '';
+
+    // 'all' category
+    panel.activeCategory = 'all';
+    assert.equal(panel.getFilteredNotes().length, 4);
+
+    // 'pinned' category filter
+    panel.activeCategory = 'pinned';
+    const pinned = panel.getFilteredNotes();
+    assert.equal(pinned.length, 2);
+    assert.equal(pinned[0].id, 1);
+    assert.equal(pinned[1].id, 3);
+
+    // 'favorites' category filter
+    panel.activeCategory = 'favorites';
+    const favorites = panel.getFilteredNotes();
+    assert.equal(favorites.length, 2);
+    assert.equal(favorites[0].id, 2);
+    assert.equal(favorites[1].id, 3);
+
+    // specific category filter
+    panel.activeCategory = 'lore';
+    const lore = panel.getFilteredNotes();
+    assert.equal(lore.length, 2);
+    assert.equal(lore[0].id, 3);
+    assert.equal(lore[1].id, 4);
+});
+
 

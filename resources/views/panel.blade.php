@@ -589,6 +589,16 @@
                             data-category="all">
                         ALL
                     </button>
+                    <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-amber-100 dark:hover:bg-amber-950/60 text-amber-700 dark:text-amber-400 shadow-[1px_1px_0px_#000]"
+                            data-category="pinned"
+                            title="Filter hanya catatan yang disematkan (Pinned)">
+                        <i class="fa-solid fa-thumbtack mr-1"></i>PINNED
+                    </button>
+                    <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-yellow-100 dark:hover:bg-yellow-950/60 text-yellow-700 dark:text-yellow-400 shadow-[1px_1px_0px_#000]"
+                            data-category="favorites"
+                            title="Filter hanya catatan favorit (Favorites)">
+                        <i class="fa-solid fa-star mr-1"></i>FAV
+                    </button>
                     @if(isset($categories) && $categories->isNotEmpty())
                         @foreach($categories as $category)
                             <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
