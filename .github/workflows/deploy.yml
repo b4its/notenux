@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_HOST || '82.180.152.46' }}
+      HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT != '' && secrets.HOSTINGER_PORT || '65002' }}
+      HOSTINGER_USER: ${{ secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_USER || 'u916682966' }}
       TARGET_PATH: /home/u916682966/domains/notenux.oryphem.com/notenux
 
     steps:
@@ -48,18 +51,10 @@ jobs:
 
       - name: Deploy Assets & Run Server Setup
         env:
-          HOST_INPUT: ${{ secrets.HOSTINGER_HOST }}
-          PORT_INPUT: ${{ secrets.HOSTINGER_PORT }}
-          USER_INPUT: ${{ secrets.HOSTINGER_USER }}
-          PASS_INPUT: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
         run: |
-          HOSTINGER_HOST="${HOST_INPUT:-82.180.152.46}"
-          HOSTINGER_PORT="${PORT_INPUT:-65002}"
-          HOSTINGER_USER="${USER_INPUT:-u916682966}"
-          SSH_PASS="${PASS_INPUT:-pastiSukses2026@}"
-
           SSH_OPTS="-p ${HOSTINGER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-          REMOTE_COMMAND="if [ -f /home/u916682966/domains/notenux.oryphem.com/deploy.sh ]; then bash /home/u916682966/domains/notenux.oryphem.com/deploy.sh; elif [ -f ${TARGET_PATH}/scripts/deploy.sh ]; then bash ${TARGET_PATH}/scripts/deploy.sh; fi"
+          REMOTE_COMMAND="bash /home/u916682966/domains/notenux.oryphem.com/deploy.sh"
 
           if [ -f ~/.ssh/deploy_key ] && ssh -i ~/.ssh/deploy_key ${SSH_OPTS} -o BatchMode=yes "${HOSTINGER_USER}@${HOSTINGER_HOST}" "true" 2>/dev/null; then
             echo "SSH key authentication successful. Syncing assets..."
@@ -76,17 +71,10 @@ jobs:
       - name: Health Check
         run: |
           echo "Verifying application availability..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://notenux.oryphem.com/up || true)
-          echo "Health check endpoint returned: $STATUS"
-          if [ "$STATUS" -eq 200 ] || [ "$STATUS" -eq 301 ] || [ "$STATUS" -eq 302 ]; then
-            echo "Deployment verified successfully! HTTP Status: $STATUS"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://notenux.oryphem.com/up)
+          if [ "$STATUS" -eq 200 ]; then
+            echo "Deployment verified successfully! HTTP Status: 200"
           else
-            ROOT_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://notenux.oryphem.com/ || true)
-            echo "Root URL returned: $ROOT_STATUS"
-            if [ "$ROOT_STATUS" -eq 200 ] || [ "$ROOT_STATUS" -eq 301 ] || [ "$ROOT_STATUS" -eq 302 ]; then
-              echo "Deployment verified successfully on root! HTTP Status: $ROOT_STATUS"
-            else
-              echo "Warning: Application responded with status $STATUS / $ROOT_STATUS"
-              exit 1
-            fi
+            echo "Health check warning: HTTP Status is $STATUS"
+            exit 1
           fi
