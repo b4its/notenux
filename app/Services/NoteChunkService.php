@@ -356,9 +356,11 @@ class NoteChunkService
                     $isPinned = ! empty($decoded['is_pinned']);
                     $isFavorite = ! empty($decoded['is_favorite']);
 
+                    $cleanTitle = (string) preg_replace('/[\x00-\x1F\x7F]/', '', $title);
+
                     $note = Note::create([
                         'user_id' => $userId,
-                        'title' => Str::limit($title, 120, ''),
+                        'title' => Str::limit($cleanTitle, 120, ''),
                         'category' => $jsonCategory,
                         'content' => '',
                         'font_family' => $jsonFont,
@@ -390,10 +392,11 @@ class NoteChunkService
             $html = app(NoteContentSanitizer::class)->sanitize($html);
 
             $validCategory = ! empty($category) ? trim($category) : 'catatan';
+            $cleanTitle = (string) preg_replace('/[\x00-\x1F\x7F]/', '', $title);
 
             $note = Note::create([
                 'user_id' => $userId,
-                'title' => Str::limit($title, 120, ''),
+                'title' => Str::limit($cleanTitle, 120, ''),
                 'category' => $validCategory,
                 'content' => '',
                 'font_family' => 'sans',

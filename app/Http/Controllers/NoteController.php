@@ -948,7 +948,7 @@ class NoteController extends Controller
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $filename = $file->getClientOriginalName();
-            $rawMarkdown = file_get_contents($file->getRealPath());
+            $rawMarkdown = (string) file_get_contents($file->getRealPath());
         } else {
             $rawMarkdown = $validated['content'] ?? '';
             $filename = $validated['title'] ?? null;
@@ -958,7 +958,8 @@ class NoteController extends Controller
         $note = $this->chunkService->importMarkdown($rawMarkdown, $filename, $category, $user);
 
         if (! empty($validated['title'])) {
-            $note->update(['title' => $validated['title']]);
+            $cleanTitle = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
+            $note->update(['title' => Str::limit($cleanTitle, 120, '')]);
         }
 
         return response()->json([

@@ -19,8 +19,14 @@ class NoteContentSanitizer
 
     public function sanitize(?string $content): string
     {
-        if (! $content || ! preg_match('/<[a-z!]/i', $content)) {
-            return $content ?? '';
+        if (! $content) {
+            return '';
+        }
+
+        $content = str_replace("\0", '', $content);
+
+        if (! preg_match('/<[a-z!]/i', $content)) {
+            return $content;
         }
 
         $document = HTMLDocument::createFromString($content, LIBXML_NOERROR, 'UTF-8');
@@ -44,7 +50,7 @@ class NoteContentSanitizer
                     || (in_array($name, ['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'], true) && ctype_digit($value))
                     || (in_array($name, ['color', 'bgcolor', 'bordercolor'], true) && preg_match('/^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i', $value))
                     || (in_array($name, ['align', 'valign'], true) && in_array(strtolower($value), ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'], true))
-                    || ($name === 'style' && preg_match('/^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s\'"-]+;?\s*)+$/i', $value) && ! preg_match('/(expression|behavior|javascript|vbscript|data:|url\s*\()/i', $value))
+                    || ($name === 'style' && preg_match('/^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s\'"-]+;?\s*)+$/i', $value) && ! preg_match('/(expression|behavior|binding|javascript|vbscript|data:|import|url\s*[\(\/])/i', $value))
                     || ($name === 'href' && $tag === 'a' && preg_match('~^(https?://|mailto:|\#|/(?!/))~i', $value))
                     || ($name === 'target' && $tag === 'a' && in_array(strtolower($value), ['_blank', '_self'], true))
                     || ($name === 'rel' && $tag === 'a' && preg_match('/^[a-z\s_-]+$/i', $value))

