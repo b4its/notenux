@@ -16,9 +16,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST != '' && secrets.HOSTINGER_HOST || '82.180.152.46' }}
-      HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT != '' && secrets.HOSTINGER_PORT || '65002' }}
-      HOSTINGER_USER: ${{ secrets.HOSTINGER_USER != '' && secrets.HOSTINGER_USER || 'u916682966' }}
       TARGET_PATH: /home/u916682966/domains/notenux.oryphem.com/notenux
 
     steps:
@@ -121,8 +118,16 @@ EOF
 
       - name: Deploy Codebase & Run Server Setup
         env:
-          SSH_PASS: ${{ secrets.HOSTINGER_SSH_PASSWORD != '' && secrets.HOSTINGER_SSH_PASSWORD || 'pastiSukses2026@' }}
+          HOST_INPUT: ${{ secrets.HOSTINGER_HOST }}
+          PORT_INPUT: ${{ secrets.HOSTINGER_PORT }}
+          USER_INPUT: ${{ secrets.HOSTINGER_USER }}
+          PASS_INPUT: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
         run: |
+          HOSTINGER_HOST="${HOST_INPUT:-82.180.152.46}"
+          HOSTINGER_PORT="${PORT_INPUT:-65002}"
+          HOSTINGER_USER="${USER_INPUT:-u916682966}"
+          SSH_PASS="${PASS_INPUT:-pastiSukses2026@}"
+
           SSH_OPTS="-p ${HOSTINGER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=15"
           
           USE_KEY=false
