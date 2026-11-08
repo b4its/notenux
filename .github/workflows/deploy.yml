@@ -28,14 +28,27 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install NPM Dependencies
         run: npm ci
 
       - name: Build Production Assets
-        run: npm run build
+        run: |
+          for i in 1 2 3; do
+            echo "Attempt $i: Building production assets..."
+            if npm run build; then
+              echo "Build succeeded on attempt $i"
+              break
+            fi
+            if [ $i -eq 3 ]; then
+              echo "Build failed after 3 attempts."
+              exit 1
+            fi
+            echo "Build failed, retrying in 3 seconds..."
+            sleep 3
+          done
 
       - name: Setup SSH Tools
         env:
@@ -71,10 +84,14 @@ jobs:
       - name: Health Check
         run: |
           echo "Verifying application availability..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://notenux.oryphem.com/up)
-          if [ "$STATUS" -eq 200 ]; then
-            echo "Deployment verified successfully! HTTP Status: 200"
-          else
-            echo "Health check warning: HTTP Status is $STATUS"
-            exit 1
-          fi
+          for i in {1..5}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://notenux.oryphem.com/up || echo "000")
+            if [ "$STATUS" -eq 200 ]; then
+              echo "Deployment verified successfully! HTTP Status: 200"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP Status $STATUS, waiting 2s..."
+            sleep 2
+          done
+          echo "Health check warning: HTTP Status did not return 200"
+          exit 1

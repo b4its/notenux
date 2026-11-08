@@ -2203,7 +2203,7 @@
 
     <!-- Hidden Server Initial Data for Seamless Hydration -->
     <script id="initial-notes-data" type="application/json">
-        {!! json_encode($notes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
+        {!! json_encode($notes ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
     </script>
     <script id="initial-categories-data" type="application/json">
         {!! json_encode($categories ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
