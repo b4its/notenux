@@ -27,7 +27,7 @@ class AiAssistantController extends Controller
         }
 
         $validated = $request->validate([
-            'action' => ['required', 'in:improve,summarize,continue,translate,custom'],
+            'action' => ['required', 'in:improve,summarize,continue,translate,custom,generate_title'],
             'content' => ['required', 'string', 'max:30000'],
             'instruction' => ['required_if:action,custom,translate', 'nullable', 'string', 'max:2000'],
         ]);
@@ -42,6 +42,7 @@ class AiAssistantController extends Controller
             'continue' => 'Write only the continuation of this manuscript in the same language and style.',
             'translate' => 'Translate the manuscript into the language specified by the instruction.',
             'custom' => 'Edit the manuscript according to the instruction.',
+            'generate_title' => 'Generate a short, concise, engaging title for this manuscript (maximum 60 characters). Return only the title text without quotes, markdown headers, or punctuation.',
         ];
 
         try {

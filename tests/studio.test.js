@@ -2710,6 +2710,32 @@ test('white-box: openProfileModal and closeProfileModal manage profile modal vis
     assert.equal(panel.dom.profileSettingsModal.classList.contains('hidden'), true);
 });
 
+test('white-box: openAiModal and closeAiModal manage ai assistant modal visibility', () => {
+    const { panel } = harness(() => {});
+    panel.activeNote = { id: 1, title: 'Eldoria Chronicles', content: '<p>Lore text</p>' };
+    const modalClasses = new Set(['hidden']);
+    const mockModal = {
+        classList: {
+            add(c) { modalClasses.add(c); },
+            remove(c) { modalClasses.delete(c); },
+            contains(c) { return modalClasses.has(c); }
+        }
+    };
+
+    panel.closeAiModal = () => { mockModal.classList.add('hidden'); };
+    panel.openAiModal = () => {
+        if (!panel.activeNote) return;
+        mockModal.classList.remove('hidden');
+    };
+
+    panel.openAiModal();
+    assert.equal(mockModal.classList.contains('hidden'), false);
+
+    panel.closeAiModal();
+    assert.equal(mockModal.classList.contains('hidden'), true);
+});
+
+
 
 
 

@@ -1630,6 +1630,41 @@ test('black-box: ai assistant handles unexpected network throwable with 502 erro
         ->assertJsonPath('status', 'error');
 });
 
+test('black-box: ai assistant handles generate_title action successfully', function () {
+    config([
+        'services.ai.key' => 'test-key',
+        'services.ai.model' => 'test-model',
+        'services.ai.base_url' => 'https://api.openai.com/v1',
+    ]);
+
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create([
+        'title' => 'Draft',
+    ]);
+
+    Http::fake([
+        'https://api.openai.com/v1/chat/completions' => Http::response([
+            'choices' => [
+                [
+                    'message' => [
+                        'content' => 'The Whispering Shadows of Eldoria',
+                    ],
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ], 200),
+    ]);
+
+    $res = $this->actingAs($user)->postJson(route('notes.assistant', $note), [
+        'action' => 'generate_title',
+        'content' => 'In the depths of Eldoria, dark shadows whisper secrets of the past.',
+    ]);
+
+    $res->assertStatus(200)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.content', 'The Whispering Shadows of Eldoria');
+});
+
 test('black-box: application health check endpoint /up returns 200 OK', function () {
     $res = $this->get('/up');
     $res->assertStatus(200);

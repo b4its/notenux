@@ -1090,6 +1090,11 @@
                                         title="Find & Replace in Scroll (Ctrl+F)">
                                     <i class="fa-solid fa-magnifying-glass mr-1 text-amber-600 dark:text-yellow-400"></i> FIND
                                 </button>
+                                <button id="open-ai-modal-btn"
+                                        class="arcade-btn bg-purple-600 hover:bg-purple-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shadow-[1px_1px_0px_#000]"
+                                        title="Arcane Scribe AI Assistant (Poles, Ringkas, Lanjutkan)">
+                                    <i class="fa-solid fa-wand-magic-sparkles mr-1 text-yellow-300"></i> AI
+                                </button>
                             </div>
 
                             <!-- Canvas Zoom Widget -->
@@ -2093,6 +2098,107 @@
                 <button type="button" id="save-profile-btn" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded text-xs font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#000]">
                     <i class="fa-solid fa-floppy-disk"></i> SIMPAN PERUBAHAN
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- ARCANE SCRIBE AI ASSISTANT MODAL -->
+    <!-- ============================================================================== -->
+    <div id="ai-assistant-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="arcade-card bg-[var(--bg-surface)] border-2 border-black dark:border-purple-700 w-full max-w-2xl rounded-xl overflow-hidden shadow-[6px_6px_0px_#000] flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="p-3.5 bg-gradient-to-r from-purple-700 to-indigo-700 border-b-2 border-black text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-base text-yellow-300"></i>
+                    <h2 class="font-pixel text-xs sm:text-sm tracking-wider uppercase">ARCANE SCRIBE AI ASSISTANT</h2>
+                </div>
+                <button type="button" id="close-ai-modal-x" class="arcade-btn bg-black text-white hover:bg-gray-800 px-2 py-0.5 rounded text-xs font-mono" title="Tutup (ESC)">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs font-mono flex-1">
+                <!-- Action & Instruction Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-1">
+                        <label for="ai-action" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
+                            <i class="fa-solid fa-bolt mr-1 text-purple-600 dark:text-purple-400"></i> Sihir / Perintah:
+                        </label>
+                        <select id="ai-action" class="retro-input w-full p-2 rounded bg-[var(--bg-main)] border-2 border-black dark:border-purple-700 font-mono text-xs">
+                            <option value="improve">✨ Poles & Perbaiki Naskah</option>
+                            <option value="summarize">📜 Ringkas Inti Naskah</option>
+                            <option value="continue">⚡ Lanjutkan Tulisan</option>
+                            <option value="translate">🌐 Terjemahkan Bahasa</option>
+                            <option value="custom">🔮 Kustom Perintah</option>
+                            <option value="generate_title">🏷️ Buat Judul Menarik</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="ai-instruction" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
+                            <i class="fa-solid fa-pen-nib mr-1 text-purple-600 dark:text-purple-400"></i> Instruksi / Bahasa Tujuan (Opsional):
+                        </label>
+                        <input type="text"
+                               id="ai-instruction"
+                               placeholder="Contoh: Terjemahkan ke Bahasa Jepang, buat lebih puitis..."
+                               class="retro-input w-full p-2 rounded bg-[var(--bg-main)] border-2 border-black dark:border-purple-700 font-mono text-xs">
+                    </div>
+                </div>
+
+                <!-- Generate & Cancel Controls -->
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            id="ai-generate-btn"
+                            class="arcade-btn bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded text-xs font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#000]">
+                        <i class="fa-solid fa-wand-magic-sparkles text-yellow-300"></i> GENERATE HASIL AI
+                    </button>
+                    <button type="button"
+                            id="ai-cancel-btn"
+                            disabled
+                            class="arcade-btn bg-slate-200 dark:bg-slate-800 text-main px-3 py-2 rounded text-xs font-mono font-bold disabled:opacity-40 disabled:cursor-not-allowed shadow-[1px_1px_0px_#000]">
+                        <i class="fa-solid fa-ban mr-1"></i> Batal
+                    </button>
+                </div>
+
+                <!-- Status Feedback -->
+                <div id="ai-status" class="p-2 rounded bg-purple-50 dark:bg-purple-950/40 border border-purple-500/40 text-[11px] text-purple-900 dark:text-purple-200 min-h-[32px] flex items-center">
+                    Pilih perintah dan klik Generate untuk memulai sihir AI.
+                </div>
+
+                <!-- Result Textarea -->
+                <div>
+                    <label for="ai-result" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
+                        <i class="fa-solid fa-scroll mr-1 text-purple-600 dark:text-purple-400"></i> Hasil Sihir AI:
+                    </label>
+                    <textarea id="ai-result"
+                              readonly
+                              rows="6"
+                              placeholder="Hasil naskah dari AI akan muncul di sini untuk ditinjau terlebih dahulu..."
+                              class="retro-input w-full p-2.5 rounded bg-[var(--bg-main)] border-2 border-black dark:border-purple-700 font-mono text-xs resize-y"></textarea>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-3 border-t-2 border-black/10 dark:border-white/10 bg-[var(--bg-surface-alt)] flex items-center justify-between gap-2 flex-wrap">
+                <button type="button" id="close-ai-modal-btn" class="arcade-btn bg-[var(--bg-surface)] hover:bg-gray-200 dark:hover:bg-slate-800 px-4 py-2 rounded text-xs font-mono font-bold shadow-[2px_2px_0px_#000]">
+                    Tutup
+                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            id="ai-append-btn"
+                            disabled
+                            class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded text-xs font-mono font-bold tracking-wider disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0px_#000]">
+                        <i class="fa-solid fa-plus mr-1"></i> Tambahkan ke Akhir
+                    </button>
+                    <button type="button"
+                            id="ai-replace-btn"
+                            disabled
+                            class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded text-xs font-mono font-bold tracking-wider disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0px_#000]">
+                        <i class="fa-solid fa-arrows-rotate mr-1"></i> Ganti Naskah Aktif
+                    </button>
+                </div>
             </div>
         </div>
     </div>

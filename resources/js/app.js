@@ -1196,7 +1196,34 @@ class NotenuxPanel {
 
     initAiAssistant() {
         const get = id => document.getElementById(id);
+        const modal = get('ai-assistant-modal');
+        const openBtn = get('open-ai-modal-btn');
+        const closeX = get('close-ai-modal-x');
+        const closeBtn = get('close-ai-modal-btn');
         const generate = get('ai-generate-btn');
+
+        this.openAiModal = () => {
+            if (!this.activeNote) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                return;
+            }
+            modal?.classList.remove('hidden');
+            this.audio?.playBlip?.();
+            const status = get('ai-status');
+            if (status) status.textContent = 'Pilih perintah dan klik Generate untuk memulai sihir AI.';
+        };
+
+        this.closeAiModal = () => {
+            modal?.classList.add('hidden');
+        };
+
+        openBtn?.addEventListener('click', this.openAiModal);
+        closeX?.addEventListener('click', this.closeAiModal);
+        closeBtn?.addEventListener('click', this.closeAiModal);
+        modal?.addEventListener('click', (e) => {
+            if (e.target === modal) this.closeAiModal();
+        });
+
         if (!generate) return;
         const result = get('ai-result');
         const status = get('ai-status');
@@ -1216,7 +1243,7 @@ class NotenuxPanel {
                 status.textContent = 'Isi naskah 1–30.000 karakter dan instruksi / bahasa tujuan bila diperlukan.';
                 return;
             }
-            context = { id: this.activeNote.id, content: this.activeNote.content };
+            context = { id: this.activeNote.id, content: this.activeNote.content, action };
             const version = ++requestVersion;
             controller = new AbortController();
             generate.disabled = true;
@@ -1228,7 +1255,10 @@ class NotenuxPanel {
             try {
                 const response = await fetch(`/api/notes/${context.id}/assistant`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
                     body: JSON.stringify({ action, instruction, content }),
                     signal: controller.signal,
                 });
@@ -1253,6 +1283,19 @@ class NotenuxPanel {
                 return;
             }
             if (!result.value.trim()) return;
+
+            if (context.action === 'generate_title') {
+                const cleanTitle = result.value.replace(/^["'`#]+|["'`#]+$/g, '').trim();
+                if (this.dom.noteTitleInput) this.dom.noteTitleInput.value = cleanTitle;
+                this.activeNote.title = cleanTitle;
+                this.updateActiveNoteInList();
+                this.scheduleAutoSave();
+                this.toast.show(`Judul diperbarui: "${cleanTitle}"`, 'success', 'AI Title');
+                append.disabled = replace.disabled = true;
+                status.textContent = 'Judul naskah telah berhasil diterapkan!';
+                return;
+            }
+
             const html = MarkdownEngine.parse(result.value);
             this.dom.editorArea.innerHTML = mode === 'append' ? this.dom.editorArea.innerHTML + html : html;
             if (this.isRawMarkdownMode) this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(this.dom.editorArea.innerHTML);
@@ -2163,6 +2206,7 @@ class NotenuxPanel {
                 this.closeMarkdownModal();
                 this.closeChunkInspector();
                 this.closeProfileModal();
+                this.closeAiModal?.();
                 this.toggleFindBar(false);
                 if (this.dom.importModal) this.dom.importModal.classList.add('hidden');
                 if (this.dom.shortcutsModal) this.dom.shortcutsModal.classList.add('hidden');
