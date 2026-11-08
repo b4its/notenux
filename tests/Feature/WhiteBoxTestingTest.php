@@ -959,3 +959,23 @@ test('white-box: category controller calculatePlayerStats includes pinned and fa
         ->and($stats['pinned_notes'])->toBeGreaterThanOrEqual(2)
         ->and($stats['favorite_notes'])->toBeGreaterThanOrEqual(1);
 });
+
+test('white-box: note content sanitizer preserves safe link targets, rels, and disabled checkboxes', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+
+    $html = '<p><a href="https://notenux.dev" target="_blank" rel="noopener noreferrer">Grimoire Link</a></p>'
+        .'<p><input type="checkbox" checked disabled> Completed Quest</p>'
+        .'<p><input type="text" value="malicious"></p>'
+        .'<script>alert("hack")</script>';
+
+    $clean = $sanitizer->sanitize($html);
+
+    expect($clean)->toContain('href="https://notenux.dev"')
+        ->and($clean)->toContain('target="_blank"')
+        ->and($clean)->toContain('rel="noopener noreferrer"')
+        ->and($clean)->toContain('type="checkbox"')
+        ->and($clean)->toContain('checked')
+        ->and($clean)->toContain('disabled')
+        ->and($clean)->not->toContain('<script>')
+        ->and($clean)->not->toContain('type="text"');
+});

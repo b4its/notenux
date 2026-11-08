@@ -2182,6 +2182,59 @@ test('white-box: copyTextToClipboard falls back to document.execCommand when nav
     assert.ok(messages.some(m => m[0] === 'Fallback succeeded!'));
 });
 
+test('white-box: sanitizeHtml allows target and rel on anchor tags and disabled on input checkboxes', () => {
+    const removedAttributes = [];
+    let isRemoved = false;
+    const mockAnchor = {
+        localName: 'a',
+        attributes: [
+            { name: 'href', value: 'https://notenux.dev' },
+            { name: 'target', value: '_blank' },
+            { name: 'rel', value: 'noopener noreferrer' },
+            { name: 'onclick', value: 'alert(1)' },
+        ],
+        removeAttribute(name) { removedAttributes.push(name); },
+        remove() { isRemoved = true; }
+    };
+
+    const mockCheckbox = {
+        localName: 'input',
+        type: 'checkbox',
+        attributes: [
+            { name: 'type', value: 'checkbox' },
+            { name: 'checked', value: '' },
+            { name: 'disabled', value: '' },
+        ],
+        removeAttribute(name) { removedAttributes.push(name); },
+        remove() { isRemoved = true; }
+    };
+
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({
+                content: {
+                    querySelectorAll: () => [mockAnchor, mockCheckbox]
+                },
+                innerHTML: 'sanitized-output'
+            }),
+            addEventListener() {},
+            querySelector() { return null; }
+        }
+    });
+
+    vm.runInContext(source + '\nglobalThis.sanitizeHtml = sanitizeHtml;', context);
+    const result = context.sanitizeHtml('<div>raw</div>');
+
+    assert.equal(result, '<div>raw</div>');
+    assert.ok(removedAttributes.includes('onclick'));
+    assert.ok(!removedAttributes.includes('target'));
+    assert.ok(!removedAttributes.includes('rel'));
+    assert.ok(!removedAttributes.includes('disabled'));
+    assert.equal(isRemoved, false);
+});
+
+
 
 
 

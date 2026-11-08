@@ -1165,3 +1165,23 @@ test('black-box: user visits categories api with empty database and receives aut
         ->and($slugs)->toContain('quest')
         ->and($slugs)->toContain('spellbook');
 });
+
+test('black-box: user creates note with external links and checklist and attributes persist securely', function () {
+    $res = $this->postJson('/api/notes', [
+        'title' => 'Portal Waypoint Notes',
+        'category' => 'quest',
+        'content' => '<p>Visit <a href="https://example.com/gate" target="_blank" rel="noopener">Astral Gate</a></p>'
+            .'<ul><li><input type="checkbox" checked disabled> Acquired Rune Key</li></ul>',
+    ]);
+
+    $res->assertCreated()
+        ->assertJsonPath('status', 'success');
+
+    $id = $res->json('data.id');
+    $note = Note::findOrFail($id);
+
+    expect($note->content)->toContain('target="_blank"')
+        ->and($note->content)->toContain('rel="noopener"')
+        ->and($note->content)->toContain('disabled')
+        ->and($note->content)->toContain('checked');
+});
