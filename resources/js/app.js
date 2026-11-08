@@ -22,7 +22,7 @@ function sanitizeHtml(html) {
         }
         for (const attribute of [...element.attributes]) {
             const { name, value } = attribute;
-            const isReservedId = name === 'id' && ['editorarea', 'plain-text-editor', 'markdownraweditor', 'note-title-input', 'note-category-select', 'save-now-btn', 'delete-note-btn', 'save-status-text', 'app-favicon', 'csrf-token', 'studio-dynamic-island', 'dynamic-island-tray', 'dynamic-island-toggle-btn', 'favorite-note-btn', 'pin-note-btn', 'location', 'window', 'document', 'form', 'body', 'cookie'].includes((value || '').toLowerCase());
+            const isReservedId = name === 'id' && ['editorarea', 'plain-text-editor', 'markdownraweditor', 'note-title-input', 'note-category-select', 'save-now-btn', 'mobile-save-now-btn', 'delete-note-btn', 'save-status-text', 'app-favicon', 'csrf-token', 'studio-dynamic-island', 'dynamic-island-tray', 'dynamic-island-toggle-btn', 'mobile-dynamic-island-toggle-btn', 'favorite-note-btn', 'pin-note-btn', 'location', 'window', 'document', 'form', 'body', 'cookie'].includes((value || '').toLowerCase());
             const safe = (!isReservedId && ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable'].includes(name))
                 || (name === 'id' && !isReservedId && /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(value))
                 || (name === 'type' && element.localName === 'input' && value === 'checkbox')
@@ -724,21 +724,16 @@ class RetroSearchableSelect {
         const viewportWidth = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1024;
         const viewportHeight = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 768;
 
-        const isFullWidth = Boolean(this.select?.className && this.select.className.includes('w-full'));
         const triggerWidth = rect.width || 120;
-        const minW = isFullWidth ? triggerWidth : Math.max(triggerWidth, 190);
+        const minDropdownWidth = Math.min(220, viewportWidth - 24);
+        const targetWidth = Math.min(Math.max(triggerWidth, minDropdownWidth), viewportWidth - 24);
 
         if (this.dropdown.style) {
             this.dropdown.style.position = 'fixed';
             this.dropdown.style.zIndex = '99999';
-
-            if (isFullWidth) {
-                this.dropdown.style.width = `${triggerWidth}px`;
-                this.dropdown.style.minWidth = `${triggerWidth}px`;
-            } else {
-                this.dropdown.style.width = 'auto';
-                this.dropdown.style.minWidth = `${Math.min(minW, viewportWidth - 24)}px`;
-            }
+            this.dropdown.style.width = `${targetWidth}px`;
+            this.dropdown.style.minWidth = `${minDropdownWidth}px`;
+            this.dropdown.style.maxWidth = `${viewportWidth - 24}px`;
 
             const dropdownHeight = this.dropdown.offsetHeight || 220;
             const spaceBelow = viewportHeight - (rect.bottom || 0);
@@ -753,9 +748,8 @@ class RetroSearchableSelect {
             }
 
             let left = rect.left || 0;
-            const targetWidth = this.dropdown.offsetWidth || minW;
             if (left + targetWidth > viewportWidth - 12) {
-                left = Math.max(12, (rect.right || left) - targetWidth);
+                left = Math.max(12, viewportWidth - targetWidth - 12);
             }
             if (left < 12) {
                 left = 12;
@@ -1037,6 +1031,7 @@ class NotenuxPanel {
             fontSizeSelect: document.getElementById('font-size-select'),
             saveStatusText: document.getElementById('save-status-text'),
             saveNowBtn: document.getElementById('save-now-btn'),
+            mobileSaveNowBtn: document.getElementById('mobile-save-now-btn'),
             pinNoteBtn: document.getElementById('pin-note-btn'),
             favoriteNoteBtn: document.getElementById('favorite-note-btn'),
             duplicateNoteBtn: document.getElementById('duplicate-note-btn'),
@@ -1075,6 +1070,7 @@ class NotenuxPanel {
             dynamicIslandContainer: document.getElementById('studio-dynamic-island'),
             dynamicIslandTray: document.getElementById('dynamic-island-tray'),
             dynamicIslandToggleBtn: document.getElementById('dynamic-island-toggle-btn'),
+            mobileDynamicIslandToggleBtn: document.getElementById('mobile-dynamic-island-toggle-btn'),
             islandChevronIcon: document.getElementById('island-chevron-icon'),
             islandCloseBtn: document.getElementById('island-close-btn'),
             islandChipsTrack: document.getElementById('island-chips-track'),
@@ -1242,12 +1238,15 @@ class NotenuxPanel {
 
     /* ---------------- DYNAMIC ISLAND ENGINE ---------------- */
     initDynamicIsland() {
-        if (!this.dom.dynamicIslandToggleBtn || !this.dom.dynamicIslandTray) return;
+        if (!this.dom.dynamicIslandTray) return;
 
-        this.dom.dynamicIslandToggleBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.toggleDynamicIsland();
+        const toggleBtns = [this.dom.dynamicIslandToggleBtn, this.dom.mobileDynamicIslandToggleBtn].filter(Boolean);
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleDynamicIsland();
+            });
         });
 
         // Allow clicking on capsule padding/background to toggle island
@@ -1305,42 +1304,67 @@ class NotenuxPanel {
             });
         }
 
-        // Chip navigation for quick section scrolling
+        // Chip navigation for quick section filtering & scrolling
         const chips = document.querySelectorAll('.island-chip-btn');
         chips.forEach(chip => {
             chip.addEventListener('click', () => {
                 chips.forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
-                const section = chip.getAttribute('data-island-section');
-                if (section === 'formatting' && this.dom.editorDeck1) {
-                    this.dom.editorDeck1.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-                } else if (section === 'inserts') {
-                    const inserts = document.getElementById('editor-deck-2-inserts');
-                    if (inserts) {
-                        inserts.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-                    } else if (this.dom.editorDeck2) {
-                        this.dom.editorDeck2.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-                    }
-                } else if (section === 'studio') {
-                    const palette = document.getElementById('editor-deck-2-palette');
-                    if (palette) {
-                        palette.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-                    } else if (this.dom.editorDeck2) {
-                        this.dom.editorDeck2.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-                    }
-                } else if (section === 'operations' && this.dom.editorDeckOperations) {
-                    this.dom.editorDeckOperations.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-                }
+                const section = chip.getAttribute('data-island-section') || 'all';
+                this.filterIslandSection(section);
             });
         });
+    }
+
+    filterIslandSection(section = 'all') {
+        const deck1 = this.dom.editorDeck1;
+        const deck2 = this.dom.editorDeck2;
+        const deck2Inserts = document.getElementById('editor-deck-2-inserts');
+        const deck2Studio = document.getElementById('editor-deck-2-studio');
+        const deckOps = this.dom.editorDeckOperations;
+
+        if (section === 'all') {
+            deck1?.classList.remove('hidden');
+            deck2?.classList.remove('hidden');
+            deck2Inserts?.classList.remove('hidden');
+            deck2Studio?.classList.remove('hidden');
+            deckOps?.classList.remove('hidden');
+        } else if (section === 'formatting') {
+            deck1?.classList.remove('hidden');
+            deck2?.classList.add('hidden');
+            deckOps?.classList.add('hidden');
+            deck1?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        } else if (section === 'inserts') {
+            deck1?.classList.add('hidden');
+            deck2?.classList.remove('hidden');
+            deck2Inserts?.classList.remove('hidden');
+            deck2Studio?.classList.add('hidden');
+            deckOps?.classList.add('hidden');
+            deck2Inserts?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        } else if (section === 'studio') {
+            deck1?.classList.add('hidden');
+            deck2?.classList.remove('hidden');
+            deck2Inserts?.classList.add('hidden');
+            deck2Studio?.classList.remove('hidden');
+            deckOps?.classList.add('hidden');
+            deck2Studio?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        } else if (section === 'operations') {
+            deck1?.classList.add('hidden');
+            deck2?.classList.add('hidden');
+            deckOps?.classList.remove('hidden');
+            deckOps?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        }
     }
 
     openDynamicIsland() {
         if (!this.dom.dynamicIslandTray) return;
         this.dom.dynamicIslandTray.classList.remove('collapsed');
-        if (this.dom.dynamicIslandToggleBtn) {
-            this.dom.dynamicIslandToggleBtn.setAttribute('aria-expanded', 'true');
-        }
+        const toggleBtns = [this.dom.dynamicIslandToggleBtn, this.dom.mobileDynamicIslandToggleBtn].filter(Boolean);
+        toggleBtns.forEach(btn => {
+            btn.setAttribute?.('aria-expanded', 'true');
+            const chevron = btn.querySelector ? btn.querySelector('.fa-chevron-down') : null;
+            if (chevron?.classList?.add) chevron.classList.add('rotate-180');
+        });
         if (this.dom.islandChevronIcon) {
             this.dom.islandChevronIcon.classList.add('rotate-180');
         }
@@ -1352,9 +1376,12 @@ class NotenuxPanel {
     closeDynamicIsland() {
         if (!this.dom.dynamicIslandTray) return;
         this.dom.dynamicIslandTray.classList.add('collapsed');
-        if (this.dom.dynamicIslandToggleBtn) {
-            this.dom.dynamicIslandToggleBtn.setAttribute('aria-expanded', 'false');
-        }
+        const toggleBtns = [this.dom.dynamicIslandToggleBtn, this.dom.mobileDynamicIslandToggleBtn].filter(Boolean);
+        toggleBtns.forEach(btn => {
+            btn.setAttribute?.('aria-expanded', 'false');
+            const chevron = btn.querySelector ? btn.querySelector('.fa-chevron-down') : null;
+            if (chevron?.classList?.remove) chevron.classList.remove('rotate-180');
+        });
         if (this.dom.islandChevronIcon) {
             this.dom.islandChevronIcon.classList.remove('rotate-180');
         }
@@ -2759,8 +2786,11 @@ class NotenuxPanel {
             this.handleEditorInput();
         });
 
-        this.dom.saveNowBtn?.addEventListener('click', () => {
-            this.saveActiveNote(true);
+        const saveButtons = [this.dom.saveNowBtn, this.dom.mobileSaveNowBtn].filter(Boolean);
+        saveButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.saveActiveNote(true);
+            });
         });
 
         this.dom.pinNoteBtn?.addEventListener('click', () => {
@@ -2779,10 +2809,55 @@ class NotenuxPanel {
             this.archiveActiveNote();
         });
 
+        this.updateExportMenuPosition = () => {
+            if (!this.dom.exportMenu || this.dom.exportMenu.classList.contains('hidden')) return;
+            const btn = this.dom.exportNoteBtn;
+            if (!btn || !btn.getBoundingClientRect) return;
+            const rect = btn.getBoundingClientRect();
+            const viewportWidth = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1024;
+            const viewportHeight = (typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 768;
+            const menuWidth = this.dom.exportMenu.offsetWidth || 192;
+            const menuHeight = this.dom.exportMenu.offsetHeight || 280;
+
+            let left = (rect.right || 0) - menuWidth;
+            if (left < 12) left = 12;
+            if (left + menuWidth > viewportWidth - 12) left = Math.max(12, viewportWidth - menuWidth - 12);
+
+            let top = (rect.bottom || 0) + 4;
+            if (top + menuHeight > viewportHeight - 12 && (rect.top || 0) > menuHeight) {
+                top = Math.max(12, (rect.top || 0) - menuHeight - 4);
+            }
+
+            this.dom.exportMenu.style.position = 'fixed';
+            this.dom.exportMenu.style.zIndex = '99999';
+            this.dom.exportMenu.style.left = `${left}px`;
+            this.dom.exportMenu.style.top = `${top}px`;
+            this.dom.exportMenu.style.right = 'auto';
+            this.dom.exportMenu.style.bottom = 'auto';
+        };
+
         this.dom.exportNoteBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.dom.exportMenu?.classList.toggle('hidden');
+            if (this.dom.exportMenu) {
+                const isHidden = this.dom.exportMenu.classList.toggle('hidden');
+                if (!isHidden) {
+                    this.updateExportMenuPosition();
+                }
+            }
         });
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('resize', () => {
+                if (this.dom.exportMenu && !this.dom.exportMenu.classList.contains('hidden')) {
+                    this.updateExportMenuPosition();
+                }
+            });
+            window.addEventListener('scroll', () => {
+                if (this.dom.exportMenu && !this.dom.exportMenu.classList.contains('hidden')) {
+                    this.updateExportMenuPosition();
+                }
+            }, true);
+        }
 
         document.addEventListener('click', (e) => {
             if (!this.dom.exportMenu?.contains(e.target) && e.target !== this.dom.exportNoteBtn) {
@@ -3131,9 +3206,24 @@ class NotenuxPanel {
                 this.pushUndoSnapshot();
 
                 if (command === 'createLink') {
-                    const url = prompt('Enter link URL (https://...):');
-                    if (url && /^(https?:\/\/|mailto:|#)/i.test(url)) {
-                        document.execCommand(command, false, url);
+                    let url = prompt('Enter link URL (https://...):');
+                    if (url) {
+                        url = url.trim();
+                        if (!/^(https?:\/\/|mailto:|#|\/)/i.test(url)) {
+                            url = 'https://' + url;
+                        }
+                        const sel = window.getSelection ? window.getSelection() : null;
+                        const isCollapsed = !sel || sel.isCollapsed || !sel.toString().trim();
+                        if (isCollapsed) {
+                            const linkText = prompt('Enter link text:', url) || url;
+                            const safeUrl = url.replace(/"/g, '&quot;');
+                            const safeText = linkText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            this.insertHtmlAtCursor(`<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeText}</a> `);
+                        } else {
+                            document.execCommand('createLink', false, url);
+                        }
+                        this.dom.editorArea?.focus();
+                        this.handleEditorInput();
                         this.toast.show('Hyperlink inserted', 'info');
                     }
                 } else if (command === 'formatBlock' && value) {
@@ -3226,6 +3316,14 @@ class NotenuxPanel {
                 this.pushUndoSnapshot();
             });
         });
+
+        const saveSelectionBeforePicker = () => {
+            this.saveEditorSelection();
+        };
+        this.dom.customTextColorPicker?.addEventListener('mousedown', saveSelectionBeforePicker);
+        this.dom.customTextColorPicker?.parentElement?.addEventListener('mousedown', saveSelectionBeforePicker);
+        this.dom.customHiliteColorPicker?.addEventListener('mousedown', saveSelectionBeforePicker);
+        this.dom.customHiliteColorPicker?.parentElement?.addEventListener('mousedown', saveSelectionBeforePicker);
 
         if (this.dom.customTextColorPicker) {
             const applyCustomText = (e) => {
@@ -3704,6 +3802,12 @@ class NotenuxPanel {
 
     initTableToolkit() {
         if (!this.dom.editorArea) return;
+
+        if (this.dom.tableToolkitBar) {
+            this.dom.tableToolkitBar.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('mousedown', (e) => e.preventDefault());
+            });
+        }
 
         const detectCellFromSelection = () => {
             const sel = window.getSelection ? window.getSelection() : null;
@@ -4232,6 +4336,12 @@ class NotenuxPanel {
     initImageToolkit() {
         if (!this.dom.editorArea) return;
 
+        if (this.dom.imageToolkitBar) {
+            this.dom.imageToolkitBar.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('mousedown', (e) => e.preventDefault());
+            });
+        }
+
         this.dom.editorArea.addEventListener('click', (e) => {
             const img = e.target?.closest ? e.target.closest('img') : (e.target?.tagName === 'IMG' ? e.target : null);
             const figure = e.target?.closest ? e.target.closest('figure') : null;
@@ -4313,22 +4423,28 @@ class NotenuxPanel {
 
     insertMedia() {
         this.saveEditorSelection();
-        this.audio.playClick();
-        const choice = prompt('Enter Image URL (or type "sword", "crystal", "shield" for retro presets):', 'crystal');
-        if (!choice) return;
+        this.audio?.playClick?.();
+        const choice = prompt('Masukkan URL Gambar (atau kosongkan untuk upload file dari perangkat, atau ketik "crystal", "sword", "shield"):', 'crystal');
+        if (choice === null) return;
+
+        const trimmed = choice.trim();
+        if (trimmed === '' || trimmed.toLowerCase() === 'upload') {
+            this.dom.mediaFileInput?.click();
+            return;
+        }
 
         this.pushUndoSnapshot();
 
-        let src = choice;
+        let src = trimmed;
         let alt = 'Media Item';
 
-        if (choice === 'crystal') {
+        if (trimmed === 'crystal') {
             src = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&q=80';
             alt = 'Cyan Mana Crystal';
-        } else if (choice === 'sword') {
+        } else if (trimmed === 'sword') {
             src = 'https://images.unsplash.com/photo-1595590424283-b8f17842773f?auto=format&fit=crop&w=400&q=80';
             alt = 'Ancient Relic Blade';
-        } else if (choice === 'shield') {
+        } else if (trimmed === 'shield') {
             src = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80';
             alt = 'Guardian Shield';
         }

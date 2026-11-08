@@ -718,7 +718,7 @@
                 <div id="studio-dynamic-island" class="dynamic-island-container sticky top-0 z-30 w-full transition-all duration-300">
                     <!-- Island Capsule Pill (Compact Header / Always Visible & Interactive) -->
                     <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
-                        <!-- Top on Mobile / Left on Desktop: Scroll Icon & Full-Width Scroll Title -->
+                        <!-- Top on Mobile / Left on Desktop: Scroll Icon & Full-Width Scroll Title + Mobile Quick Actions -->
                         <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 w-full sm:w-auto sm:flex-1">
                             <!-- Retro Scroll Pill Icon -->
                             <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
@@ -733,12 +733,32 @@
                                    {{ $activeNote ? '' : 'readonly' }}
                                    class="w-full min-w-0 flex-1 text-sm sm:text-base font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-0.5 truncate"
                                    title="Scroll Title">
+
+                            <!-- Mobile Quick Save & Tools Toggle (Visible only on mobile < sm) -->
+                            <div class="flex items-center gap-1 sm:hidden shrink-0">
+                                <button type="button"
+                                        id="mobile-save-now-btn"
+                                        class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2 h-7 rounded-lg text-[10px] font-mono font-bold flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]"
+                                        title="Simpan naskah catatan sekarang">
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i> <span>SAVE</span>
+                                </button>
+                                <button type="button"
+                                        id="mobile-dynamic-island-toggle-btn"
+                                        class="arcade-btn bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white px-2 h-7 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0"
+                                        title="Buka / Tutup Dynamic Island Tools"
+                                        aria-expanded="false"
+                                        aria-controls="dynamic-island-tray">
+                                    <i class="fa-solid fa-layer-group text-cyan-300 text-[10px]"></i>
+                                    <span class="font-pixel text-[8px]">TOOLS</span>
+                                    <i class="fa-solid fa-chevron-down text-[8px] transition-transform duration-300"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Bottom on Mobile / Right on Desktop: Category, Live Telemetry, Actions & Dynamic Island Toggle -->
                         <div class="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 min-w-0">
                             <!-- Compact Category Pill Dropdown -->
-                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-0 flex-1 sm:flex-initial max-w-[130px] sm:max-w-[150px]">
+                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-0 flex-1 sm:flex-initial sm:w-36 max-w-[145px] sm:max-w-[155px]">
                                 <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
                                 <select id="note-category-select" class="w-full bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer truncate">
                                     @if(isset($categories) && $categories->isNotEmpty())
@@ -753,7 +773,7 @@
                             </div>
 
                             <!-- Compact Folder Pill Dropdown -->
-                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-0 flex-1 sm:flex-initial max-w-[130px] sm:max-w-[150px]" title="Folder Naskah / Direktori Gulungan">
+                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-0 flex-1 sm:flex-initial sm:w-36 max-w-[145px] sm:max-w-[155px]" title="Folder Naskah / Direktori Gulungan">
                                 <i class="fa-solid fa-folder text-amber-500 dark:text-yellow-400 text-xs shrink-0"></i>
                                 <select id="note-folder-select" class="w-full bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer truncate">
                                     <option value="">[ROOT] Tanpa Folder</option>
@@ -791,17 +811,17 @@
                                     <i class="fa-solid fa-thumbtack"></i>
                                 </button>
 
-                                <!-- Save Now Button -->
+                                <!-- Save Now Button (Desktop only) -->
                                 <button id="save-now-btn"
-                                        class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]"
+                                        class="hidden sm:flex arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]"
                                         title="Simpan naskah catatan sekarang">
                                     <i class="fa-solid fa-floppy-disk mr-1"></i> <span>SAVE</span>
                                 </button>
 
-                                <!-- Dynamic Island Slide Toggle Button -->
+                                <!-- Dynamic Island Slide Toggle Button (Desktop only) -->
                                 <button type="button"
                                         id="dynamic-island-toggle-btn"
-                                        class="arcade-btn bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white px-2 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold flex items-center gap-1 sm:gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95"
+                                        class="hidden sm:flex arcade-btn bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white px-2 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold items-center gap-1 sm:gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95"
                                         title="Buka / Tutup Dynamic Island Tools (Alt+T)"
                                         aria-expanded="false"
                                         aria-controls="dynamic-island-tray">
@@ -1045,7 +1065,7 @@
                                 </div>
 
                                 <!-- Right: Color Palette, Studio Tools & Canvas Zoom -->
-                                <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:ml-auto">
+                                <div id="editor-deck-2-studio" class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:ml-auto">
                                     <!-- Complete Color Palette (Text Colors, Highlights & Custom Pickers) -->
                                     <div id="editor-deck-2-palette" class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] px-1.5 h-7 shrink-0" title="Palet Pewarnaan Naskah & Teks (Adaptif Dark & Light Mode)">
                                         <span class="text-[10px] font-mono font-bold text-slate-500 mr-0.5 shrink-0" title="Warna Font"><i class="fa-solid fa-palette text-blue-500"></i></span>
@@ -1190,7 +1210,7 @@
                                             <i class="fa-solid fa-file-arrow-down text-blue-600 dark:text-blue-400"></i>
                                             <span class="hidden md:inline">Ekspor</span>
                                         </button>
-                                        <div id="export-menu" class="hidden absolute right-0 mt-1 w-44 bg-[var(--bg-surface)] border-2 border-black rounded-lg shadow-[3px_3px_0px_#000] z-50 p-1 font-mono text-xs">
+                                        <div id="export-menu" class="hidden fixed z-[99999] w-48 bg-[var(--bg-surface)] border-2 border-black rounded-lg shadow-[3px_3px_0px_#000] p-1 font-mono text-xs">
                                             <button data-export-format="md" class="w-full text-left px-2 py-1 rounded hover:bg-blue-600 hover:text-white flex items-center gap-2">
                                                 <i class="fa-brands fa-markdown text-blue-600 dark:text-blue-400"></i> Markdown (.md)
                                             </button>
@@ -1273,9 +1293,9 @@
                 </div>
 
                 <!-- Detailed Table Customization Matrix Toolkit -->
-                <div id="table-toolkit-bar" class="shrink-0 hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono select-none transition-all">
+                <div id="table-toolkit-bar" class="shrink-0 hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap sm:flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono select-none transition-all w-full min-w-0">
                     <!-- Left: Table Info & Row/Col Operations -->
-                    <div class="flex items-center gap-1.5 flex-wrap">
+                    <div class="flex items-center gap-1.5 flex-nowrap sm:flex-wrap shrink-0">
                         <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-100 dark:bg-blue-950/80 border border-blue-400 dark:border-blue-700 text-blue-900 dark:text-cyan-300">
                             <i class="fa-solid fa-table text-blue-600 dark:text-cyan-400"></i>
                             <span class="font-pixel text-[10px] hidden sm:inline">TABLE MATRIX</span>
@@ -1362,9 +1382,9 @@
                 </div>
 
                 <!-- Detailed Image Artifact Matrix Toolkit -->
-                <div id="image-toolkit-bar" class="shrink-0 hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono select-none transition-all">
+                <div id="image-toolkit-bar" class="shrink-0 hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap sm:flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono select-none transition-all w-full min-w-0">
                     <!-- Left: Image Info & Alignment Operations -->
-                    <div class="flex items-center gap-1.5 flex-wrap">
+                    <div class="flex items-center gap-1.5 flex-nowrap sm:flex-wrap shrink-0">
                         <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-100 dark:bg-blue-950/80 border border-blue-400 dark:border-blue-700 text-blue-900 dark:text-cyan-300">
                             <i class="fa-solid fa-image text-blue-600 dark:text-cyan-400"></i>
                             <span class="font-pixel text-[10px] hidden sm:inline">IMAGE MATRIX</span>
@@ -1404,13 +1424,13 @@
                 </div>
 
                 <!-- Zoomable Editable Content Area (The Core Canvas - Full Size) -->
-                <div id="editor-canvas-card" class="arcade-card flex-1 min-h-[550px] lg:min-h-[700px] p-4 sm:p-6 lg:p-8 rounded-2xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000] bg-[var(--bg-surface)] flex flex-col">
+                <div id="editor-canvas-card" class="arcade-card flex-1 min-h-[300px] sm:min-h-[450px] lg:min-h-[600px] p-3 sm:p-5 lg:p-7 rounded-2xl relative shadow-[4px_4px_0px_#000] bg-[var(--bg-surface)] flex flex-col">
                     <div id="editor-zoom-wrapper" class="zoom-canvas-container min-h-full flex flex-col">
                         <!-- Rich Editable Canvas -->
                         <div id="editor-content"
                              contenteditable="{{ $activeNote ? 'true' : 'false' }}"
                              spellcheck="false"
-                             class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none min-h-[350px] flex-1 break-words overflow-x-hidden"
+                             class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none min-h-[250px] sm:min-h-[350px] flex-1 break-words overflow-x-hidden"
                              style="font-family: 'Modern Sans', sans-serif; font-size: 16px;">
                             @if($activeNote)
                                 {!! $activeNote->content !!}

@@ -3349,6 +3349,151 @@ test('white-box: moveNoteToFolder rejects incompatible folder and preserves note
     assert.equal(toastShown, true);
 });
 
+test('white-box: RetroSearchableSelect updatePosition enforces minimum width on narrow triggers and prevents viewport overflow', () => {
+    const mockSelect = {
+        className: 'w-full',
+        dataset: {},
+        value: 'opt1',
+        options: [{ value: 'opt1', textContent: 'Mobile Pill' }],
+        querySelector() { return this.options[0]; },
+        classList: { add() {}, remove() {}, contains: () => false },
+        parentNode: { insertBefore() {} },
+        addEventListener() {},
+        dispatchEvent() {}
+    };
+
+    const context = vm.createContext({
+        window: {
+            innerWidth: 320,
+            innerHeight: 800,
+            addEventListener() {},
+            removeEventListener() {}
+        },
+        document: {
+            createElement: (tag) => ({
+                tagName: tag,
+                className: '',
+                innerHTML: '',
+                children: [],
+                dataset: {},
+                style: {},
+                offsetHeight: 200,
+                offsetWidth: 220,
+                classList: {
+                    classes: new Set(),
+                    add(c) { this.classes.add(c); },
+                    remove(c) { this.classes.delete(c); },
+                    contains(c) { return this.classes.has(c); },
+                    toggle(c, s) { if (s) this.classes.add(c); else this.classes.delete(c); }
+                },
+                appendChild(c) { return c; },
+                querySelector(sel) {
+                    if (sel === '.retro-select-label') return { textContent: '' };
+                    if (sel === '.fa-chevron-down') return { classList: { add() {}, remove() {} } };
+                    if (sel === '.retro-select-search-input') return { value: '', focus() {}, addEventListener() {} };
+                    if (sel === '.retro-select-options-list') return { innerHTML: '', appendChild() {} };
+                    if (sel === '.retro-select-no-results') return { classList: { add() {}, remove() {} } };
+                    return null;
+                },
+                addEventListener() {},
+                focus() {},
+                scrollIntoView() {},
+                // Mock trigger squeezed to 25px near right border
+                getBoundingClientRect() {
+                    return { top: 50, bottom: 80, left: 180, right: 205, width: 25, height: 30 };
+                }
+            }),
+            querySelectorAll: () => [],
+            addEventListener: () => {}
+        },
+        MutationObserver: class { observe() {} disconnect() {} },
+        HTMLSelectElement: class {},
+        Event: class { constructor(type) { this.type = type; } },
+        setTimeout: (fn) => fn(),
+        clearTimeout: () => {}
+    });
+
+    vm.runInContext(source + '\nglobalThis.RetroSearchableSelect = RetroSearchableSelect;', context);
+    const instance = new context.RetroSearchableSelect(mockSelect);
+    instance.open();
+
+    // Trigger is 25px, but dropdown width must be at least 220px (min width)
+    assert.equal(instance.dropdown.style.width, '220px');
+    assert.equal(instance.dropdown.style.minWidth, '220px');
+    // On 320px screen with targetWidth 220px, left must be clamped to 320 - 220 - 12 = 88px so it never overflows
+    assert.equal(instance.dropdown.style.left, '88px');
+});
+
+test('white-box: filterIslandSection selectively displays target tool decks', () => {
+    const { panel, context } = harness(() => {});
+    panel.filterIslandSection = context.Panel.prototype.filterIslandSection.bind(panel);
+
+    const makeDeck = () => {
+        const classes = new Set();
+        return {
+            classList: {
+                add: (c) => classes.add(c),
+                remove: (c) => classes.delete(c),
+                contains: (c) => classes.has(c)
+            },
+            scrollIntoView: () => {}
+        };
+    };
+
+    const deck1 = makeDeck();
+    const deck2 = makeDeck();
+    const deck2Inserts = makeDeck();
+    const deck2Studio = makeDeck();
+    const deckOps = makeDeck();
+
+    panel.dom.editorDeck1 = deck1;
+    panel.dom.editorDeck2 = deck2;
+    panel.dom.editorDeckOperations = deckOps;
+
+    const origGetElementById = context.document.getElementById;
+    context.document.getElementById = (id) => {
+        if (id === 'editor-deck-2-inserts') return deck2Inserts;
+        if (id === 'editor-deck-2-studio') return deck2Studio;
+        return typeof origGetElementById === 'function' ? origGetElementById(id) : null;
+    };
+
+    // Filter 'formatting'
+    panel.filterIslandSection('formatting');
+    assert.equal(deck1.classList.contains('hidden'), false);
+    assert.equal(deck2.classList.contains('hidden'), true);
+    assert.equal(deckOps.classList.contains('hidden'), true);
+
+    // Filter 'inserts'
+    panel.filterIslandSection('inserts');
+    assert.equal(deck1.classList.contains('hidden'), true);
+    assert.equal(deck2.classList.contains('hidden'), false);
+    assert.equal(deck2Inserts.classList.contains('hidden'), false);
+    assert.equal(deck2Studio.classList.contains('hidden'), true);
+    assert.equal(deckOps.classList.contains('hidden'), true);
+
+    // Filter 'studio'
+    panel.filterIslandSection('studio');
+    assert.equal(deck1.classList.contains('hidden'), true);
+    assert.equal(deck2.classList.contains('hidden'), false);
+    assert.equal(deck2Inserts.classList.contains('hidden'), true);
+    assert.equal(deck2Studio.classList.contains('hidden'), false);
+    assert.equal(deckOps.classList.contains('hidden'), true);
+
+    // Filter 'operations'
+    panel.filterIslandSection('operations');
+    assert.equal(deck1.classList.contains('hidden'), true);
+    assert.equal(deck2.classList.contains('hidden'), true);
+    assert.equal(deckOps.classList.contains('hidden'), false);
+
+    // Filter 'all'
+    panel.filterIslandSection('all');
+    assert.equal(deck1.classList.contains('hidden'), false);
+    assert.equal(deck2.classList.contains('hidden'), false);
+    assert.equal(deck2Inserts.classList.contains('hidden'), false);
+    assert.equal(deck2Studio.classList.contains('hidden'), false);
+    assert.equal(deckOps.classList.contains('hidden'), false);
+});
+
 
 
 
