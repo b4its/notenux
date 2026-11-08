@@ -228,17 +228,17 @@
     <header class="shrink-0 bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-2 sm:px-4 lg:px-6 py-2 sm:py-2.5 z-30">
         <div class="flex items-center justify-between gap-1.5 sm:gap-4 max-w-7xl mx-auto">
             <!-- Left Branding & Dual-Sidebar Mobile Triggers -->
-            <div class="flex items-center gap-1.5 sm:gap-3 min-w-0">
+            <div class="flex items-center gap-1 sm:gap-2.5 min-w-0">
                 <!-- Mobile Primary Nav Toggle -->
                 <button id="mobile-nav-toggle-btn"
-                        class="lg:hidden arcade-btn bg-blue-600 text-white p-2 rounded text-xs shrink-0"
+                        class="lg:hidden arcade-btn bg-blue-600 text-white p-1.5 sm:p-2 rounded text-xs shrink-0 flex items-center justify-center w-8 h-8 sm:w-auto sm:h-auto"
                         aria-label="Toggle Primary Navigation Drawer">
                     <i class="fa-solid fa-bars"></i>
                 </button>
 
                 <!-- Mobile Scroll Explorer Toggle -->
                 <button id="mobile-explorer-toggle-btn"
-                        class="lg:hidden arcade-btn bg-cyan-600 text-white p-2 rounded text-xs shrink-0"
+                        class="lg:hidden arcade-btn bg-cyan-600 text-white p-1.5 sm:p-2 rounded text-xs shrink-0 flex items-center justify-center w-8 h-8 sm:w-auto sm:h-auto"
                         aria-label="Toggle Scroll Explorer Drawer">
                     <i class="fa-solid fa-folder-open"></i>
                 </button>
@@ -262,10 +262,10 @@
                     <!-- Adaptive Horizontal Logo -->
                     <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.png') }}"
                          alt="Notenux Studio"
-                         class="h-7 sm:h-8 w-auto object-contain hidden dark:block transition-transform duration-200 group-hover:scale-105">
+                         class="h-6 sm:h-8 w-auto object-contain hidden dark:block transition-transform duration-200 group-hover:scale-105">
                     <img src="{{ asset('assets/logo/light/icon_horizontal_light.png') }}"
                          alt="Notenux Studio"
-                         class="h-7 sm:h-8 w-auto object-contain block dark:hidden transition-transform duration-200 group-hover:scale-105">
+                         class="h-6 sm:h-8 w-auto object-contain block dark:hidden transition-transform duration-200 group-hover:scale-105">
                     <span class="sr-only">NOTENUX</span>
                     <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden sm:inline-block">STUDIO v3.0</span>
                 </a>
@@ -275,7 +275,7 @@
             <div class="flex items-center gap-1 sm:gap-2 shrink-0">
                 <!-- Sound Synthesizer SFX Button -->
                 <button id="sound-toggle-btn"
-                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center"
                         title="Toggle 8-bit Audio Synthesizer">
                     <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 sm:mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
                 </button>
@@ -296,14 +296,14 @@
 
                 <!-- Light / Dark Theme Switcher -->
                 <button id="theme-toggle-btn"
-                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
+                        class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center"
                         title="Toggle Light / Dark Mode">
                     <i class="fa-solid fa-moon text-cyan-300 sm:mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>
                 </button>
 
                 <!-- Back to Landing Page -->
                 <a href="{{ route('landing') }}"
-                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
+                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center"
                    title="Beranda Notenux">
                     <i class="fa-solid fa-house"></i>
                 </a>
@@ -313,7 +313,7 @@
                     @csrf
                     <button type="submit"
                             id="logout-btn"
-                            class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono"
+                            class="arcade-btn bg-red-600 hover:bg-red-500 text-white p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center"
                             title="Keluar dari Studio">
                         <i class="fa-solid fa-right-from-bracket sm:mr-1"></i> <span class="hidden sm:inline">LOGOUT</span>
                     </button>
@@ -669,24 +669,26 @@
                 <!-- ============================================================================== -->
                 <div class="arcade-card p-3 sm:p-4 rounded-xl flex flex-col gap-2.5 shadow-[4px_4px_0px_#000]">
                     <!-- Tier 1: Category Badge & Core Action Command Deck -->
-                    <div class="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-black/10 dark:border-white/10">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-black/10 dark:border-white/10 w-full min-w-0">
                         <!-- Category Selector & Quick Actions -->
-                        <div class="flex items-center gap-1.5 bg-surface-alt px-2 sm:px-2.5 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] max-w-full min-w-0">
-                            <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
-                            <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[200px] truncate">
-                                @if(isset($categories) && $categories->isNotEmpty())
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
-                                    @endforeach
-                                @else
-                                    <option value="quest">[QUEST] Quest Log</option>
-                                    <option value="spellbook">[SPELL] Spellbook</option>
-                                    <option value="strategy">[RAID] Boss Tactics</option>
-                                    <option value="lore">[LORE] Ancient Lore</option>
-                                    <option value="archive">[ARCHIVE] Library Vault</option>
-                                    <option value="general">[GENERAL] General Note</option>
-                                @endif
-                            </select>
+                        <div class="flex items-center justify-between sm:justify-start gap-1.5 bg-surface-alt px-2 sm:px-2.5 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] w-full sm:w-auto min-w-0">
+                            <div class="flex items-center gap-1.5 min-w-0 flex-1 sm:flex-initial">
+                                <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
+                                <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer w-full sm:max-w-[200px] truncate">
+                                    @if(isset($categories) && $categories->isNotEmpty())
+                                        @foreach($categories as $category)
+                                            <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
+                                        @endforeach
+                                    @else
+                                        <option value="quest">[QUEST] Quest Log</option>
+                                        <option value="spellbook">[SPELL] Spellbook</option>
+                                        <option value="strategy">[RAID] Boss Tactics</option>
+                                        <option value="lore">[LORE] Ancient Lore</option>
+                                        <option value="archive">[ARCHIVE] Library Vault</option>
+                                        <option value="general">[GENERAL] General Note</option>
+                                    @endif
+                                </select>
+                            </div>
 
                             <!-- Quick Category Controls: Edit, Delete, Forge -->
                             <div class="flex items-center gap-1 pl-1.5 border-l border-black/20 dark:border-blue-800 shrink-0">
@@ -712,25 +714,25 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
+                        <div class="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto min-w-0 flex-wrap">
+                            <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
                                 <!-- Favorite Bookmark -->
                                 <button id="favorite-note-btn"
-                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs"
+                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs flex items-center justify-center"
                                         title="Toggle Favorite Bookmark">
                                     <i class="fa-regular fa-star text-amber-600 dark:text-yellow-400"></i>
                                 </button>
 
                                 <!-- Pin Button -->
                                 <button id="pin-note-btn"
-                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono"
+                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center"
                                         title="Toggle Pinned Note">
                                     <i class="fa-solid fa-thumbtack"></i>
                                 </button>
 
                                 <!-- Duplicate Button -->
                                 <button id="duplicate-note-btn"
-                                        class="arcade-btn bg-surface hover:bg-cyan-100 dark:hover:bg-cyan-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono"
+                                        class="arcade-btn bg-surface hover:bg-cyan-100 dark:hover:bg-cyan-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center"
                                         title="Duplicate Scroll">
                                     <i class="fa-solid fa-clone text-blue-600 dark:text-cyan-400"></i>
                                 </button>
@@ -738,7 +740,7 @@
                                 <!-- Export Dropdown -->
                                 <div class="relative inline-block text-left" id="export-dropdown-wrapper">
                                     <button id="export-note-btn"
-                                            class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono"
+                                            class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center"
                                             title="Export Scroll">
                                         <i class="fa-solid fa-file-arrow-down text-blue-600 dark:text-blue-400"></i>
                                     </button>
@@ -776,32 +778,34 @@
 
                                 <!-- Zen Mode Toggle -->
                                 <button id="zen-mode-btn"
-                                        class="arcade-btn bg-surface hover:bg-purple-100 dark:hover:bg-purple-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono"
+                                        class="arcade-btn bg-surface hover:bg-purple-100 dark:hover:bg-purple-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center"
                                         title="Toggle Distraction-Free Zen Writing Mode">
                                     <i class="fa-solid fa-expand text-purple-600 dark:text-purple-400"></i>
                                 </button>
 
                                 <!-- Archive Button -->
                                 <button id="archive-note-btn"
-                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono"
+                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded text-xs font-mono flex items-center justify-center"
                                         title="Archive Scroll to Library Vault">
                                     <i class="fa-solid fa-box-archive text-amber-600 dark:text-amber-400"></i>
                                 </button>
                             </div>
 
-                            <!-- Delete Scroll Button (Opens Visual Interactive Modal) -->
-                            <button id="delete-note-btn"
-                                    class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-2.5 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider"
-                                    title="Banish Scroll to Digital Void">
-                                <i class="fa-solid fa-trash-can mr-1"></i> DELETE
-                            </button>
+                            <!-- Delete Scroll Button (Opens Visual Interactive Modal) & Save Button -->
+                            <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto sm:ml-0">
+                                <button id="delete-note-btn"
+                                        class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-2 sm:px-3 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center"
+                                        title="Banish Scroll to Digital Void">
+                                    <i class="fa-solid fa-trash-can mr-1"></i> DELETE
+                                </button>
 
-                            <!-- Inscribe / Save Now -->
-                            <button id="save-now-btn"
-                                    class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider"
-                                    title="Simpan naskah catatan sekarang">
-                                <i class="fa-solid fa-floppy-disk mr-1.5"></i> SAVE
-                            </button>
+                                <!-- Inscribe / Save Now -->
+                                <button id="save-now-btn"
+                                        class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center"
+                                        title="Simpan naskah catatan sekarang">
+                                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> SAVE
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -819,41 +823,41 @@
                     </div>
 
                     <!-- Tier 3: HUD Telemetry Sub-bar -->
-                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-black/10 dark:border-white/10 text-xs font-mono">
+                    <div class="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pt-2 border-t border-black/10 dark:border-white/10 text-xs font-mono">
                         <!-- Word & Character Badges -->
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span id="word-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 font-bold flex items-center">
+                        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <span id="word-count-badge" class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] sm:text-xs font-bold flex items-center">
                                 <i class="fa-solid fa-pen-nib mr-1 text-blue-600 dark:text-blue-400"></i> 0 Words
                             </span>
-                            <span id="char-count-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 font-bold hidden sm:inline-flex items-center">
+                            <span id="char-count-badge" class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] sm:text-xs font-bold hidden sm:inline-flex items-center">
                                 <i class="fa-solid fa-font mr-1 text-blue-600 dark:text-blue-400"></i> 0 Chars
                             </span>
-                            <span id="reading-time-badge" class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 font-bold flex items-center">
+                            <span id="reading-time-badge" class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] sm:text-xs font-bold flex items-center">
                                 <i class="fa-solid fa-clock mr-1 text-blue-600 dark:text-cyan-400"></i> 1m Read
                             </span>
 
                             <!-- Created At & Updated At Badges for Active Scroll -->
                             <span id="scroll-created-badge"
-                                  class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[11px] hidden sm:inline-flex items-center gap-1 shadow-[1px_1px_0px_#000]"
+                                  class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[10px] sm:text-[11px] hidden sm:inline-flex items-center gap-1 shadow-[1px_1px_0px_#000]"
                                   title="Waktu Gulungan Ini Dibuat">
                                 <i class="fa-solid fa-calendar-plus text-blue-600 dark:text-cyan-400"></i>
                                 <span id="scroll-created-text">Dibuat: -</span>
                             </span>
                             <span id="scroll-updated-badge"
-                                  class="px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[11px] inline-flex items-center gap-1 shadow-[1px_1px_0px_#000]"
+                                  class="px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 bg-surface-alt text-slate-700 dark:text-slate-300 font-mono text-[10px] sm:text-[11px] inline-flex items-center gap-1 shadow-[1px_1px_0px_#000] max-w-full"
                                   title="Waktu Gulungan Ini Terakhir Diperbarui">
-                                <i class="fa-solid fa-clock-rotate-left text-emerald-600 dark:text-emerald-400"></i>
-                                <span id="scroll-updated-text">Diperbarui: -</span>
+                                <i class="fa-solid fa-clock-rotate-left text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+                                <span id="scroll-updated-text" class="truncate max-w-[170px] sm:max-w-none">Diperbarui: -</span>
                             </span>
                         </div>
 
                         <!-- Right: Goal Progress, Save Status -->
-                        <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                             <!-- Quest Goal Tracker Pill -->
-                            <div class="flex items-center gap-1 bg-surface-alt px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 text-xs font-mono shadow-[1px_1px_0px_#000]">
+                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-0.5 rounded border border-black/20 dark:border-blue-900 text-[11px] sm:text-xs font-mono shadow-[1px_1px_0px_#000]">
                                 <i class="fa-solid fa-bullseye text-amber-600 dark:text-amber-400"></i>
                                 <span id="quest-goal-text" class="font-bold text-slate-900 dark:text-slate-100">Goal: 0/250w</span>
-                                <select id="quest-goal-select" class="bg-transparent border-0 text-[10px] focus:outline-none ml-0.5 cursor-pointer font-bold text-slate-900 dark:text-slate-100 opacity-90 hover:opacity-100">
+                                <select id="quest-goal-select" class="no-retro-select bg-transparent border-0 text-[10px] focus:outline-none ml-0.5 cursor-pointer font-bold text-slate-900 dark:text-slate-100 opacity-90 hover:opacity-100">
                                     <option value="100">100w</option>
                                     <option value="250" selected>250w</option>
                                     <option value="500">500w</option>
@@ -862,7 +866,7 @@
                             </div>
 
                             <!-- Synchronized indicator -->
-                            <span id="save-status-text" class="text-xs font-mono text-emerald-700 dark:text-emerald-400 flex items-center gap-1 font-bold">
+                            <span id="save-status-text" class="text-[11px] sm:text-xs font-mono text-emerald-700 dark:text-emerald-400 flex items-center gap-1 font-bold">
                                 <i class="fa-solid fa-circle-check"></i> Synchronized
                             </span>
 
@@ -877,11 +881,11 @@
                 <!-- ============================================================================== -->
                 <div id="editor-toolbar-decks" class="arcade-card p-2 sm:p-2.5 rounded-xl flex flex-col gap-2 shadow-[3px_3px_0px_#000]">
                     <!-- Toolbar Deck 1: Typography & Inline Formatting -->
-                    <div id="editor-deck-1" class="flex items-center justify-between gap-1.5 pb-2 border-b border-black/10 dark:border-white/10 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap">
-                        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                    <div id="editor-deck-1" class="flex items-center justify-between gap-1 sm:gap-1.5 pb-2 border-b border-black/10 dark:border-white/10 flex-wrap">
+                        <div class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                             <!-- Font Family & Size Combined Pill -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
-                                <i class="fa-solid fa-font text-blue-500 dark:text-cyan-400 text-xs px-0.5"></i>
+                                <i class="fa-solid fa-font text-blue-500 dark:text-cyan-400 text-xs px-0.5 shrink-0"></i>
                                 <select id="font-family-select"
                                         class="bg-white dark:bg-black/50 border border-black/30 dark:border-blue-800 rounded px-1.5 py-0.5 text-xs font-mono focus:outline-none focus:border-cyan-400 max-w-[125px] sm:max-w-[145px]">
                                     <option value="pixel">Pixel (Press Start 2P)</option>
@@ -906,26 +910,26 @@
 
                             <!-- Undo & Redo -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
-                                <button id="editor-undo-btn" data-command="undo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Undo (Ctrl+Z)">
+                                <button id="editor-undo-btn" data-command="undo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center" title="Undo (Ctrl+Z)">
                                     <i class="fa-solid fa-rotate-left"></i>
                                 </button>
-                                <button id="editor-redo-btn" data-command="redo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Redo (Ctrl+Y / Ctrl+Shift+Z)">
+                                <button id="editor-redo-btn" data-command="redo" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center" title="Redo (Ctrl+Y / Ctrl+Shift+Z)">
                                     <i class="fa-solid fa-rotate-right"></i>
                                 </button>
                             </div>
 
                             <!-- Bold, Italic, Underline, Strikethrough -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
-                                <button data-command="bold" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs font-bold" title="Bold (Ctrl+B)">
+                                <button data-command="bold" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs font-bold flex items-center justify-center" title="Bold (Ctrl+B)">
                                     <i class="fa-solid fa-bold"></i>
                                 </button>
-                                <button data-command="italic" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs italic" title="Italic (Ctrl+I)">
+                                <button data-command="italic" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs italic flex items-center justify-center" title="Italic (Ctrl+I)">
                                     <i class="fa-solid fa-italic"></i>
                                 </button>
-                                <button data-command="underline" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs underline" title="Underline (Ctrl+U)">
+                                <button data-command="underline" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs underline flex items-center justify-center" title="Underline (Ctrl+U)">
                                     <i class="fa-solid fa-underline"></i>
                                 </button>
-                                <button data-command="strikeThrough" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs line-through" title="Strikethrough">
+                                <button data-command="strikeThrough" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs line-through flex items-center justify-center" title="Strikethrough">
                                     <i class="fa-solid fa-strikethrough"></i>
                                 </button>
                             </div>
@@ -940,70 +944,70 @@
                         </div>
 
                         <!-- Right: Alignment & Clear -->
-                        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        <div class="flex items-center gap-1 sm:gap-1.5 ml-auto sm:ml-0 flex-wrap">
                             <!-- Alignment -->
                             <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
-                                <button data-command="justifyLeft" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Align Left">
+                                <button data-command="justifyLeft" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center" title="Align Left">
                                     <i class="fa-solid fa-align-left"></i>
                                 </button>
-                                <button data-command="justifyCenter" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Align Center">
+                                <button data-command="justifyCenter" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center" title="Align Center">
                                     <i class="fa-solid fa-align-center"></i>
                                 </button>
-                                <button data-command="justifyRight" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Align Right">
+                                <button data-command="justifyRight" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center" title="Align Right">
                                     <i class="fa-solid fa-align-right"></i>
                                 </button>
                             </div>
 
                             <!-- Clear Formatting / Content -->
-                            <button id="clear-editor-btn" type="button" class="arcade-btn bg-surface hover:bg-rose-200 dark:hover:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold px-2 h-7 rounded text-xs font-mono" title="Bersihkan format teks atau kosongkan catatan">
+                            <button id="clear-editor-btn" type="button" class="arcade-btn bg-surface hover:bg-rose-200 dark:hover:bg-rose-950 text-rose-600 dark:text-rose-400 font-bold px-2 h-7 rounded text-xs font-mono flex items-center justify-center" title="Bersihkan format teks atau kosongkan catatan">
                                 <i class="fa-solid fa-broom mr-1"></i> CLEAR
                             </button>
                         </div>
                     </div>
 
                     <!-- Toolbar Deck 2: Structural Blocks, Inserts, Studio Tools, Palette & Canvas Zoom -->
-                    <div class="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar touch-pan-x flex-nowrap">
+                    <div class="flex items-center justify-between gap-1 sm:gap-1.5 flex-wrap">
                         <!-- Notepad Mode Active Banner (Visible only in Notepad mode) -->
-                        <div id="notepad-mode-banner" class="hidden items-center gap-2 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-500/60 rounded-lg px-2.5 py-1 text-xs font-mono text-emerald-900 dark:text-emerald-300 shadow-[1px_1px_0px_#000]">
+                        <div id="notepad-mode-banner" class="hidden items-center gap-2 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-500/60 rounded-lg px-2.5 py-1 text-xs font-mono text-emerald-900 dark:text-emerald-300 shadow-[1px_1px_0px_#000] w-full">
                             <i class="fa-solid fa-file-lines text-emerald-600 dark:text-emerald-400"></i>
                             <span class="font-bold">MODE NOTEPAD</span>
                             <span class="hidden md:inline text-black/60 dark:text-emerald-400/80">— Teks biasa murni tanpa format, siap disalin kapan saja.</span>
                         </div>
 
-                        <div id="editor-deck-2-inserts" class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        <div id="editor-deck-2-inserts" class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                             <!-- Lists & Structure -->
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
-                                <button data-command="insertUnorderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Bullet List">
+                            <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
+                                <button data-command="insertUnorderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center" title="Bullet List">
                                     <i class="fa-solid fa-list-ul"></i>
                                 </button>
-                                <button data-command="insertOrderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Numbered List">
+                                <button data-command="insertOrderedList" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center" title="Numbered List">
                                     <i class="fa-solid fa-list-ol"></i>
                                 </button>
-                                <button data-command="formatBlock" data-value="blockquote" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Quote Block">
+                                <button data-command="formatBlock" data-value="blockquote" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center" title="Quote Block">
                                     <i class="fa-solid fa-quote-left"></i>
                                 </button>
-                                <button data-command="formatBlock" data-value="pre" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs font-mono" title="Code Block">
+                                <button data-command="formatBlock" data-value="pre" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs font-mono flex items-center justify-center" title="Code Block">
                                     <i class="fa-solid fa-code"></i>
                                 </button>
-                                <button data-command="insertHorizontalRule" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs" title="Divider Line">
+                                <button data-command="insertHorizontalRule" class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 w-7 h-7 rounded text-xs flex items-center justify-center" title="Divider Line">
                                     <i class="fa-solid fa-minus"></i>
                                 </button>
                             </div>
 
                             <!-- Content Inserts -->
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
+                            <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
                                 <button id="insert-table-btn"
-                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2.5 h-7 rounded text-xs font-mono"
+                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
                                         title="Insert 3x4 Retro Data Table">
                                     <i class="fa-solid fa-table mr-1"></i> TABLE
                                 </button>
                                 <button id="insert-task-btn"
-                                        class="arcade-btn bg-blue-700 hover:bg-blue-600 text-white px-2.5 h-7 rounded text-xs font-mono"
+                                        class="arcade-btn bg-blue-700 hover:bg-blue-600 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
                                         title="Insert Interactive Quest Checklist">
                                     <i class="fa-solid fa-square-check mr-1"></i> TASK
                                 </button>
                                 <button id="insert-media-btn"
-                                        class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2.5 h-7 rounded text-xs font-mono"
+                                        class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
                                         title="Insert Image / Pixel Artifact">
                                     <i class="fa-solid fa-image mr-1 text-blue-600 dark:text-cyan-400"></i> IMG
                                 </button>
@@ -1011,7 +1015,7 @@
                         </div>
 
                         <!-- Right: Color Palette, Studio Tools & Canvas Zoom -->
-                        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                        <div class="flex items-center gap-1 sm:gap-1.5 ml-auto sm:ml-0 flex-wrap">
                             <!-- Color Palette Swatches -->
                             <div id="editor-deck-2-palette" class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] px-1.5 h-7">
                                 <button data-color="#38bdf8" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-cyan-400 border border-black cursor-pointer hover:scale-110 transition-transform" title="Neon Cyan"></button>
@@ -1023,31 +1027,31 @@
                             </div>
 
                             <!-- Studio Markdown & Plain Text Tools -->
-                            <div class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
+                            <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000]">
                                 <button id="markdown-paste-btn"
-                                        class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2.5 h-7 rounded text-xs font-mono"
+                                        class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
                                         title="Paste or Convert Raw Markdown (.md)">
                                     <i class="fa-solid fa-file-code mr-1"></i> MD
                                 </button>
                                 <button id="markdown-view-toggle-btn"
-                                        class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/40 px-2.5 h-7 rounded text-xs font-mono"
+                                        class="arcade-btn bg-surface hover:bg-cyan-200 dark:hover:bg-cyan-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
                                         title="Toggle Raw Markdown Textarea View">
                                     <i class="fa-brands fa-markdown mr-1 text-blue-600 dark:text-cyan-400"></i> RAW
                                 </button>
                                 <button id="plain-text-toggle-btn"
-                                        class="arcade-btn bg-surface hover:bg-emerald-200 dark:hover:bg-emerald-900/40 px-2.5 h-7 rounded text-xs font-mono"
+                                        class="arcade-btn bg-surface hover:bg-emerald-200 dark:hover:bg-emerald-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
                                         title="Mode Teks Biasa / Notepad (Alt+N)">
                                     <i class="fa-solid fa-file-lines mr-1 text-emerald-600 dark:text-emerald-400"></i> TXT
                                 </button>
                                 <button id="find-replace-toggle-btn"
-                                        class="arcade-btn bg-surface hover:bg-amber-200 dark:hover:bg-amber-900/40 px-2.5 h-7 rounded text-xs font-mono"
+                                        class="arcade-btn bg-surface hover:bg-amber-200 dark:hover:bg-amber-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center"
                                         title="Find & Replace in Scroll (Ctrl+F)">
                                     <i class="fa-solid fa-magnifying-glass mr-1 text-amber-600 dark:text-yellow-400"></i> FIND
                                 </button>
                             </div>
 
                             <!-- Canvas Zoom Widget -->
-                            <div class="flex items-center bg-surface rounded border border-black/20 dark:border-blue-800 px-1.5 h-7 shadow-[1px_1px_0px_#000]">
+                            <div class="flex items-center bg-surface rounded border border-black/20 dark:border-blue-800 px-1 sm:px-1.5 h-7 shadow-[1px_1px_0px_#000]">
                                 <button id="zoom-out-btn"
                                         class="text-xs hover:text-blue-600 dark:hover:text-cyan-400 px-1 cursor-pointer"
                                         title="Zoom Out Canvas">
@@ -1222,13 +1226,13 @@
                 </div>
 
                 <!-- Zoomable Editable Content Area (The Core Canvas) -->
-                <div class="arcade-card flex-1 min-h-0 p-4 sm:p-6 rounded-xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000] bg-[var(--bg-surface)]">
+                <div class="arcade-card flex-1 min-h-0 p-3 sm:p-6 rounded-xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000] bg-[var(--bg-surface)]">
                     <div id="editor-zoom-wrapper" class="zoom-canvas-container min-h-full flex flex-col">
                         <!-- Rich Editable Canvas -->
                         <div id="editor-content"
                              contenteditable="true"
                              spellcheck="false"
-                             class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none min-h-[350px] flex-1"
+                             class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none min-h-[350px] flex-1 break-words overflow-x-hidden"
                              style="font-family: 'Press Start 2P', monospace; font-size: 16px;">
                             {!! $activeNote->content ?? '<h2>Mission Briefing: Act I</h2><p>Begin scribing your thoughts...</p>' !!}
                         </div>

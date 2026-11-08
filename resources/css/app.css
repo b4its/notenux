@@ -476,6 +476,8 @@ figcaption.retro-image-caption {
     position: relative;
     display: inline-flex;
     vertical-align: middle;
+    max-width: 100%;
+    min-width: 0;
 }
 
 .retro-select-trigger {
@@ -496,6 +498,15 @@ figcaption.retro-image-caption {
     user-select: none;
     transition: all 0.1s ease;
     white-space: nowrap;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.retro-select-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .retro-select-trigger:hover {
@@ -511,7 +522,7 @@ figcaption.retro-image-caption {
 .retro-select-dropdown {
     position: fixed;
     min-width: 190px;
-    max-width: 340px;
+    max-width: min(340px, calc(100vw - 24px));
     max-height: 280px;
     z-index: 99999;
     background-color: var(--bg-surface);
@@ -520,6 +531,33 @@ figcaption.retro-image-caption {
     border-radius: 8px;
     overflow: hidden;
     animation: arcadePopIn 0.12s ease-out;
+}
+
+/* Studio Toolbar compact select styles */
+#editor-toolbar-decks .retro-select-container {
+    max-width: 100%;
+    min-width: 0;
+}
+
+#editor-toolbar-decks .retro-select-trigger {
+    padding: 0.15rem 0.35rem;
+    font-size: 0.75rem;
+    height: 1.75rem;
+    max-width: 100%;
+    min-width: 0;
+}
+
+#editor-toolbar-decks .retro-select-label {
+    max-width: 105px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+    #editor-toolbar-decks .retro-select-label {
+        max-width: 140px;
+    }
 }
 
 .retro-select-container.w-full .retro-select-dropdown {
