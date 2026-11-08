@@ -338,7 +338,7 @@ class NoteController extends Controller
 
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:100'],
-            'ids.*' => ['required', 'integer', 'exists:notes,id'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:notes,id'],
         ]);
 
         $notes = Note::whereIn('id', $validated['ids'])->get();
@@ -379,7 +379,7 @@ class NoteController extends Controller
 
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:100'],
-            'ids.*' => ['required', 'integer', 'exists:notes,id'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:notes,id'],
             'folder_id' => [
                 'nullable',
                 'integer',

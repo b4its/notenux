@@ -350,3 +350,25 @@ test('performance: database backup command includes folders table in backup payl
     @unlink($backupPath);
     @unlink(database_path("backups/{$testBackupFile}.sql"));
 });
+
+test('performance: sitemap route serves xml with public daily cache header and validates file presence', function () {
+    $response = $this->get('/sitemap.xml');
+    $response->assertOk()
+        ->assertHeader('Content-Type', 'application/xml; charset=UTF-8');
+
+    $cacheHeader = (string) $response->headers->get('Cache-Control');
+    expect($cacheHeader)->toContain('public')
+        ->and($cacheHeader)->toContain('max-age=86400');
+});
+
+test('security: bulk operations reject duplicate ids in payload using distinct validation rule', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->create(['user_id' => $user->id]);
+
+    $response = $this->actingAs($user)->postJson('/api/notes/bulk-delete', [
+        'ids' => [$note->id, $note->id],
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors('ids.0');
+});

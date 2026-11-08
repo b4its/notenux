@@ -195,7 +195,7 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:100'],
-            'ids.*' => ['required', 'integer', 'exists:categories,id'],
+            'ids.*' => ['required', 'integer', 'distinct', 'exists:categories,id'],
         ]);
 
         $categories = Category::whereIn('id', $validated['ids'])->get();

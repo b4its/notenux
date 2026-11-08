@@ -57,7 +57,7 @@ class RestoreDatabaseCommand extends Command
                 continue;
             }
 
-            DB::table($table)->truncate();
+            DB::table($table)->delete();
             $rows = $tableData['rows'] ?? [];
 
             if (! empty($rows)) {

@@ -15,8 +15,14 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/sitemap.xml', function () {
-    return response(file_get_contents(public_path('sitemap.xml')), 200, [
+    $path = public_path('sitemap.xml');
+    if (! file_exists($path)) {
+        abort(404);
+    }
+
+    return response((string) file_get_contents($path), 200, [
         'Content-Type' => 'application/xml; charset=UTF-8',
+        'Cache-Control' => 'public, max-age=86400',
     ]);
 })->name('sitemap');
 
