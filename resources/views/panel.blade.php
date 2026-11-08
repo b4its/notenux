@@ -307,21 +307,21 @@
             <div class="flex items-center gap-1 sm:gap-2 shrink-0">
                 <!-- Sound Synthesizer SFX Button -->
                 <button id="sound-toggle-btn"
-                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center"
+                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto hidden lg:inline-flex items-center justify-center"
                         title="Toggle 8-bit Audio Synthesizer">
-                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 sm:mr-1.5"></i> <span class="hidden sm:inline">SFX: ON</span>
+                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 sm:mr-1.5"></i> <span class="hidden xl:inline">SFX: ON</span>
                 </button>
 
-                <!-- CRT Scanlines Mode Switcher (Hidden on small mobile) -->
+                <!-- CRT Scanlines Mode Switcher (Hidden on mobile & tablet) -->
                 <button id="crt-toggle-btn"
-                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden sm:inline-flex"
+                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden xl:inline-flex items-center"
                         title="Toggle Retro CRT Scanlines Effect">
                     <i class="fa-solid fa-tv sm:mr-1.5 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT FX</span>
                 </button>
 
-                <!-- Arcade Shortcuts Guide Button (Desktop / Tablet) -->
+                <!-- Arcade Shortcuts Guide Button (Desktop only) -->
                 <button id="shortcuts-modal-btn"
-                        class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-900 text-main px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden md:inline-flex"
+                        class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-900 text-main px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden xl:inline-flex items-center"
                         title="Arcade Controller & Keyboard Shortcuts Guide">
                     <i class="fa-solid fa-keyboard text-amber-600 dark:text-yellow-400 sm:mr-1.5"></i> <span class="hidden xl:inline">KEYS</span>
                 </button>
@@ -330,12 +330,12 @@
                 <button id="theme-toggle-btn"
                         class="arcade-btn bg-amber-300 hover:bg-amber-400 dark:bg-blue-900 dark:hover:bg-blue-800 text-black dark:text-cyan-300 p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center"
                         title="Toggle Light / Dark Mode">
-                    <i class="fa-solid fa-moon text-cyan-300 sm:mr-1.5"></i> <span class="hidden sm:inline">NIGHT</span>
+                    <i class="fa-solid fa-moon text-cyan-300 sm:mr-1.5"></i> <span class="hidden xl:inline">NIGHT</span>
                 </button>
 
-                <!-- Back to Landing Page -->
+                <!-- Back to Landing Page (Desktop only; logo already links to home) -->
                 <a href="{{ route('landing') }}"
-                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center"
+                   class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto hidden lg:inline-flex items-center justify-center"
                    title="Beranda Notenux">
                     <i class="fa-solid fa-house"></i>
                 </a>
@@ -346,7 +346,7 @@
                         class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-950 dark:text-cyan-300 p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center border border-blue-400/50"
                         title="Profil Hero & Keamanan Akun">
                     <i class="fa-solid fa-user-shield sm:mr-1 text-blue-600 dark:text-cyan-400"></i>
-                    <span class="hidden sm:inline" id="top-nav-username">{{ Str::limit($user->name ?? 'HERO', 10) }}</span>
+                    <span class="hidden md:inline" id="top-nav-username">{{ Str::limit($user->name ?? 'HERO', 10) }}</span>
                 </button>
 
                 <!-- Logout Button -->
@@ -356,17 +356,17 @@
                             id="logout-btn"
                             class="arcade-btn bg-red-600 hover:bg-red-500 text-white p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center"
                             title="Keluar dari Studio">
-                        <i class="fa-solid fa-right-from-bracket sm:mr-1"></i> <span class="hidden sm:inline">LOGOUT</span>
+                        <i class="fa-solid fa-right-from-bracket sm:mr-1"></i> <span class="hidden md:inline">LOGOUT</span>
                     </button>
                 </form>
 
-                <!-- Hidden inspect chunks button replaced with functional Shards button -->
+                <!-- Database Shard Telemetry & Integrity Audit (Desktop only) -->
                 <button type="button"
                         id="inspect-chunks-btn"
-                        class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto flex items-center justify-center border border-black/20 dark:border-blue-900"
+                        class="arcade-btn bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-main p-1.5 sm:px-2.5 sm:py-1.5 rounded text-xs font-mono h-8 sm:h-auto hidden xl:inline-flex items-center justify-center border border-black/20 dark:border-blue-900"
                         title="Database Shard Telemetry & Integrity Audit">
                     <i class="fa-solid fa-cubes text-cyan-600 dark:text-cyan-400 sm:mr-1"></i>
-                    <span class="hidden sm:inline">CHUNKS</span>
+                    <span class="hidden xl:inline">CHUNKS</span>
                 </button>
             </div>
         </div>
@@ -691,15 +691,15 @@
                 <!-- ============================================================================== -->
                 <div id="studio-dynamic-island" class="dynamic-island-container sticky top-0 z-30 w-full transition-all duration-300">
                     <!-- Island Capsule Pill (Compact Header / Always Visible & Interactive) -->
-                    <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex items-center justify-between gap-3 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
-                        <!-- Left: Scroll Icon & Full-Width Scroll Title (Maximum Breathing Room) -->
-                        <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+                    <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
+                        <!-- Top on Mobile / Left on Desktop: Scroll Icon & Full-Width Scroll Title -->
+                        <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 w-full sm:w-auto sm:flex-1">
                             <!-- Retro Scroll Pill Icon -->
-                            <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
-                                <i class="fa-solid fa-scroll text-sm text-blue-600 dark:text-cyan-400"></i>
+                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
+                                <i class="fa-solid fa-scroll text-xs sm:text-sm text-blue-600 dark:text-cyan-400"></i>
                             </div>
 
-                            <!-- Scroll Title (Always 100% visible, wide, prominent and editable) -->
+                            <!-- Scroll Title (Always 100% visible, prominent, and editable without compression) -->
                             <input type="text"
                                    id="note-title-input"
                                    placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
@@ -709,12 +709,12 @@
                                    title="Scroll Title">
                         </div>
 
-                        <!-- Right: Category, Live Telemetry, Actions & Dynamic Island Toggle -->
-                        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <!-- Bottom on Mobile / Right on Desktop: Category, Live Telemetry, Actions & Dynamic Island Toggle -->
+                        <div class="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 min-w-0">
                             <!-- Compact Category Pill Dropdown -->
-                            <div class="flex items-center gap-1 bg-surface-alt px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-0 flex-1 sm:flex-initial max-w-[130px] sm:max-w-[150px]">
                                 <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
-                                <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer max-w-[120px] sm:max-w-[140px] truncate">
+                                <select id="note-category-select" class="w-full bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer truncate">
                                     @if(isset($categories) && $categories->isNotEmpty())
                                         @foreach($categories as $category)
                                             <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
@@ -736,38 +736,41 @@
                                 <i class="fa-solid fa-pen-nib text-blue-600 dark:text-blue-400"></i> 0 Words
                             </span>
 
-                            <!-- Favorite Bookmark -->
-                            <button id="favorite-note-btn"
-                                    class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs flex items-center justify-center shrink-0"
-                                    title="Toggle Favorite Bookmark">
-                                <i class="fa-regular fa-star text-amber-600 dark:text-yellow-400"></i>
-                            </button>
+                            <!-- Action Buttons Group: Favorite, Pin, Save, Tools Toggle -->
+                            <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                                <!-- Favorite Bookmark -->
+                                <button id="favorite-note-btn"
+                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs flex items-center justify-center shrink-0"
+                                        title="Toggle Favorite Bookmark">
+                                    <i class="fa-regular fa-star text-amber-600 dark:text-yellow-400"></i>
+                                </button>
 
-                            <!-- Pin Button -->
-                            <button id="pin-note-btn"
-                                    class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs font-mono flex items-center justify-center shrink-0"
-                                    title="Toggle Pinned Note">
-                                <i class="fa-solid fa-thumbtack"></i>
-                            </button>
+                                <!-- Pin Button -->
+                                <button id="pin-note-btn"
+                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs font-mono flex items-center justify-center shrink-0"
+                                        title="Toggle Pinned Note">
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                </button>
 
-                            <!-- Save Now Button -->
-                            <button id="save-now-btn"
-                                    class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]"
-                                    title="Simpan naskah catatan sekarang">
-                                <i class="fa-solid fa-floppy-disk mr-1"></i> SAVE
-                            </button>
+                                <!-- Save Now Button -->
+                                <button id="save-now-btn"
+                                        class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]"
+                                        title="Simpan naskah catatan sekarang">
+                                    <i class="fa-solid fa-floppy-disk mr-1"></i> <span>SAVE</span>
+                                </button>
 
-                            <!-- Dynamic Island Slide Toggle Button -->
-                            <button type="button"
-                                    id="dynamic-island-toggle-btn"
-                                    class="arcade-btn bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95"
-                                    title="Buka / Tutup Dynamic Island Tools (Alt+T)"
-                                    aria-expanded="false"
-                                    aria-controls="dynamic-island-tray">
-                                <i class="fa-solid fa-layer-group text-cyan-300"></i>
-                                <span class="hidden sm:inline font-pixel text-[10px]">TOOLS</span>
-                                <i id="island-chevron-icon" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
-                            </button>
+                                <!-- Dynamic Island Slide Toggle Button -->
+                                <button type="button"
+                                        id="dynamic-island-toggle-btn"
+                                        class="arcade-btn bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white px-2 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold flex items-center gap-1 sm:gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95"
+                                        title="Buka / Tutup Dynamic Island Tools (Alt+T)"
+                                        aria-expanded="false"
+                                        aria-controls="dynamic-island-tray">
+                                    <i class="fa-solid fa-layer-group text-cyan-300"></i>
+                                    <span class="font-pixel text-[9px] sm:text-[10px]">TOOLS</span>
+                                    <i id="island-chevron-icon" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -847,10 +850,10 @@
 
                             <!-- Scroll Arrows & Close Island Button -->
                             <div class="flex items-center gap-1 shrink-0">
-                                <button type="button" id="island-scroll-left-btn" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded flex items-center justify-center text-[10px]" title="Scroll Tools Left">
+                                <button type="button" id="island-scroll-left-btn" class="hidden sm:flex arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded items-center justify-center text-[10px]" title="Scroll Tools Left">
                                     <i class="fa-solid fa-chevron-left"></i>
                                 </button>
-                                <button type="button" id="island-scroll-right-btn" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded flex items-center justify-center text-[10px]" title="Scroll Tools Right">
+                                <button type="button" id="island-scroll-right-btn" class="hidden sm:flex arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded items-center justify-center text-[10px]" title="Scroll Tools Right">
                                     <i class="fa-solid fa-chevron-right"></i>
                                 </button>
                                 <button type="button" id="island-close-btn" class="arcade-btn bg-surface hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-500 w-6 h-6 rounded flex items-center justify-center text-[10px] ml-1" title="Tutup Dynamic Island (Esc / Alt+T)">
