@@ -24,6 +24,7 @@ class FolderFactory extends Factory
             'user_id' => User::factory(),
             'parent_id' => null,
             'name' => fake()->words(2, true),
+            'category' => null,
             'color' => fake()->randomElement(['amber', 'blue', 'emerald', 'purple', 'rose', 'cyan']),
             'icon' => 'fa-solid fa-folder',
             'is_expanded' => true,

@@ -23,6 +23,7 @@ class Folder extends Model
         'user_id',
         'parent_id',
         'name',
+        'category',
         'color',
         'icon',
         'is_expanded',
@@ -119,5 +120,32 @@ class Folder extends Model
         }
 
         return $ids;
+    }
+
+    /**
+     * Determine if this folder can accept notes with the given category.
+     * Rules:
+     * 1. If folder has no category (null or empty), any note is accepted.
+     * 2. If folder has a category C, only notes with category C OR notes without category (null or empty) are accepted.
+     */
+    public function acceptsNoteCategory(?string $noteCategory): bool
+    {
+        if (empty($this->category) || empty($noteCategory)) {
+            return true;
+        }
+
+        return $this->category === $noteCategory;
+    }
+
+    /**
+     * Determine if this folder is compatible with a parent folder category.
+     */
+    public function isCompatibleWithParentCategory(?string $parentCategory): bool
+    {
+        if (empty($parentCategory) || empty($this->category)) {
+            return true;
+        }
+
+        return $this->category === $parentCategory;
     }
 }

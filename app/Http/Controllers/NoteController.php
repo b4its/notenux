@@ -16,6 +16,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class NoteController extends Controller
@@ -196,6 +197,16 @@ class NoteController extends Controller
             $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
         }
 
+        $noteCategory = $validated['category'] ?? 'catatan';
+        if (! empty($validated['folder_id'])) {
+            $folder = Folder::forUser($user)->find($validated['folder_id']);
+            if ($folder && ! $folder->acceptsNoteCategory($noteCategory)) {
+                throw ValidationException::withMessages([
+                    'folder_id' => "Gulungan dengan kategori [{$noteCategory}] tidak cocok dengan folder berkategori [{$folder->category}].",
+                ]);
+            }
+        }
+
         $note = DB::transaction(function () use ($validated, $user): Note {
             $note = Note::create([
                 'user_id' => $user->id,
@@ -264,6 +275,23 @@ class NoteController extends Controller
 
         if (array_key_exists('title', $validated)) {
             $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
+        }
+
+        $targetFolderId = array_key_exists('folder_id', $validated)
+            ? $validated['folder_id']
+            : $note->folder_id;
+
+        $targetCategory = array_key_exists('category', $validated)
+            ? $validated['category']
+            : $note->category;
+
+        if (! empty($targetFolderId)) {
+            $folder = Folder::forUser($this->resolveUser($request))->find($targetFolderId);
+            if ($folder && ! $folder->acceptsNoteCategory($targetCategory)) {
+                throw ValidationException::withMessages([
+                    'folder_id' => "Gulungan dengan kategori [{$targetCategory}] tidak cocok dengan folder berkategori [{$folder->category}].",
+                ]);
+            }
         }
 
         DB::transaction(function () use ($note, $validated): void {
@@ -370,6 +398,21 @@ class NoteController extends Controller
 
         foreach ($notes as $note) {
             $this->authorizeNote($note, $user);
+        }
+
+        if (! empty($validated['folder_id'])) {
+            $folder = Folder::forUser($user)->find($validated['folder_id']);
+            if ($folder && ! empty($folder->category)) {
+                $targetCat = $validated['category'] ?? null;
+                foreach ($notes as $n) {
+                    $noteCat = $targetCat ?? $n->category;
+                    if (! $folder->acceptsNoteCategory($noteCat)) {
+                        throw ValidationException::withMessages([
+                            'folder_id' => "Gulungan '{$n->title}' berkategori [{$noteCat}] tidak cocok dengan folder berkategori [{$folder->category}].",
+                        ]);
+                    }
+                }
+            }
         }
 
         $updatedCount = DB::transaction(function () use ($validated, $user): int {

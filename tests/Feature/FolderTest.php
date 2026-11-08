@@ -221,3 +221,119 @@ test('NoteContentSanitizer preserves data-color-token and retro-color classes', 
         ->toContain('class="retro-color-black"')
         ->toContain('color: rgb(0, 0, 0)');
 });
+
+test('user can create a folder with a specific category or without category', function () {
+    $user = User::factory()->create();
+
+    // Folder with category
+    $res1 = $this->actingAs($user)->postJson(route('api.folders.store'), [
+        'name' => 'Work Vault',
+        'category' => 'catatan',
+    ]);
+    $res1->assertCreated()
+        ->assertJsonPath('data.category', 'catatan');
+
+    // Folder without category
+    $res2 = $this->actingAs($user)->postJson(route('api.folders.store'), [
+        'name' => 'General Vault',
+        'category' => null,
+    ]);
+    $res2->assertCreated()
+        ->assertJsonPath('data.category', null);
+});
+
+test('note category compatibility with folder', function () {
+    $user = User::factory()->create();
+    $catFolder = Folder::factory()->create([
+        'user_id' => $user->id,
+        'name' => 'Quest Folder',
+        'category' => 'catatan',
+    ]);
+    $freeFolder = Folder::factory()->create([
+        'user_id' => $user->id,
+        'name' => 'Universal Folder',
+        'category' => null,
+    ]);
+
+    // 1. Note matching folder category -> allowed
+    $noteMatch = $this->actingAs($user)->postJson(route('notes.store'), [
+        'title' => 'Matching Note',
+        'category' => 'catatan',
+        'folder_id' => $catFolder->id,
+    ]);
+    $noteMatch->assertCreated();
+
+    // 2. Note with mismatched category -> rejected
+    $noteMismatch = $this->actingAs($user)->postJson(route('notes.store'), [
+        'title' => 'Mismatched Note',
+        'category' => 'jurnal',
+        'folder_id' => $catFolder->id,
+    ]);
+    $noteMismatch->assertUnprocessable()
+        ->assertJsonValidationErrors('folder_id');
+
+    // 3. Any note can enter a folder without category
+    $noteInFree = $this->actingAs($user)->postJson(route('notes.store'), [
+        'title' => 'Free Note',
+        'category' => 'jurnal',
+        'folder_id' => $freeFolder->id,
+    ]);
+    $noteInFree->assertCreated();
+
+    // 4. Moving an existing mismatched note into categorized folder -> rejected
+    $createdNote = $noteInFree->json('data.id');
+    $this->actingAs($user)->putJson(route('notes.update', $createdNote), [
+        'folder_id' => $catFolder->id,
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('folder_id');
+});
+
+test('subfolder category must be compatible with parent folder category', function () {
+    $user = User::factory()->create();
+    $parentCat = Folder::factory()->create([
+        'user_id' => $user->id,
+        'name' => 'Parent With Category',
+        'category' => 'catatan',
+    ]);
+
+    // Compatible subfolder (same category)
+    $this->actingAs($user)->postJson(route('api.folders.store'), [
+        'name' => 'Child Same Cat',
+        'category' => 'catatan',
+        'parent_id' => $parentCat->id,
+    ])->assertCreated();
+
+    // Incompatible subfolder (different category) -> rejected
+    $this->actingAs($user)->postJson(route('api.folders.store'), [
+        'name' => 'Child Other Cat',
+        'category' => 'jurnal',
+        'parent_id' => $parentCat->id,
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('category');
+});
+
+test('folder category cannot be changed if existing notes conflict with the new category', function () {
+    $user = User::factory()->create();
+    $folder = Folder::factory()->create([
+        'user_id' => $user->id,
+        'name' => 'Neutral Folder',
+        'category' => null,
+    ]);
+
+    Note::factory()->create([
+        'user_id' => $user->id,
+        'folder_id' => $folder->id,
+        'category' => 'catatan',
+    ]);
+
+    // Updating folder category to 'catatan' matches existing notes -> allowed
+    $this->actingAs($user)->putJson(route('api.folders.update', $folder), [
+        'category' => 'catatan',
+    ])->assertOk();
+
+    // Updating folder category to 'jurnal' conflicts with existing note -> rejected
+    $this->actingAs($user)->putJson(route('api.folders.update', $folder), [
+        'category' => 'jurnal',
+    ])->assertUnprocessable()
+        ->assertJsonValidationErrors('category');
+});

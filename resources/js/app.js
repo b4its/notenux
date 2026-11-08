@@ -1005,8 +1005,10 @@ class NotenuxPanel {
             folderParentPreviewBox: document.getElementById('folder-parent-preview-box'),
             folderParentNameText: document.getElementById('folder-parent-name-text'),
             folderFormName: document.getElementById('folder-form-name'),
+            folderFormCategory: document.getElementById('folder-form-category'),
             folderFormColor: document.getElementById('folder-form-color'),
             folderFormIcon: document.getElementById('folder-form-icon'),
+            rootDropzone: document.getElementById('directory-root-dropzone'),
             deleteFolderModal: document.getElementById('delete-folder-modal'),
             closeDeleteFolderModalBtn: document.getElementById('close-delete-folder-modal-btn'),
             cancelDeleteFolderBtn: document.getElementById('cancel-delete-folder-btn'),
@@ -2471,6 +2473,20 @@ class NotenuxPanel {
             if (!this.activeNote) return;
             const rawVal = e.target.value;
             const targetFolderId = rawVal === '' ? null : parseInt(rawVal, 10);
+
+            if (targetFolderId !== null) {
+                const targetFolder = this.folders.find(f => f.id === targetFolderId);
+                if (targetFolder && !this.isCategoryCompatible(targetFolder.category, this.activeNote.category)) {
+                    this.toast.show(
+                        `Gulungan [${this.activeNote.category || 'tanpa kategori'}] tidak cocok dengan folder berkategori [${targetFolder.category}].`,
+                        'warning',
+                        'Kategori Tidak Cocok'
+                    );
+                    this.dom.noteFolderSelect.value = this.activeNote.folder_id ? String(this.activeNote.folder_id) : '';
+                    return;
+                }
+            }
+
             this.activeNote.folder_id = targetFolderId;
             this.dirtyNotes.add(this.activeNote.id);
             this.saveDraftLocal();
@@ -2513,10 +2529,65 @@ class NotenuxPanel {
 
         this.dom.noteCategorySelect?.addEventListener('change', (e) => {
             if (!this.activeNote) return;
-            this.activeNote.category = e.target.value;
+            const newCat = e.target.value;
+            if (this.activeNote.folder_id) {
+                const currentFolder = this.folders.find(f => f.id === Number(this.activeNote.folder_id));
+                if (currentFolder && !this.isCategoryCompatible(currentFolder.category, newCat)) {
+                    this.toast.show(
+                        `Folder [${currentFolder.name}] berkategori [${currentFolder.category}]. Gulungan tidak dapat diubah ke kategori [${newCat}].`,
+                        'warning',
+                        'Kategori Tidak Cocok'
+                    );
+                    this.dom.noteCategorySelect.value = this.activeNote.category || 'catatan';
+                    return;
+                }
+            }
+            this.activeNote.category = newCat;
             this.updateActiveNoteInList();
             this.scheduleAutoSave();
-            this.toast.show(`Scroll moved to category "${e.target.value.toUpperCase()}"`, 'info', 'Category');
+            this.toast.show(`Scroll moved to category "${newCat.toUpperCase()}"`, 'info', 'Category');
+        });
+
+        // Root dropzone listener bindings
+        this.dom.rootDropzone?.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!this.draggedItem) return;
+
+            let isValid = false;
+            if (this.draggedItem.type === 'note') {
+                const note = this.notes.find(n => n.id === this.draggedItem.id);
+                isValid = Boolean(note && note.folder_id !== null);
+            } else if (this.draggedItem.type === 'folder') {
+                const folder = this.folders.find(f => f.id === this.draggedItem.id);
+                isValid = Boolean(folder && folder.parent_id !== null);
+            }
+
+            if (isValid) {
+                e.dataTransfer.dropEffect = 'move';
+                this.dom.rootDropzone.classList.add('drag-over-valid');
+                this.dom.rootDropzone.classList.remove('drag-over-invalid');
+            } else {
+                e.dataTransfer.dropEffect = 'none';
+                this.dom.rootDropzone.classList.add('drag-over-invalid');
+                this.dom.rootDropzone.classList.remove('drag-over-valid');
+            }
+        });
+
+        this.dom.rootDropzone?.addEventListener('dragleave', () => {
+            this.dom.rootDropzone?.classList.remove('drag-over-valid', 'drag-over-invalid');
+        });
+
+        this.dom.rootDropzone?.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            this.dom.rootDropzone?.classList.remove('drag-over-valid', 'drag-over-invalid');
+            if (!this.draggedItem) return;
+
+            const { type, id } = this.draggedItem;
+            if (type === 'note') {
+                await this.moveNoteToFolder(id, null);
+            } else if (type === 'folder') {
+                await this.moveFolderToParent(id, null);
+            }
         });
 
         // Quick Category Management Actions
@@ -4892,15 +4963,23 @@ class NotenuxPanel {
         this.audio.playLevelUp();
         try {
             const count = this.notes.length + 1;
-            const defaultCategory = (this.activeCategory && this.activeCategory !== 'all' && this.activeCategory !== 'pinned' && this.activeCategory !== 'favorites')
-                ? this.activeCategory
-                : (this.categories?.find(category => category.slug === 'catatan')?.slug || this.categories?.[0]?.slug || 'catatan');
-
             const folderId = options.folder_id ? Number(options.folder_id) : null;
+            const targetFolder = folderId ? this.folders.find(f => f.id === folderId) : null;
+
+            let defaultCategory = options.category;
+            if (!defaultCategory) {
+                if (targetFolder && targetFolder.category) {
+                    defaultCategory = targetFolder.category;
+                } else if (this.activeCategory && this.activeCategory !== 'all' && this.activeCategory !== 'pinned' && this.activeCategory !== 'favorites') {
+                    defaultCategory = this.activeCategory;
+                } else {
+                    defaultCategory = (this.categories?.find(category => category.slug === 'catatan')?.slug || this.categories?.[0]?.slug || 'catatan');
+                }
+            }
 
             const payload = {
                 title: options.title || (count === 1 ? 'Catatan Baru' : `Catatan Baru #${count}`),
-                category: options.category || defaultCategory,
+                category: defaultCategory,
                 folder_id: folderId,
                 is_pinned: this.activeCategory === 'pinned',
                 is_favorite: this.activeCategory === 'favorites',
@@ -5600,7 +5679,11 @@ class NotenuxPanel {
 
             return `
                 <div data-note-id="${note.id}"
-                     class="note-list-card cursor-pointer p-3 rounded-lg border-2 transition-all mb-2 select-none ${cardClasses}">
+                     data-drag-type="note"
+                     data-note-category="${note.category || ''}"
+                     data-note-title="${this.escapeHtml(note.title)}"
+                     draggable="true"
+                     class="note-list-card drag-item cursor-pointer p-3 rounded-lg border-2 transition-all mb-2 select-none ${cardClasses}">
                     <div class="flex items-center justify-between gap-1 mb-1">
                         <div class="flex items-center gap-1.5 overflow-hidden min-w-0">
                             ${checkboxHtml}
@@ -5653,11 +5736,21 @@ class NotenuxPanel {
             }
 
             const totalScrollsCount = childNotes.length;
+            const folderCategoryBadge = folder.category ? `
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded border border-blue-500/40 bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-cyan-300 font-bold shrink-0" title="Kategori Folder: [${this.escapeHtml(folder.category.toUpperCase())}]">
+                    [${this.escapeHtml(folder.category.toUpperCase())}]
+                </span>
+            ` : '';
 
             return `
                 <div class="folder-tree-node mb-2" data-folder-id="${folder.id}">
                     <!-- Folder Header Bar -->
-                    <div class="folder-header-row flex items-center justify-between p-2 rounded-lg border-2 border-black/20 dark:border-blue-900/60 bg-surface-alt/70 hover:bg-surface-alt transition-colors select-none">
+                    <div class="folder-header-row drag-item flex items-center justify-between p-2 rounded-lg border-2 border-black/20 dark:border-blue-900/60 bg-surface-alt/70 hover:bg-surface-alt transition-colors select-none"
+                         draggable="true"
+                         data-drag-type="folder"
+                         data-folder-id="${folder.id}"
+                         data-folder-category="${folder.category || ''}"
+                         data-folder-name="${this.escapeHtml(folder.name)}">
                         <div class="flex items-center gap-1.5 min-w-0 flex-1 cursor-pointer folder-toggle-btn" data-folder-id="${folder.id}">
                             <span class="w-4 text-center text-[10px] text-slate-500 dark:text-cyan-400 shrink-0">
                                 <i class="fa-solid ${isExpanded ? 'fa-chevron-down text-cyan-500' : 'fa-chevron-right'}"></i>
@@ -5666,6 +5759,7 @@ class NotenuxPanel {
                             <span class="font-bold text-xs font-mono text-main truncate hover:text-blue-600 dark:hover:text-cyan-300" title="${this.escapeHtml(folder.name)}">
                                 ${this.escapeHtml(folder.name)}
                             </span>
+                            ${folderCategoryBadge}
                         </div>
 
                         <!-- Right: Item Count Badge & The 2 Explicit Markers (+ folder, + scroll) -->
@@ -5838,6 +5932,9 @@ class NotenuxPanel {
                 this.openDeleteFolderModal(folderId);
             });
         });
+
+        // Initialize drag-and-drop interactions on folder and note cards
+        this.initDragAndDrop();
     }
 
     /* ---------------- BULK SELECT & DELETE SCROLLS ---------------- */
@@ -6443,6 +6540,16 @@ class NotenuxPanel {
             this.dom.bulkMoveCategorySelect.innerHTML = `<option value="">PINDAH KATEGORI...</option>${options}`;
         }
 
+        // Sync folder form category dropdown options
+        if (this.dom.folderFormCategory) {
+            const currentVal = this.dom.folderFormCategory.value;
+            const options = (this.categories || []).map(cat =>
+                `<option value="${this.escapeHtml(cat.slug)}">${this.escapeHtml((cat.slug || '').toUpperCase())} - ${this.escapeHtml(cat.name)}</option>`
+            ).join('');
+            this.dom.folderFormCategory.innerHTML = `<option value="">[SEMUA] Tanpa Kategori Tertentu (Bisa untuk Semua Scroll)</option>${options}`;
+            if (currentVal) this.dom.folderFormCategory.value = currentVal;
+        }
+
         // Sync filter pills row
         if (this.dom.categoryFilterPillsRow) {
             let pillsHtml = `
@@ -6564,11 +6671,13 @@ class NotenuxPanel {
             if (this.dom.folderFormParentId) this.dom.folderFormParentId.value = parentId;
             if (this.dom.folderParentPreviewBox) this.dom.folderParentPreviewBox.classList.remove('hidden');
             if (this.dom.folderParentNameText) this.dom.folderParentNameText.textContent = parent ? parent.name : 'Parent';
+            if (this.dom.folderFormCategory) this.dom.folderFormCategory.value = parent?.category || '';
             if (this.dom.folderModalTitle) this.dom.folderModalTitle.textContent = 'TAMBAH SUBFOLDER';
             if (this.dom.folderModalHeaderIcon) this.dom.folderModalHeaderIcon.className = 'fa-solid fa-folder-tree text-lg text-amber-200';
         } else {
             if (this.dom.folderFormParentId) this.dom.folderFormParentId.value = '';
             if (this.dom.folderParentPreviewBox) this.dom.folderParentPreviewBox.classList.add('hidden');
+            if (this.dom.folderFormCategory) this.dom.folderFormCategory.value = '';
             if (this.dom.folderModalTitle) this.dom.folderModalTitle.textContent = 'BUAT FOLDER BARU';
             if (this.dom.folderModalHeaderIcon) this.dom.folderModalHeaderIcon.className = 'fa-solid fa-folder-plus text-lg text-amber-200';
         }
@@ -6587,6 +6696,7 @@ class NotenuxPanel {
         if (this.dom.folderFormParentId) this.dom.folderFormParentId.value = folder.parent_id || '';
         if (this.dom.folderParentPreviewBox) this.dom.folderParentPreviewBox.classList.add('hidden');
         if (this.dom.folderFormName) this.dom.folderFormName.value = folder.name;
+        if (this.dom.folderFormCategory) this.dom.folderFormCategory.value = folder.category || '';
         if (this.dom.folderFormColor) this.dom.folderFormColor.value = folder.color || 'amber';
         if (this.dom.folderFormIcon) this.dom.folderFormIcon.value = folder.icon || 'fa-solid fa-folder';
         if (this.dom.folderModalTitle) this.dom.folderModalTitle.textContent = 'EDIT FOLDER';
@@ -6606,6 +6716,7 @@ class NotenuxPanel {
         const id = this.dom.folderFormId?.value ? Number(this.dom.folderFormId.value) : null;
         const parentId = this.dom.folderFormParentId?.value ? Number(this.dom.folderFormParentId.value) : null;
         const name = (this.dom.folderFormName?.value || '').trim();
+        const category = (this.dom.folderFormCategory?.value || '').trim() || null;
         const color = this.dom.folderFormColor?.value || 'amber';
         const icon = this.dom.folderFormIcon?.value || 'fa-solid fa-folder';
 
@@ -6618,6 +6729,7 @@ class NotenuxPanel {
         const method = id ? 'PUT' : 'POST';
         const payload = {
             name,
+            category,
             parent_id: parentId,
             color,
             icon,
@@ -6731,6 +6843,278 @@ class NotenuxPanel {
             }
         } catch (err) {
             this.toast.show(err.message || 'Gagal menghapus folder.', 'danger');
+        }
+    }
+
+    /* ---------------- DRAG & DROP AND CATEGORY COMPATIBILITY ---------------- */
+    isCategoryCompatible(folderCategory, itemCategory) {
+        if (!folderCategory || !itemCategory) return true;
+        return folderCategory === itemCategory;
+    }
+
+    isFolderDescendantOf(folderId, potentialAncestorId) {
+        if (!folderId || !potentialAncestorId) return false;
+        let curr = this.folders.find(f => f.id === folderId);
+        while (curr && curr.parent_id) {
+            if (Number(curr.parent_id) === Number(potentialAncestorId)) return true;
+            curr = this.folders.find(f => f.id === Number(curr.parent_id));
+        }
+        return false;
+    }
+
+    initDragAndDrop() {
+        if (!this.dom.notesList) return;
+
+        // Draggable elements: .folder-header-row and .note-list-card
+        const draggables = this.dom.notesList.querySelectorAll('.drag-item');
+        draggables.forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                if (e.target.closest('button, input, select, a, textarea')) {
+                    e.preventDefault();
+                    return;
+                }
+
+                const type = item.dataset.dragType;
+                const id = type === 'folder' ? Number(item.dataset.folderId) : Number(item.dataset.noteId);
+                const category = item.dataset.dragCategory || (type === 'folder' ? item.dataset.folderCategory : item.dataset.noteCategory) || null;
+
+                this.draggedItem = {
+                    type,
+                    id,
+                    category,
+                    element: item,
+                };
+
+                item.classList.add('dragging');
+                if (this.dom.rootDropzone) {
+                    this.dom.rootDropzone.classList.remove('hidden');
+                }
+
+                if (e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = 'move';
+                    try {
+                        e.dataTransfer.setData('text/plain', JSON.stringify({ type, id }));
+                    } catch (_) {}
+                }
+            });
+
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+                if (this.dom.rootDropzone) {
+                    this.dom.rootDropzone.classList.add('hidden');
+                    this.dom.rootDropzone.classList.remove('drag-over-valid', 'drag-over-invalid');
+                }
+                this.dom.notesList.querySelectorAll('.drag-over-valid, .drag-over-invalid').forEach(el => {
+                    el.classList.remove('drag-over-valid', 'drag-over-invalid');
+                });
+                this.draggedItem = null;
+            });
+        });
+
+        // Folder drop targets: .folder-header-row
+        const folderDropZones = this.dom.notesList.querySelectorAll('.folder-header-row');
+        folderDropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                if (!this.draggedItem) return;
+                e.preventDefault();
+
+                const targetFolderId = Number(zone.dataset.folderId);
+                const targetFolder = this.folders.find(f => f.id === targetFolderId);
+                if (!targetFolder) {
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+                    return;
+                }
+
+                let isValid = false;
+                if (this.draggedItem.type === 'note') {
+                    const note = this.notes.find(n => n.id === this.draggedItem.id);
+                    const isDifferentFolder = note ? (Number(note.folder_id) !== targetFolderId) : true;
+                    const isCompatible = this.isCategoryCompatible(targetFolder.category, this.draggedItem.category);
+                    isValid = isDifferentFolder && isCompatible;
+                } else if (this.draggedItem.type === 'folder') {
+                    const folder = this.folders.find(f => f.id === this.draggedItem.id);
+                    const isSame = this.draggedItem.id === targetFolderId;
+                    const isDescendant = this.isFolderDescendantOf(targetFolderId, this.draggedItem.id);
+                    const isDifferentParent = folder ? (Number(folder.parent_id) !== targetFolderId) : true;
+                    const isCompatible = this.isCategoryCompatible(targetFolder.category, this.draggedItem.category);
+                    isValid = !isSame && !isDescendant && isDifferentParent && isCompatible;
+                }
+
+                if (isValid) {
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+                    zone.classList.add('drag-over-valid');
+                    zone.classList.remove('drag-over-invalid');
+                } else {
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+                    zone.classList.add('drag-over-invalid');
+                    zone.classList.remove('drag-over-valid');
+                }
+            });
+
+            zone.addEventListener('dragleave', (e) => {
+                if (!zone.contains(e.relatedTarget)) {
+                    zone.classList.remove('drag-over-valid', 'drag-over-invalid');
+                }
+            });
+
+            zone.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over-valid', 'drag-over-invalid');
+                if (!this.draggedItem) return;
+
+                const targetFolderId = Number(zone.dataset.folderId);
+                const targetFolder = this.folders.find(f => f.id === targetFolderId);
+                if (!targetFolder) return;
+
+                const { type, id, category } = this.draggedItem;
+
+                if (type === 'note') {
+                    if (!this.isCategoryCompatible(targetFolder.category, category)) {
+                        this.toast.show(
+                            `Gulungan [${category || 'tanpa kategori'}] tidak cocok dengan folder berkategori [${targetFolder.category}].`,
+                            'warning',
+                            'Kategori Tidak Cocok'
+                        );
+                        return;
+                    }
+                    await this.moveNoteToFolder(id, targetFolderId);
+                } else if (type === 'folder') {
+                    if (id === targetFolderId) return;
+                    if (this.isFolderDescendantOf(targetFolderId, id)) {
+                        this.toast.show('Folder tidak dapat dimasukkan ke dalam subfolder turunannya.', 'warning', 'Invalid Nesting');
+                        return;
+                    }
+                    if (!this.isCategoryCompatible(targetFolder.category, category)) {
+                        this.toast.show(
+                            `Subfolder [${category || 'tanpa kategori'}] tidak cocok dengan folder induk [${targetFolder.category}].`,
+                            'warning',
+                            'Kategori Tidak Cocok'
+                        );
+                        return;
+                    }
+                    await this.moveFolderToParent(id, targetFolderId);
+                }
+            });
+        });
+    }
+
+    async moveNoteToFolder(noteId, targetFolderId) {
+        const note = this.notes.find(n => n.id === noteId);
+        if (!note) return;
+
+        if (targetFolderId !== null) {
+            const folder = this.folders.find(f => f.id === targetFolderId);
+            if (folder && !this.isCategoryCompatible(folder.category, note.category)) {
+                this.toast.show(
+                    `Gulungan [${note.category || 'tanpa kategori'}] tidak cocok dengan folder berkategori [${folder.category}].`,
+                    'warning',
+                    'Kategori Tidak Cocok'
+                );
+                return;
+            }
+        }
+
+        const prevFolderId = note.folder_id;
+        note.folder_id = targetFolderId;
+        this.dirtyNotes.add(note.id);
+        this.saveDraftLocal();
+
+        if (targetFolderId) {
+            this.expandedFolderIds.add(targetFolderId);
+            localStorage.setItem('notenux_expanded_folders', JSON.stringify([...this.expandedFolderIds]));
+        }
+
+        if (this.activeNote?.id === note.id && this.dom.noteFolderSelect) {
+            this.dom.noteFolderSelect.value = targetFolderId ? String(targetFolderId) : '';
+        }
+
+        this.renderNotesList();
+        this.audio?.playBlip?.();
+
+        const ok = await this.saveNote(note, true);
+        if (ok) {
+            const folderName = targetFolderId ? (this.folders.find(f => f.id === targetFolderId)?.name || 'Folder') : 'Root Directory';
+            this.toast.show(
+                `Scroll "${note.title}" berhasil dipindahkan ke ${folderName}.`,
+                'success',
+                'Pindah Folder',
+                'fa-solid fa-folder-tree text-cyan-400'
+            );
+        } else {
+            note.folder_id = prevFolderId;
+            this.renderNotesList();
+        }
+    }
+
+    async moveFolderToParent(folderId, targetParentId) {
+        const folder = this.folders.find(f => f.id === folderId);
+        if (!folder) return;
+
+        if (targetParentId === folder.id) {
+            this.toast.show('Folder tidak dapat dimasukkan ke dalam dirinya sendiri.', 'warning', 'Invalid Nesting');
+            return;
+        }
+
+        if (targetParentId !== null) {
+            if (this.isFolderDescendantOf(targetParentId, folder.id)) {
+                this.toast.show('Folder tidak dapat dimasukkan ke dalam subfolder turunannya.', 'warning', 'Invalid Nesting');
+                return;
+            }
+
+            const targetParent = this.folders.find(f => f.id === targetParentId);
+            if (targetParent && !this.isCategoryCompatible(targetParent.category, folder.category)) {
+                this.toast.show(
+                    `Subfolder [${folder.category || 'tanpa kategori'}] tidak cocok dengan folder induk [${targetParent.category}].`,
+                    'warning',
+                    'Kategori Tidak Cocok'
+                );
+                return;
+            }
+        }
+
+        const prevParentId = folder.parent_id;
+        folder.parent_id = targetParentId;
+
+        if (targetParentId) {
+            this.expandedFolderIds.add(targetParentId);
+            localStorage.setItem('notenux_expanded_folders', JSON.stringify([...this.expandedFolderIds]));
+        }
+
+        this.renderNotesList();
+        this.syncFoldersDOM();
+        this.audio?.playLevelUp?.();
+
+        try {
+            const response = await fetch(`/api/folders/${folder.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ parent_id: targetParentId }),
+            });
+
+            const data = await response.json();
+            if (response.ok && data.status === 'success') {
+                const parentName = targetParentId ? (this.folders.find(f => f.id === targetParentId)?.name || 'Folder') : 'Root Directory';
+                this.toast.show(
+                    `Folder "${folder.name}" dipindahkan ke ${parentName}.`,
+                    'success',
+                    'Folder Dipindahkan',
+                    'fa-solid fa-folder-tree text-amber-400'
+                );
+            } else {
+                folder.parent_id = prevParentId;
+                this.renderNotesList();
+                this.syncFoldersDOM();
+                this.toast.show(data.message || 'Gagal memindahkan folder.', 'danger', 'Gagal');
+            }
+        } catch (err) {
+            folder.parent_id = prevParentId;
+            this.renderNotesList();
+            this.syncFoldersDOM();
+            this.toast.show('Koneksi terganggu saat memindahkan folder.', 'danger', 'Error');
         }
     }
 

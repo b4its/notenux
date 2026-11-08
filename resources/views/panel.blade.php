@@ -691,6 +691,14 @@
                     @endif
                 </div>
 
+                <!-- Drag & Drop Target for Root Directory (Shows drop indicator) -->
+                <div id="directory-root-dropzone"
+                     class="hidden mb-2 p-2.5 rounded-lg border-2 border-dashed border-blue-500/60 dark:border-cyan-400/60 bg-blue-50/80 dark:bg-blue-950/50 text-center text-[10px] font-mono text-blue-900 dark:text-cyan-300 transition-all select-none shadow-[2px_2px_0px_#000]"
+                     title="Lepaskan di sini untuk memindahkan Scroll atau Folder ke Root Directory">
+                    <i class="fa-solid fa-arrows-to-dot mr-1 text-xs"></i>
+                    <span>DROP KE SINI UNTUK ROOT (TANPA FOLDER)</span>
+                </div>
+
                 <!-- Dynamic Notes List Container -->
                 <div class="flex-1 overflow-y-auto pr-1 space-y-1" id="notes-list">
                     <!-- Populated dynamically via app.js -->
@@ -1975,6 +1983,21 @@
                 <div>
                     <label class="block font-bold mb-1">Nama Folder <span class="text-rose-500">*</span></label>
                     <input type="text" id="folder-form-name" required placeholder="Contoh: Projek Rahasia, Lore Bab 1..." class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none focus:border-amber-400">
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Kategori Folder (Opsional)</label>
+                    <select id="folder-form-category" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none focus:border-amber-400">
+                        <option value="">[SEMUA] Tanpa Kategori Tertentu (Bisa untuk Semua Scroll)</option>
+                        @if(isset($categories) && $categories->isNotEmpty())
+                            @foreach($categories as $category)
+                                <option value="{{ $category->slug }}">{{ strtoupper($category->slug) }} - {{ $category->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                        * Jika folder berkategori tertentu, hanya scroll dalam kategori tersebut (atau scroll tanpa kategori) yang bisa dimasukkan.
+                    </p>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">

@@ -55,6 +55,7 @@ class FolderController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'category' => ['nullable', 'string', 'max:64'],
             'parent_id' => [
                 'nullable',
                 'integer',
@@ -65,10 +66,22 @@ class FolderController extends Controller
             'is_expanded' => ['nullable', 'boolean'],
         ]);
 
+        $folderCategory = ! empty($validated['category']) ? $validated['category'] : null;
+
+        if (! empty($validated['parent_id'])) {
+            $parent = Folder::forUser($user)->find($validated['parent_id']);
+            if ($parent && ! empty($parent->category) && ! empty($folderCategory) && $parent->category !== $folderCategory) {
+                throw ValidationException::withMessages([
+                    'category' => "Subfolder dengan kategori [{$folderCategory}] tidak dapat dimasukkan ke dalam folder induk berkategori [{$parent->category}].",
+                ]);
+            }
+        }
+
         $folder = Folder::create([
             'user_id' => $user->id,
             'parent_id' => $validated['parent_id'] ?? null,
             'name' => trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $validated['name'])),
+            'category' => $folderCategory,
             'color' => $validated['color'] ?? 'amber',
             'icon' => $validated['icon'] ?? 'fa-solid fa-folder',
             'is_expanded' => $validated['is_expanded'] ?? true,
@@ -93,6 +106,7 @@ class FolderController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'category' => ['sometimes', 'nullable', 'string', 'max:64'],
             'parent_id' => [
                 'nullable',
                 'integer',
@@ -103,6 +117,10 @@ class FolderController extends Controller
             'is_expanded' => ['sometimes', 'boolean'],
         ]);
 
+        $targetCategory = array_key_exists('category', $validated)
+            ? (! empty($validated['category']) ? $validated['category'] : null)
+            : $folder->category;
+
         if (array_key_exists('parent_id', $validated) && $validated['parent_id'] !== null) {
             $parentId = (int) $validated['parent_id'];
             if ($parentId === $folder->id || in_array($parentId, $folder->allDescendantIds(), true)) {
@@ -110,6 +128,32 @@ class FolderController extends Controller
                     'parent_id' => 'Folder cannot be nested inside itself or one of its descendants.',
                 ]);
             }
+
+            $targetParent = Folder::forUser($user)->find($parentId);
+            if ($targetParent && ! empty($targetParent->category) && ! empty($targetCategory) && $targetParent->category !== $targetCategory) {
+                throw ValidationException::withMessages([
+                    'parent_id' => "Folder dengan kategori [{$targetCategory}] tidak dapat dimasukkan ke dalam folder induk berkategori [{$targetParent->category}].",
+                ]);
+            }
+        }
+
+        if (array_key_exists('category', $validated) && ! empty($validated['category'])) {
+            $newCat = $validated['category'];
+            $hasConflictingNotes = $folder->notes()
+                ->whereNotNull('category')
+                ->where('category', '!=', '')
+                ->where('category', '!=', $newCat)
+                ->exists();
+
+            if ($hasConflictingNotes) {
+                throw ValidationException::withMessages([
+                    'category' => "Folder ini memuat gulungan dengan kategori lain yang berbeda dari [{$newCat}].",
+                ]);
+            }
+        }
+
+        if (array_key_exists('category', $validated)) {
+            $validated['category'] = ! empty($validated['category']) ? $validated['category'] : null;
         }
 
         if (array_key_exists('name', $validated)) {

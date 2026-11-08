@@ -119,6 +119,30 @@ html.dark .note-chunk-body font[color="#000000"] {
     border-left-color: rgba(6, 182, 212, 0.35);
 }
 
+/* Drag and Drop Visual Feedback */
+.drag-item {
+    cursor: grab;
+}
+.drag-item:active {
+    cursor: grabbing;
+}
+.dragging {
+    opacity: 0.45 !important;
+    transform: scale(0.98);
+}
+.drag-over-valid {
+    outline: 2px dashed #06b6d4 !important;
+    outline-offset: 2px;
+    background-color: rgba(6, 182, 212, 0.12) !important;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.4) !important;
+}
+.drag-over-invalid {
+    outline: 2px dashed #f43f5e !important;
+    outline-offset: 2px;
+    background-color: rgba(244, 63, 94, 0.15) !important;
+    cursor: not-allowed !important;
+}
+
 /* CRT Scanline retro overlay */
 .retro-crt-screen {
     position: relative;

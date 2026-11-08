@@ -3237,35 +3237,116 @@ test('white-box: openCreateFolderModal configures subfolder state when parentId 
     assert.equal(panel.dom.folderModalTitle.textContent, 'TAMBAH SUBFOLDER');
 });
 
-test('white-box: syncFoldersDOM builds indented tree options for note and bulk move selects', async () => {
+test('white-box: isCategoryCompatible strictly enforces category compatibility rules', () => {
     const { panel, context } = harness(() => Promise.resolve(response({})));
-    panel.syncFoldersDOM = context.Panel.prototype.syncFoldersDOM.bind(panel);
-    panel.escapeHtml = context.Panel.prototype.escapeHtml.bind(panel);
+    panel.isCategoryCompatible = context.Panel.prototype.isCategoryCompatible.bind(panel);
+
+    // 1. If folder has no category (null or empty), any item is allowed
+    assert.equal(panel.isCategoryCompatible(null, 'catatan'), true);
+    assert.equal(panel.isCategoryCompatible('', 'catatan'), true);
+    assert.equal(panel.isCategoryCompatible(null, null), true);
+
+    // 2. If item has no category (null or empty), it can enter any folder
+    assert.equal(panel.isCategoryCompatible('work', null), true);
+    assert.equal(panel.isCategoryCompatible('work', ''), true);
+
+    // 3. If both have category, they must match
+    assert.equal(panel.isCategoryCompatible('work', 'work'), true);
+    assert.equal(panel.isCategoryCompatible('work', 'personal'), false);
+    assert.equal(panel.isCategoryCompatible('catatan', 'jurnal'), false);
+});
+
+test('white-box: isFolderDescendantOf detects deep ancestor cycles accurately', () => {
+    const { panel, context } = harness(() => Promise.resolve(response({})));
+    panel.isFolderDescendantOf = context.Panel.prototype.isFolderDescendantOf.bind(panel);
 
     panel.folders = [
-        { id: 10, name: 'Root Folder', parent_id: null },
-        { id: 20, name: 'Nested Subfolder', parent_id: 10 },
+        { id: 1, name: 'Root', parent_id: null },
+        { id: 2, name: 'Child A', parent_id: 1 },
+        { id: 3, name: 'Grandchild A1', parent_id: 2 },
+        { id: 4, name: 'Great-Grandchild A1a', parent_id: 3 },
+        { id: 5, name: 'Unrelated Root', parent_id: null },
     ];
 
-    panel.dom.noteFolderSelect = { innerHTML: '', value: '' };
-    panel.dom.bulkMoveFolderSelect = { innerHTML: '', value: '' };
-    panel.activeNote = { id: 1, folder_id: 20 };
+    // 3 (Grandchild) is descendant of 1 (Root)
+    assert.equal(panel.isFolderDescendantOf(3, 1), true);
 
-    panel.syncFoldersDOM();
+    // 4 (Great-Grandchild) is descendant of 2 (Child A)
+    assert.equal(panel.isFolderDescendantOf(4, 2), true);
 
-    // Verify option text and values
-    assert.match(panel.dom.noteFolderSelect.innerHTML, /\[ROOT\] Tanpa Folder/);
-    assert.match(panel.dom.noteFolderSelect.innerHTML, /value="10"/);
-    assert.match(panel.dom.noteFolderSelect.innerHTML, /📁 Root Folder/);
-    assert.match(panel.dom.noteFolderSelect.innerHTML, /value="20"/);
-    assert.match(panel.dom.noteFolderSelect.innerHTML, /└── 📁 Nested Subfolder/);
+    // 1 (Root) is NOT descendant of 3 (Grandchild)
+    assert.equal(panel.isFolderDescendantOf(1, 3), false);
 
-    // Verify selected value is set to active note's folder_id
-    assert.equal(panel.dom.noteFolderSelect.value, '20');
+    // 5 (Unrelated) is NOT descendant of 1
+    assert.equal(panel.isFolderDescendantOf(5, 1), false);
+});
 
-    // Verify bulk move folder select
-    assert.match(panel.dom.bulkMoveFolderSelect.innerHTML, /PINDAH FOLDER\.\.\./);
-    assert.match(panel.dom.bulkMoveFolderSelect.innerHTML, /\[ROOT\] Tanpa Folder/);
+test('white-box: renderNotesList renders folder category badge and draggable attributes', () => {
+    const { panel, context } = harness(() => Promise.resolve(response({})));
+    panel.renderNotesList = context.Panel.prototype.renderNotesList.bind(panel);
+    panel.getFilteredNotes = () => panel.notes;
+    panel.getCategoryBadge = context.Panel.prototype.getCategoryBadge.bind(panel);
+    panel.escapeHtml = context.Panel.prototype.escapeHtml.bind(panel);
+    panel.formatDateTime = () => '2026-11-08';
+    panel.formatDateCompact = () => '08 Nov';
+    panel.initDragAndDrop = () => {};
+
+    panel.folders = [
+        { id: 101, name: 'Secret Projects', parent_id: null, category: 'rahasia' },
+        { id: 102, name: 'General Dump', parent_id: null, category: null },
+    ];
+    panel.notes = [
+        { id: 201, title: 'Project X', folder_id: 101, category: 'rahasia' },
+        { id: 202, title: 'Random Memo', folder_id: null, category: 'catatan' },
+    ];
+    panel.expandedFolderIds = new Set([101]);
+
+    let renderedHtml = '';
+    panel.dom.notesList = {
+        set innerHTML(html) { renderedHtml = html; },
+        querySelectorAll: () => [],
+    };
+
+    panel.renderNotesList();
+
+    // Verify folder category badge
+    assert.match(renderedHtml, /\[RAHASIA\]/);
+
+    // Verify folder drag attributes
+    assert.match(renderedHtml, /data-drag-type="folder"/);
+    assert.match(renderedHtml, /draggable="true"/);
+    assert.match(renderedHtml, /data-folder-id="101"/);
+
+    // Verify note drag attributes
+    assert.match(renderedHtml, /data-drag-type="note"/);
+    assert.match(renderedHtml, /data-note-id="201"/);
+});
+
+test('white-box: moveNoteToFolder rejects incompatible folder and preserves note folder_id', async () => {
+    const { panel, context } = harness(() => Promise.resolve(response({})));
+    panel.moveNoteToFolder = context.Panel.prototype.moveNoteToFolder.bind(panel);
+    panel.isCategoryCompatible = context.Panel.prototype.isCategoryCompatible.bind(panel);
+
+    panel.folders = [
+        { id: 10, name: 'Journal Only', category: 'jurnal' },
+    ];
+    panel.notes = [
+        { id: 1, title: 'Code Memo', category: 'catatan', folder_id: null },
+    ];
+
+    let toastShown = false;
+    panel.toast = {
+        show: (msg, type) => {
+            if (type === 'warning') toastShown = true;
+        }
+    };
+
+    // Attempt to move 'catatan' note into 'jurnal' folder
+    await panel.moveNoteToFolder(1, 10);
+
+    // Note folder_id must remain null and warning toast must be displayed
+    assert.equal(panel.notes[0].folder_id, null);
+    assert.equal(toastShown, true);
 });
 
 
