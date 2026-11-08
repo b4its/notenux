@@ -57,10 +57,16 @@ class NoteController extends Controller
         ])->withCount('chunks');
 
         if ($search = $request->input('q')) {
+            $isSqlite = DB::connection()->getDriverName() === 'sqlite';
             $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
-            $query->where(function ($q) use ($escaped) {
-                $q->where('title', 'like', "%{$escaped}%")
-                    ->orWhere('content', 'like', "%{$escaped}%");
+            $query->where(function ($q) use ($escaped, $isSqlite) {
+                if ($isSqlite) {
+                    $q->whereRaw("title LIKE ? ESCAPE '\\'", ["%{$escaped}%"])
+                        ->orWhereRaw("content LIKE ? ESCAPE '\\'", ["%{$escaped}%"]);
+                } else {
+                    $q->where('title', 'like', "%{$escaped}%")
+                        ->orWhere('content', 'like', "%{$escaped}%");
+                }
             });
         }
 

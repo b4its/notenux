@@ -1931,3 +1931,92 @@ test('black-box: chunk reorder endpoint atomically updates chunk_index sequence'
         expect(true)->toBeTrue();
     }
 });
+
+test('black-box: note export endpoint delivers correct MIME headers and sanitized contents across all supported formats', function (string $format, string $expectedMime, string $expectedExtension) {
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create([
+        'title' => 'Ancient Knowledge Scroll',
+        'content' => '<h2>Knowledge</h2><p>Safe paragraph.</p>',
+    ]);
+
+    $res = $this->actingAs($user)->get(route('notes.export', [$note, $format]));
+
+    $res->assertStatus(200);
+    expect($res->headers->get('Content-Type'))->toContain($expectedMime)
+        ->and($res->headers->get('Content-Disposition'))->toContain("ancient-knowledge-scroll.{$expectedExtension}");
+})->with([
+    ['md', 'text/markdown', 'md'],
+    ['txt', 'text/plain', 'txt'],
+    ['csv', 'text/csv', 'csv'],
+    ['html', 'text/html', 'html'],
+    ['json', 'application/json', 'json'],
+]);
+
+test('black-box: search query with special wildcard characters strictly matches literal substrings', function () {
+    $user = User::factory()->create();
+    Note::factory()->forUser($user)->create(['title' => 'Scroll 100% Complete', 'content' => '<p>Exact</p>']);
+    Note::factory()->forUser($user)->create(['title' => 'Scroll 1000 Complete', 'content' => '<p>Other</p>']);
+    Note::factory()->forUser($user)->create(['title' => 'Note_Special_Name', 'content' => '<p>Underscore</p>']);
+    Note::factory()->forUser($user)->create(['title' => 'NoteXSpecialYName', 'content' => '<p>No match</p>']);
+
+    // Search for literal '100%'
+    $resPercent = $this->actingAs($user)->getJson('/api/notes?q='.urlencode('100%'));
+    $resPercent->assertStatus(200);
+    $titlesPercent = collect($resPercent->json('data'))->pluck('title');
+    expect($titlesPercent)->toContain('Scroll 100% Complete')
+        ->and($titlesPercent)->not->toContain('Scroll 1000 Complete');
+
+    // Search for literal 'Note_Special'
+    $resUnder = $this->actingAs($user)->getJson('/api/notes?q='.urlencode('Note_Special'));
+    $resUnder->assertStatus(200);
+    $titlesUnder = collect($resUnder->json('data'))->pluck('title');
+    expect($titlesUnder)->toContain('Note_Special_Name')
+        ->and($titlesUnder)->not->toContain('NoteXSpecialYName');
+});
+
+test('black-box: user profile update validates current password before allowing password change', function () {
+    $user = User::factory()->create([
+        'password' => Hash::make('originalPassword123!'),
+    ]);
+
+    // Wrong current password
+    $resWrong = $this->actingAs($user)->putJson(route('profile.update'), [
+        'name' => 'Updated Scribe',
+        'email' => $user->email,
+        'current_password' => 'wrongPassword!',
+        'password' => 'newSecretPassword123!',
+        'password_confirmation' => 'newSecretPassword123!',
+    ]);
+    $resWrong->assertStatus(422)
+        ->assertJsonValidationErrors(['current_password']);
+
+    // Correct current password
+    $resCorrect = $this->actingAs($user)->putJson(route('profile.update'), [
+        'name' => 'Renowned Scribe',
+        'email' => $user->email,
+        'current_password' => 'originalPassword123!',
+        'password' => 'newSecretPassword123!',
+        'password_confirmation' => 'newSecretPassword123!',
+    ]);
+    $resCorrect->assertStatus(200)
+        ->assertJsonPath('status', 'success');
+
+    expect(Hash::check('newSecretPassword123!', $user->fresh()->password))->toBeTrue()
+        ->and($user->fresh()->name)->toBe('Renowned Scribe');
+});
+
+test('black-box: studio layout incorporates responsive container constraints, touch rails, and border collision guards', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('studio'));
+
+    $response->assertOk()
+        ->assertSee('overflow-x-hidden', false)
+        ->assertSee('min-w-0 max-w-full', false)
+        ->assertSee('touch-pan-x', false)
+        ->assertSee('no-scrollbar', false)
+        ->assertSee('editor-deck-1', false)
+        ->assertSee('editor-deck-2', false)
+        ->assertSee('delete-note-btn', false)
+        ->assertSee('save-now-btn', false);
+});

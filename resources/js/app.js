@@ -1238,6 +1238,19 @@ class NotenuxPanel {
             if (!this.activeNote || controller) return;
             const action = get('ai-action').value;
             const instruction = get('ai-instruction').value.trim();
+
+            if (this.dom.editorArea && !this.isRawMarkdownMode && !this.isPlainTextMode) {
+                const contentNode = this.dom.editorArea.cloneNode(true);
+                contentNode.querySelectorAll('mark.search-match').forEach(mark => mark.replaceWith(...mark.childNodes));
+                this.activeNote.content = contentNode.innerHTML;
+            } else if (this.dom.markdownRawEditor && this.isRawMarkdownMode) {
+                this.activeNote.content = MarkdownEngine.parse(this.dom.markdownRawEditor.value);
+            } else if (this.dom.plainTextEditor && this.isPlainTextMode) {
+                this.activeNote.content = this.dom.plainTextEditor.value === this.plainTextOriginalText
+                    ? this.plainTextOriginalHtml
+                    : this.plainTextToHtml(this.dom.plainTextEditor.value);
+            }
+
             const content = MarkdownEngine.toMarkdown(this.activeNote.content || '');
             if (!content.trim() || content.length > 30000 || (['custom', 'translate'].includes(action) && !instruction)) {
                 status.textContent = 'Isi naskah 1–30.000 karakter dan instruksi / bahasa tujuan bila diperlukan.';
@@ -1298,7 +1311,13 @@ class NotenuxPanel {
 
             const html = MarkdownEngine.parse(result.value);
             this.dom.editorArea.innerHTML = mode === 'append' ? this.dom.editorArea.innerHTML + html : html;
-            if (this.isRawMarkdownMode) this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(this.dom.editorArea.innerHTML);
+            if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+                this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(this.dom.editorArea.innerHTML);
+            }
+            if (this.isPlainTextMode && this.dom.plainTextEditor) {
+                this.dom.plainTextEditor.value = PlainTextEngine.toPlainText(this.dom.editorArea.innerHTML);
+                this.updatePlainTextStats();
+            }
             this.handleEditorInput();
             append.disabled = replace.disabled = true;
             status.textContent = 'Hasil diterapkan. Autosave dijadwalkan.';
@@ -2212,6 +2231,7 @@ class NotenuxPanel {
                 this.closeProfileModal();
                 this.closeAiModal?.();
                 this.toggleFindBar(false);
+                document.querySelectorAll('.retro-searchable-dropdown').forEach(d => d.classList.add('hidden'));
                 if (this.dom.importModal) this.dom.importModal.classList.add('hidden');
                 if (this.dom.shortcutsModal) this.dom.shortcutsModal.classList.add('hidden');
                 if (this.dom.exportMenu) this.dom.exportMenu.classList.add('hidden');
@@ -2538,7 +2558,14 @@ class NotenuxPanel {
                 this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
                 return;
             }
-            const md = MarkdownEngine.toMarkdown(this.dom.editorArea?.innerHTML || this.activeNote.content || '');
+            let md = '';
+            if (this.isPlainTextMode && this.dom.plainTextEditor) {
+                md = MarkdownEngine.toMarkdown(this.plainTextToHtml(this.dom.plainTextEditor.value));
+            } else if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+                md = this.dom.markdownRawEditor.value;
+            } else {
+                md = MarkdownEngine.toMarkdown(this.dom.editorArea?.innerHTML || this.activeNote.content || '');
+            }
             await this.copyTextToClipboard(md, {
                 message: 'Scroll Markdown copied to clipboard!',
                 type: 'success',
@@ -2553,7 +2580,14 @@ class NotenuxPanel {
                 this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
                 return;
             }
-            const html = this.dom.editorArea?.innerHTML || this.activeNote.content || '';
+            let html = '';
+            if (this.isPlainTextMode && this.dom.plainTextEditor) {
+                html = this.plainTextToHtml(this.dom.plainTextEditor.value);
+            } else if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+                html = MarkdownEngine.parse(this.dom.markdownRawEditor.value);
+            } else {
+                html = this.dom.editorArea?.innerHTML || this.activeNote.content || '';
+            }
             await this.copyTextToClipboard(html, {
                 message: 'Scroll HTML copied to clipboard!',
                 type: 'success',
@@ -2568,12 +2602,20 @@ class NotenuxPanel {
                 this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
                 return;
             }
+            let currentContent = '';
+            if (this.isPlainTextMode && this.dom.plainTextEditor) {
+                currentContent = this.plainTextToHtml(this.dom.plainTextEditor.value);
+            } else if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
+                currentContent = MarkdownEngine.parse(this.dom.markdownRawEditor.value);
+            } else {
+                currentContent = this.dom.editorArea?.innerHTML || this.activeNote.content || '';
+            }
             const data = {
                 id: this.activeNote.id,
                 uuid: this.activeNote.uuid,
                 title: this.activeNote.title,
                 category: this.activeNote.category,
-                content: this.dom.editorArea?.innerHTML || this.activeNote.content || '',
+                content: currentContent,
                 font_family: this.activeNote.font_family,
                 font_size: this.activeNote.font_size,
                 theme_color: this.activeNote.theme_color,

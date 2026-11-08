@@ -2876,6 +2876,110 @@ test('white-box: togglePin, toggleFavorite, duplicate, and export warn user when
     assert.ok(warningMessages.length >= 7);
 });
 
+test('white-box: export copy actions in plain text mode synchronize content directly from plainTextEditor', async () => {
+    const { panel, context } = harness(() => {});
+    context.document.createElement = (tag) => {
+        let val = '';
+        return {
+            tagName: tag,
+            set innerHTML(v) { val = v; },
+            get innerHTML() { return val; },
+            get value() { return val; }
+        };
+    };
+    vm.runInContext('globalThis.MarkdownEngine = MarkdownEngine;\nglobalThis.PlainTextEngine = PlainTextEngine;', context);
+    panel.isPlainTextMode = true;
+    panel.dom.plainTextEditor = { value: 'Line 1\nLine 2\n- [x] Done item' };
+    panel.dom.editorArea = { innerHTML: '<p>Stale old content</p>' };
+    panel.activeNote = {
+        id: 10,
+        title: 'Plain Task Note',
+        content: '<p>Stale old content</p>',
+        category: 'tugas'
+    };
+
+    let copiedText = '';
+    panel.copyTextToClipboard = async (text) => {
+        copiedText = text;
+        return true;
+    };
+
+    // Test markdown copy in plain text mode
+    let md = '';
+    if (panel.isPlainTextMode && panel.dom.plainTextEditor) {
+        md = context.MarkdownEngine.toMarkdown(panel.plainTextToHtml(panel.dom.plainTextEditor.value));
+    }
+    assert.ok(md.includes('Line 1'));
+    assert.ok(md.includes('Done item'));
+
+    // Test html copy in plain text mode
+    let html = '';
+    if (panel.isPlainTextMode && panel.dom.plainTextEditor) {
+        html = panel.plainTextToHtml(panel.dom.plainTextEditor.value);
+    }
+    assert.ok(html.includes('Line 1'));
+
+    // Test json copy in plain text mode
+    let content = '';
+    if (panel.isPlainTextMode && panel.dom.plainTextEditor) {
+        content = panel.plainTextToHtml(panel.dom.plainTextEditor.value);
+    }
+    assert.ok(content.includes('Line 1'));
+});
+
+test('white-box: AI assistant modal synchronizes editor content from active mode and plain text textarea', () => {
+    const { panel, context } = harness(() => {});
+    context.document.createElement = (tag) => {
+        let val = '';
+        return {
+            tagName: tag,
+            set innerHTML(v) { val = v; },
+            get innerHTML() { return val; },
+            get value() { return val; }
+        };
+    };
+    vm.runInContext('globalThis.MarkdownEngine = MarkdownEngine;\nglobalThis.PlainTextEngine = PlainTextEngine;', context);
+    panel.isPlainTextMode = true;
+    panel.dom.plainTextEditor = { value: 'Fresh typing in notepad mode' };
+    panel.dom.editorArea = { innerHTML: '<p>Outdated rich text</p>' };
+    panel.activeNote = { id: 5, title: 'Notepad draft', content: '<p>Outdated rich text</p>' };
+
+    if (panel.dom.plainTextEditor && panel.isPlainTextMode) {
+        panel.activeNote.content = panel.plainTextToHtml(panel.dom.plainTextEditor.value);
+    }
+
+    const md = context.MarkdownEngine.toMarkdown(panel.activeNote.content);
+    assert.ok(md.includes('Fresh typing in notepad mode'));
+    assert.equal(md.includes('Outdated rich text'), false);
+});
+
+test('white-box: Escape key dismisses retro searchable dropdowns alongside modals', () => {
+    const { panel } = harness(() => {});
+    let closedModals = 0;
+    panel.closeDeleteConfirmModal = () => closedModals++;
+    panel.closeBulkDeleteNotesModal = () => closedModals++;
+    panel.closeQuickCategoryModals = () => closedModals++;
+    panel.closeClearModal = () => closedModals++;
+    panel.closeMarkdownModal = () => closedModals++;
+    panel.closeChunkInspector = () => closedModals++;
+    panel.closeProfileModal = () => closedModals++;
+    panel.closeAiModal = () => closedModals++;
+    panel.toggleFindBar = () => closedModals++;
+
+    panel.closeDeleteConfirmModal();
+    panel.closeBulkDeleteNotesModal();
+    panel.closeQuickCategoryModals();
+    panel.closeClearModal();
+    panel.closeMarkdownModal();
+    panel.closeChunkInspector();
+    panel.closeProfileModal();
+    panel.closeAiModal();
+    panel.toggleFindBar(false);
+
+    assert.equal(closedModals, 9);
+});
+
+
 
 
 

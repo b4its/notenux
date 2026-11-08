@@ -788,3 +788,38 @@ figcaption.retro-image-caption {
     display: flex !important;
 }
 
+/* ============================================================================== */
+/* RESPONSIVE RETRO LAYOUT GUARDS */
+/* ============================================================================== */
+.touch-pan-x {
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 639px) {
+    .arcade-card {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    #plain-text-copy-btn .copy-text-label {
+        font-size: 0;
+    }
+
+    #plain-text-copy-btn .copy-text-label::before {
+        content: "Copy";
+        font-size: 0.75rem;
+    }
+
+    #editor-deck-1,
+    #editor-deck-2 {
+        scroll-snap-type: x proximity;
+    }
+
+    #editor-deck-1 > *,
+    #editor-deck-2 > * {
+        scroll-snap-align: start;
+    }
+}
+
+
