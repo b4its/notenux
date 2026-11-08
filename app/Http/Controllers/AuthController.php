@@ -74,7 +74,7 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        // Default categories for newly registered user: Catatan dan Tugas
+        // Default personalized categories for newly registered user (is_system is false to prevent leaking across tenants)
         $defaultCategories = [
             [
                 'user_id' => $user->id,
@@ -83,7 +83,7 @@ class AuthController extends Controller
                 'icon' => 'fa-solid fa-note-sticky',
                 'color' => 'blue',
                 'description' => 'Kategori utama untuk catatan harian dan pemikiran.',
-                'is_system' => true,
+                'is_system' => false,
             ],
             [
                 'user_id' => $user->id,
@@ -92,7 +92,7 @@ class AuthController extends Controller
                 'icon' => 'fa-solid fa-list-check',
                 'color' => 'emerald',
                 'description' => 'Daftar tugas, agenda, dan to-do list penting.',
-                'is_system' => true,
+                'is_system' => false,
             ],
         ];
 

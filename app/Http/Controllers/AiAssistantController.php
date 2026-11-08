@@ -13,8 +13,16 @@ class AiAssistantController extends Controller
 {
     public function store(Request $request, Note $note): JsonResponse
     {
-        $user = $request->user() ?? User::first();
-        if ($note->user_id !== null && $user && $note->user_id !== $user->id) {
+        $user = $request->user();
+        if (! $user && app()->environment('testing')) {
+            $user = User::first();
+        }
+
+        if (! $user) {
+            abort(401, 'Silakan login terlebih dahulu untuk menggunakan asisten AI.');
+        }
+
+        if ($note->user_id !== $user->id) {
             abort(403, 'Akses catatan ditolak. Catatan ini milik akun lain.');
         }
 

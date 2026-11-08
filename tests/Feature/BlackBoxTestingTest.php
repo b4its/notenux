@@ -1457,3 +1457,87 @@ test('black-box: multi-tenant player telemetry and HUD stats isolate words, XP, 
         ->and($dataBeta['pinned_notes'])->toBe(1)
         ->and($dataBeta['favorite_notes'])->toBe(1);
 });
+
+test('black-box: multi-registration prevents duplicate category clutter and strictly isolates greeting notes', function () {
+    // Register User 1
+    $this->post('/register', [
+        'name' => 'Fajerin Scribe',
+        'email' => 'fajerin@notenux.dev',
+        'password' => 'secret12345',
+        'password_confirmation' => 'secret12345',
+    ])->assertRedirect(route('studio'));
+
+    $user1 = User::where('email', 'fajerin@notenux.dev')->firstOrFail();
+
+    // Register User 2
+    $this->post('/logout');
+    $this->post('/register', [
+        'name' => 'Second Adventurer',
+        'email' => 'second@notenux.dev',
+        'password' => 'secret12345',
+        'password_confirmation' => 'secret12345',
+    ])->assertRedirect(route('studio'));
+
+    $user2 = User::where('email', 'second@notenux.dev')->firstOrFail();
+
+    // Register User 3
+    $this->post('/logout');
+    $this->post('/register', [
+        'name' => 'Third Adventurer',
+        'email' => 'third@notenux.dev',
+        'password' => 'secret12345',
+        'password_confirmation' => 'secret12345',
+    ])->assertRedirect(route('studio'));
+
+    $user3 = User::where('email', 'third@notenux.dev')->firstOrFail();
+
+    // User 1 views studio: must see ONLY 1 welcome note with their name, not user 2 or user 3 welcome notes
+    $studio1 = $this->actingAs($user1)->get(route('studio'));
+    $studio1->assertOk()
+        ->assertSee('Fajerin Scribe')
+        ->assertDontSee('Second Adventurer')
+        ->assertDontSee('Third Adventurer');
+
+    // User 1 note list via API: exactly 1 note
+    $notesRes1 = $this->actingAs($user1)->getJson('/api/notes');
+    $notesRes1->assertOk();
+    $user1Notes = $notesRes1->json('data');
+    expect(count($user1Notes))->toBe(1)
+        ->and($user1Notes[0]['title'])->toBe('Halo! Selamat Datang di Notenux');
+
+    // User 1 categories: must not have duplicate "Catatan" or "Tugas" from User 2 and User 3
+    $catsRes1 = $this->actingAs($user1)->getJson('/api/categories');
+    $catsRes1->assertOk();
+    $categories1 = collect($catsRes1->json('data'));
+    $catatanCount = $categories1->where('slug', 'catatan')->count();
+    $tugasCount = $categories1->where('slug', 'tugas')->count();
+
+    expect($catatanCount)->toBe(1)
+        ->and($tugasCount)->toBe(1);
+
+    // User 1 stats: reflects level 1 (only 1 note with 105 XP), not level 12!
+    $statsRes1 = $this->actingAs($user1)->getJson('/api/player-stats');
+    $statsRes1->assertOk();
+    expect($statsRes1->json('data.total_notes'))->toBe(1)
+        ->and($statsRes1->json('data.level'))->toBe(1)
+        ->and($statsRes1->json('data.total_xp'))->toBe(105);
+});
+
+test('black-box: database backup command creates valid json and sql dump files in database/backups', function () {
+    $this->artisan('db:backup', ['--file' => 'test_backup_suite'])
+        ->assertSuccessful();
+
+    $backupDir = database_path('backups');
+    $jsonPath = "{$backupDir}/test_backup_suite.json";
+    $sqlPath = "{$backupDir}/test_backup_suite.sql";
+
+    expect(file_exists($jsonPath))->toBeTrue()
+        ->and(file_exists($sqlPath))->toBeTrue();
+
+    $jsonContent = json_decode(file_get_contents($jsonPath), true);
+    expect($jsonContent)->toHaveKey('tables')
+        ->and($jsonContent['tables'])->toHaveKey('notes');
+
+    @unlink($jsonPath);
+    @unlink($sqlPath);
+});

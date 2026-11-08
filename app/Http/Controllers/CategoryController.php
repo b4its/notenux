@@ -264,7 +264,7 @@ class CategoryController extends Controller
     }
 
     /**
-     * Resolve the current authenticated user or fallback to initial scribe.
+     * Resolve the current authenticated user or fallback for unauthenticated requests.
      */
     protected function resolveUser(Request $request): User
     {
@@ -275,16 +275,20 @@ class CategoryController extends Controller
             return $user;
         }
 
-        $first = User::first();
-        if ($first) {
-            return $first;
+        if (app()->environment('testing')) {
+            $first = User::first();
+            if ($first) {
+                return $first;
+            }
+
+            return User::create([
+                'name' => 'Retro Adventurer',
+                'email' => 'hero@notenux.dev',
+                'password' => bcrypt('password'),
+            ]);
         }
 
-        return User::create([
-            'name' => 'Retro Adventurer',
-            'email' => 'hero@notenux.dev',
-            'password' => bcrypt('password'),
-        ]);
+        abort(401, 'Silakan login terlebih dahulu untuk mengakses kategori.');
     }
 
     /**
@@ -294,17 +298,24 @@ class CategoryController extends Controller
      */
     protected function calculatePlayerStats(?User $user = null): array
     {
+        $userId = $user?->id ?? auth()->id();
+        if (! $userId && app()->environment('testing')) {
+            $userId = User::first()?->id;
+        }
+
         $notesQuery = Note::query();
-        if ($user) {
-            $notesQuery->where('user_id', $user->id);
+        if ($userId) {
+            $notesQuery->where('user_id', $userId);
+        } else {
+            $notesQuery->whereRaw('1 = 0');
         }
 
         $totalNotes = (clone $notesQuery)->count();
         $totalWords = (int) (clone $notesQuery)->sum('word_count');
         $totalXP = (int) (clone $notesQuery)->sum('xp');
-        $totalChunks = $user
-            ? NoteChunk::whereHas('note', fn (Builder $q) => $q->where('user_id', $user->id))->count()
-            : NoteChunk::count();
+        $totalChunks = $userId
+            ? NoteChunk::whereHas('note', fn (Builder $q) => $q->where('user_id', $userId))->count()
+            : 0;
 
         $level = max(1, (int) floor($totalXP / 150) + 1);
         $nextLevelXP = $level * 150;

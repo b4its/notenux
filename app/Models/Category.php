@@ -106,7 +106,9 @@ class Category extends Model
         $userId = $user?->id;
 
         return $query->where(function (Builder $q) use ($userId): void {
-            $q->where('is_system', true);
+            $q->where(function (Builder $sub): void {
+                $sub->where('is_system', true)->whereNull('user_id');
+            });
             if ($userId) {
                 $q->orWhere('user_id', $userId);
             }

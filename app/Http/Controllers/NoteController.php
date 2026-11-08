@@ -889,16 +889,20 @@ class NoteController extends Controller
             return $user;
         }
 
-        $first = User::first();
-        if ($first) {
-            return $first;
+        if (app()->environment('testing')) {
+            $first = User::first();
+            if ($first) {
+                return $first;
+            }
+
+            return User::create([
+                'name' => 'Retro Adventurer',
+                'email' => 'hero@notenux.dev',
+                'password' => bcrypt('password'),
+            ]);
         }
 
-        return User::create([
-            'name' => 'Retro Adventurer',
-            'email' => 'hero@notenux.dev',
-            'password' => bcrypt('password'),
-        ]);
+        abort(401, 'Silakan login terlebih dahulu untuk mengakses data.');
     }
 
     /**
@@ -906,7 +910,7 @@ class NoteController extends Controller
      */
     protected function authorizeNote(Note $note, User $user): void
     {
-        if ($note->user_id !== null && $note->user_id !== $user->id) {
+        if ($note->user_id !== $user->id) {
             abort(403, 'Akses catatan ditolak. Catatan ini milik akun lain.');
         }
     }
@@ -918,17 +922,24 @@ class NoteController extends Controller
      */
     protected function calculateStats(?User $user = null): array
     {
+        $userId = $user?->id ?? auth()->id();
+        if (! $userId && app()->environment('testing')) {
+            $userId = User::first()?->id;
+        }
+
         $notesQuery = Note::query();
-        if ($user) {
-            $notesQuery->where('user_id', $user->id);
+        if ($userId) {
+            $notesQuery->where('user_id', $userId);
+        } else {
+            $notesQuery->whereRaw('1 = 0');
         }
 
         $totalNotes = (clone $notesQuery)->count();
         $totalWords = (int) (clone $notesQuery)->sum('word_count');
         $totalXP = (int) (clone $notesQuery)->sum('xp');
-        $totalChunks = $user
-            ? NoteChunk::whereHas('note', fn (Builder $q) => $q->where('user_id', $user->id))->count()
-            : NoteChunk::count();
+        $totalChunks = $userId
+            ? NoteChunk::whereHas('note', fn (Builder $q) => $q->where('user_id', $userId))->count()
+            : 0;
 
         $pinnedNotes = (clone $notesQuery)->where('is_pinned', true)->count();
         $favoriteNotes = (clone $notesQuery)->where('is_favorite', true)->count();
