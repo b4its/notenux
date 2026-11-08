@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Note;
 use App\Models\NoteChunk;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -331,10 +332,11 @@ class NoteChunkService
     /**
      * Imports raw Markdown, JSON backup, or text content into a newly created Note with chunking.
      */
-    public function importMarkdown(string $rawMarkdown, ?string $filename = null, ?string $category = 'quest'): Note
+    public function importMarkdown(string $rawMarkdown, ?string $filename = null, ?string $category = 'quest', ?User $user = null): Note
     {
-        return DB::transaction(function () use ($rawMarkdown, $filename, $category): Note {
+        return DB::transaction(function () use ($rawMarkdown, $filename, $category, $user): Note {
             $trimmed = trim($rawMarkdown);
+            $userId = $user?->id ?? auth()->id() ?? User::first()?->id;
 
             // Intelligent JSON backup detection
             if (str_starts_with($trimmed, '{') && str_ends_with($trimmed, '}')) {
@@ -355,6 +357,7 @@ class NoteChunkService
                     $isFavorite = ! empty($decoded['is_favorite']);
 
                     $note = Note::create([
+                        'user_id' => $userId,
                         'title' => Str::limit($title, 120, ''),
                         'category' => $jsonCategory,
                         'content' => '',
@@ -389,6 +392,7 @@ class NoteChunkService
             $validCategory = ! empty($category) ? trim($category) : 'quest';
 
             $note = Note::create([
+                'user_id' => $userId,
                 'title' => Str::limit($title, 120, ''),
                 'category' => $validCategory,
                 'content' => '',

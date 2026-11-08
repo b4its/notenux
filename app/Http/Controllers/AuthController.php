@@ -107,6 +107,7 @@ class AuthController extends Controller
         $greetingHtml = '<h2>Selamat Datang di Notenux! 👋</h2><p>Halo <strong>'.e($user->name).'</strong>, selamat datang di studio catatan retro Notenux.</p><p>Catatan ini adalah tempat awalmu. Mulai tulis ide hebatmu, kelompokkan dengan kategori <strong>Catatan</strong> atau <strong>Tugas</strong>, dan nikmati sensasi menulis gamifikasi retro.</p>';
 
         $greetingNote = Note::create([
+            'user_id' => $user->id,
             'title' => 'Halo! Selamat Datang di Notenux',
             'category' => 'catatan',
             'content' => $greetingHtml,

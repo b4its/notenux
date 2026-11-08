@@ -8,6 +8,7 @@ use App\Models\NoteChunk;
 use App\Models\User;
 use App\Services\NoteChunkService;
 use App\Services\NoteContentSanitizer;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -28,6 +29,8 @@ class NoteController extends Controller
      */
     public function index(Request $request): View|JsonResponse
     {
+        $user = $this->resolveUser($request);
+
         $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:64'],
@@ -35,7 +38,7 @@ class NoteController extends Controller
             'pinned_only' => ['nullable', 'boolean'],
             'favorites_only' => ['nullable', 'boolean'],
         ]);
-        $query = Note::select([
+        $query = Note::forUser($user)->select([
             'id',
             'uuid',
             'title',
@@ -117,16 +120,15 @@ class NoteController extends Controller
             ]);
         }
 
-        $stats = $this->calculateStats();
+        $stats = $this->calculateStats($user);
         $initialNote = $notes->first();
         if ($initialNote) {
             $initialNote = Note::with('chunks')->find($initialNote->id);
             $initialNote->content = $this->sanitizer->sanitize($initialNote->content);
         }
 
-        $user = $request->user() ?? User::first();
         $categories = Category::forUser($user)
-            ->withCount('notes')
+            ->withCount(['notes' => fn (Builder $q) => $q->where('user_id', $user->id)])
             ->orderBy('is_system', 'desc')
             ->orderBy('name', 'asc')
             ->get();
@@ -136,7 +138,7 @@ class NoteController extends Controller
                 Category::firstOrCreate(['slug' => $def['slug']], $def);
             }
             $categories = Category::forUser($user)
-                ->withCount('notes')
+                ->withCount(['notes' => fn (Builder $q) => $q->where('user_id', $user->id)])
                 ->orderBy('is_system', 'desc')
                 ->orderBy('name', 'asc')
                 ->get();
@@ -147,6 +149,7 @@ class NoteController extends Controller
             'activeNote' => $initialNote,
             'stats' => $stats,
             'categories' => $categories,
+            'user' => $user,
         ]);
     }
 
@@ -155,6 +158,8 @@ class NoteController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $user = $this->resolveUser($request);
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:64'],
@@ -166,8 +171,9 @@ class NoteController extends Controller
             'is_favorite' => ['nullable', 'boolean'],
         ]);
 
-        $note = DB::transaction(function () use ($validated): Note {
+        $note = DB::transaction(function () use ($validated, $user): Note {
             $note = Note::create([
+                'user_id' => $user->id,
                 'title' => $validated['title'],
                 'category' => $validated['category'] ?? 'quest',
                 'font_family' => $validated['font_family'] ?? 'pixel',
@@ -195,6 +201,8 @@ class NoteController extends Controller
      */
     public function show(Note $note): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser(request()));
+
         $note->load('chunks');
         $note->content = $this->sanitizer->sanitize($note->content);
 
@@ -209,6 +217,8 @@ class NoteController extends Controller
      */
     public function update(Request $request, Note $note): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser($request));
+
         $validated = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'category' => ['sometimes', 'nullable', 'string', 'max:64'],
@@ -244,6 +254,8 @@ class NoteController extends Controller
      */
     public function destroy(Note $note): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser(request()));
+
         $title = $note->title;
         $note->delete();
 
@@ -258,13 +270,20 @@ class NoteController extends Controller
      */
     public function bulkDestroy(Request $request): JsonResponse
     {
+        $user = $this->resolveUser($request);
+
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['required', 'integer', 'exists:notes,id'],
         ]);
 
-        $deletedIds = DB::transaction(function () use ($validated): array {
-            $notes = Note::whereIn('id', $validated['ids'])->get();
+        $notes = Note::whereIn('id', $validated['ids'])->get();
+
+        foreach ($notes as $note) {
+            $this->authorizeNote($note, $user);
+        }
+
+        $deletedIds = DB::transaction(function () use ($notes): array {
             $ids = [];
 
             foreach ($notes as $note) {
@@ -292,6 +311,8 @@ class NoteController extends Controller
      */
     public function bulkUpdate(Request $request): JsonResponse
     {
+        $user = $this->resolveUser($request);
+
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['required', 'integer', 'exists:notes,id'],
@@ -300,7 +321,13 @@ class NoteController extends Controller
             'category' => ['nullable', 'string', 'max:64'],
         ]);
 
-        $updatedCount = DB::transaction(function () use ($validated): int {
+        $notes = Note::whereIn('id', $validated['ids'])->get();
+
+        foreach ($notes as $note) {
+            $this->authorizeNote($note, $user);
+        }
+
+        $updatedCount = DB::transaction(function () use ($validated, $user): int {
             $updateData = [];
             if (array_key_exists('is_pinned', $validated) && $validated['is_pinned'] !== null) {
                 $updateData['is_pinned'] = $validated['is_pinned'];
@@ -316,7 +343,7 @@ class NoteController extends Controller
                 return 0;
             }
 
-            return Note::whereIn('id', $validated['ids'])->update($updateData);
+            return Note::forUser($user)->whereIn('id', $validated['ids'])->update($updateData);
         });
 
         return response()->json([
@@ -334,6 +361,8 @@ class NoteController extends Controller
      */
     public function togglePin(Note $note): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser(request()));
+
         $note->is_pinned = ! $note->is_pinned;
         $note->save();
 
@@ -349,6 +378,8 @@ class NoteController extends Controller
      */
     public function toggleFavorite(Note $note): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser(request()));
+
         $note->is_favorite = ! $note->is_favorite;
         $note->save();
 
@@ -364,8 +395,12 @@ class NoteController extends Controller
      */
     public function duplicate(Note $note): JsonResponse
     {
-        $clone = DB::transaction(function () use ($note): Note {
+        $user = $this->resolveUser(request());
+        $this->authorizeNote($note, $user);
+
+        $clone = DB::transaction(function () use ($note, $user): Note {
             $clone = $note->replicate(['uuid']);
+            $clone->user_id = $user->id;
             $clone->title = mb_substr($note->title, 0, 248).' (Copy)';
             $clone->is_pinned = false;
             $clone->save();
@@ -387,6 +422,8 @@ class NoteController extends Controller
      */
     public function export(Note $note, string $format = 'md'): Response
     {
+        $this->authorizeNote($note, $this->resolveUser(request()));
+
         $note->content = $this->sanitizer->sanitize($note->content);
         $format = strtolower($format);
         $filename = Str::slug($note->title) ?: 'scroll';
@@ -671,6 +708,8 @@ class NoteController extends Controller
      */
     public function chunks(Note $note): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser(request()));
+
         $chunks = $note->chunks()->get();
 
         return response()->json([
@@ -688,6 +727,8 @@ class NoteController extends Controller
      */
     public function updateChunk(Request $request, Note $note, NoteChunk $chunk): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser($request));
+
         if ($chunk->note_id !== $note->id) {
             return response()->json([
                 'status' => 'error',
@@ -721,6 +762,8 @@ class NoteController extends Controller
      */
     public function verifyChunks(Note $note): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser(request()));
+
         $report = $this->chunkService->verifyIntegrity($note);
 
         return response()->json([
@@ -736,6 +779,8 @@ class NoteController extends Controller
      */
     public function deleteChunk(Note $note, NoteChunk $chunk): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser(request()));
+
         if ($chunk->note_id !== $note->id) {
             return response()->json([
                 'status' => 'error',
@@ -760,6 +805,8 @@ class NoteController extends Controller
      */
     public function reorderChunks(Request $request, Note $note): JsonResponse
     {
+        $this->authorizeNote($note, $this->resolveUser($request));
+
         $validated = $request->validate([
             'order' => ['required', 'array'],
             'order.*' => ['required', 'regex:/^(?:[0-9]+|chk_[A-Za-z0-9_]+)$/'],
@@ -782,6 +829,8 @@ class NoteController extends Controller
      */
     public function import(Request $request): JsonResponse
     {
+        $user = $this->resolveUser($request);
+
         $validated = $request->validate([
             'file' => ['nullable', 'file', 'max:5120'],
             'content' => ['required_without:file', 'nullable', 'string'],
@@ -802,7 +851,7 @@ class NoteController extends Controller
         }
 
         $category = $validated['category'] ?? 'quest';
-        $note = $this->chunkService->importMarkdown($rawMarkdown, $filename, $category);
+        $note = $this->chunkService->importMarkdown($rawMarkdown, $filename, $category, $user);
 
         if (! empty($validated['title'])) {
             $note->update(['title' => $validated['title']]);
@@ -818,12 +867,48 @@ class NoteController extends Controller
     /**
      * Return gamified stats overview for the player.
      */
-    public function stats(): JsonResponse
+    public function stats(?Request $request = null): JsonResponse
     {
+        $user = $this->resolveUser($request ?? request());
+
         return response()->json([
             'status' => 'success',
-            'data' => $this->calculateStats(),
+            'data' => $this->calculateStats($user),
         ]);
+    }
+
+    /**
+     * Resolve the current authenticated user or fallback for unauthenticated requests.
+     */
+    protected function resolveUser(Request $request): User
+    {
+        /** @var User|null $user */
+        $user = $request->user();
+
+        if ($user) {
+            return $user;
+        }
+
+        $first = User::first();
+        if ($first) {
+            return $first;
+        }
+
+        return User::create([
+            'name' => 'Retro Adventurer',
+            'email' => 'hero@notenux.dev',
+            'password' => bcrypt('password'),
+        ]);
+    }
+
+    /**
+     * Authorize that the note belongs to the user, or abort 403.
+     */
+    protected function authorizeNote(Note $note, User $user): void
+    {
+        if ($note->user_id !== null && $note->user_id !== $user->id) {
+            abort(403, 'Akses catatan ditolak. Catatan ini milik akun lain.');
+        }
     }
 
     /**
@@ -831,12 +916,22 @@ class NoteController extends Controller
      *
      * @return array<string, mixed>
      */
-    protected function calculateStats(): array
+    protected function calculateStats(?User $user = null): array
     {
-        $totalNotes = Note::count();
-        $totalWords = (int) Note::sum('word_count');
-        $totalXP = (int) Note::sum('xp');
-        $totalChunks = NoteChunk::count();
+        $notesQuery = Note::query();
+        if ($user) {
+            $notesQuery->where('user_id', $user->id);
+        }
+
+        $totalNotes = (clone $notesQuery)->count();
+        $totalWords = (int) (clone $notesQuery)->sum('word_count');
+        $totalXP = (int) (clone $notesQuery)->sum('xp');
+        $totalChunks = $user
+            ? NoteChunk::whereHas('note', fn (Builder $q) => $q->where('user_id', $user->id))->count()
+            : NoteChunk::count();
+
+        $pinnedNotes = (clone $notesQuery)->where('is_pinned', true)->count();
+        $favoriteNotes = (clone $notesQuery)->where('is_favorite', true)->count();
 
         $level = max(1, (int) floor($totalXP / 150) + 1);
         $nextLevelXP = $level * 150;
@@ -860,8 +955,8 @@ class NoteController extends Controller
             'total_words' => $totalWords,
             'total_chunks' => $totalChunks,
             'total_xp' => $totalXP,
-            'pinned_notes' => Note::where('is_pinned', true)->count(),
-            'favorite_notes' => Note::where('is_favorite', true)->count(),
+            'pinned_notes' => $pinnedNotes,
+            'favorite_notes' => $favoriteNotes,
             'level' => $level,
             'rank_title' => $rankInfo['title'],
             'rank_badge' => $rankInfo['badge'],

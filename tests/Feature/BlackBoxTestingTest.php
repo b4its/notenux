@@ -1264,3 +1264,196 @@ test('black-box: user bulk moves multiple notes to another category via api', fu
     $this->assertDatabaseHas('notes', ['id' => $note2->id, 'category' => 'archive']);
     $this->assertDatabaseHas('notes', ['id' => $note3->id, 'category' => 'lore']);
 });
+
+test('black-box: multi-tenant isolation ensures users can only list, view, and search their own notes', function () {
+    $userAlpha = User::factory()->create(['name' => 'Scribe Alpha', 'email' => 'alpha@notenux.dev']);
+    $userBeta = User::factory()->create(['name' => 'Scribe Beta', 'email' => 'beta@notenux.dev']);
+
+    $noteAlpha = Note::factory()->create([
+        'user_id' => $userAlpha->id,
+        'title' => 'Alpha Arcane Secrets',
+        'content' => '<p>Secret of Alpha</p>',
+        'category' => 'quest',
+    ]);
+
+    $noteBeta = Note::factory()->create([
+        'user_id' => $userBeta->id,
+        'title' => 'Beta Forbidden Grimoire',
+        'content' => '<p>Secret of Beta</p>',
+        'category' => 'spellbook',
+    ]);
+
+    // Alpha lists notes via API
+    $resAlpha = $this->actingAs($userAlpha)->getJson('/api/notes');
+    $resAlpha->assertOk();
+    $alphaNotes = collect($resAlpha->json('data'));
+    expect($alphaNotes->pluck('id'))->toContain($noteAlpha->id)
+        ->and($alphaNotes->pluck('id'))->not->toContain($noteBeta->id);
+
+    // Beta lists notes via API
+    $resBeta = $this->actingAs($userBeta)->getJson('/api/notes');
+    $resBeta->assertOk();
+    $betaNotes = collect($resBeta->json('data'));
+    expect($betaNotes->pluck('id'))->toContain($noteBeta->id)
+        ->and($betaNotes->pluck('id'))->not->toContain($noteAlpha->id);
+
+    // Alpha searches notes
+    $searchAlpha = $this->actingAs($userAlpha)->getJson('/api/notes?q=Forbidden');
+    $searchAlpha->assertOk();
+    expect(collect($searchAlpha->json('data'))->pluck('id'))->not->toContain($noteBeta->id);
+
+    // Alpha views studio dashboard
+    $studioAlpha = $this->actingAs($userAlpha)->get(route('studio'));
+    $studioAlpha->assertOk()
+        ->assertSee('Alpha Arcane Secrets')
+        ->assertDontSee('Beta Forbidden Grimoire');
+
+    // Beta views studio dashboard
+    $studioBeta = $this->actingAs($userBeta)->get(route('studio'));
+    $studioBeta->assertOk()
+        ->assertSee('Beta Forbidden Grimoire')
+        ->assertDontSee('Alpha Arcane Secrets');
+});
+
+test('black-box: multi-tenant isolation prevents cross-tenant modification, deletion, chunk tampering, and export', function () {
+    $userAlpha = User::factory()->create();
+    $userBeta = User::factory()->create();
+
+    $noteAlpha = Note::factory()->create([
+        'user_id' => $userAlpha->id,
+        'title' => 'Alpha Sacred Scroll',
+        'content' => '<p>Initial Alpha Content</p>',
+        'is_pinned' => false,
+        'is_favorite' => false,
+    ]);
+
+    // Beta attempts to read Alpha\'s note -> 403 Forbidden
+    $this->actingAs($userBeta)->getJson("/api/notes/{$noteAlpha->id}")
+        ->assertStatus(403);
+
+    // Beta attempts to update Alpha\'s note -> 403 Forbidden
+    $this->actingAs($userBeta)->putJson("/api/notes/{$noteAlpha->id}", [
+        'title' => 'Tampered by Beta',
+    ])->assertStatus(403);
+    expect($noteAlpha->fresh()->title)->toBe('Alpha Sacred Scroll');
+
+    // Beta attempts to toggle pin -> 403 Forbidden
+    $this->actingAs($userBeta)->postJson("/api/notes/{$noteAlpha->id}/pin")
+        ->assertStatus(403);
+    expect($noteAlpha->fresh()->is_pinned)->toBeFalse();
+
+    // Beta attempts to toggle favorite -> 403 Forbidden
+    $this->actingAs($userBeta)->postJson("/api/notes/{$noteAlpha->id}/favorite")
+        ->assertStatus(403);
+    expect($noteAlpha->fresh()->is_favorite)->toBeFalse();
+
+    // Beta attempts to duplicate Alpha\'s note -> 403 Forbidden
+    $this->actingAs($userBeta)->postJson("/api/notes/{$noteAlpha->id}/duplicate")
+        ->assertStatus(403);
+
+    // Beta attempts to export Alpha\'s note -> 403 Forbidden
+    $this->actingAs($userBeta)->get("/api/notes/{$noteAlpha->id}/export/md")
+        ->assertStatus(403);
+    $this->actingAs($userBeta)->get("/api/notes/{$noteAlpha->id}/export/json")
+        ->assertStatus(403);
+    $this->actingAs($userBeta)->get("/api/notes/{$noteAlpha->id}/export/txt")
+        ->assertStatus(403);
+
+    // Beta attempts to inspect chunks -> 403 Forbidden
+    $this->actingAs($userBeta)->getJson("/api/notes/{$noteAlpha->id}/chunks")
+        ->assertStatus(403);
+
+    // Beta attempts to verify chunks -> 403 Forbidden
+    $this->actingAs($userBeta)->getJson("/api/notes/{$noteAlpha->id}/chunks/verify")
+        ->assertStatus(403);
+
+    // Beta attempts to delete Alpha\'s note -> 403 Forbidden
+    $this->actingAs($userBeta)->deleteJson("/api/notes/{$noteAlpha->id}")
+        ->assertStatus(403);
+    $this->assertDatabaseHas('notes', ['id' => $noteAlpha->id]);
+
+    // Alpha can legitimately view, update, and manage their own note
+    $this->actingAs($userAlpha)->getJson("/api/notes/{$noteAlpha->id}")
+        ->assertOk()
+        ->assertJsonPath('data.title', 'Alpha Sacred Scroll');
+});
+
+test('black-box: multi-tenant isolation blocks cross-tenant bulk-delete, bulk-update, and ai-assistant', function () {
+    $userAlpha = User::factory()->create();
+    $userBeta = User::factory()->create();
+
+    $noteAlpha = Note::factory()->create([
+        'user_id' => $userAlpha->id,
+        'title' => 'Alpha Fortified Note',
+        'is_pinned' => false,
+    ]);
+    $noteBeta = Note::factory()->create([
+        'user_id' => $userBeta->id,
+        'title' => 'Beta Regular Note',
+        'is_pinned' => false,
+    ]);
+
+    // Beta attempts bulk-delete including Alpha\'s note -> 403 Forbidden and no notes deleted
+    $this->actingAs($userBeta)->postJson('/api/notes/bulk-delete', [
+        'ids' => [$noteAlpha->id, $noteBeta->id],
+    ])->assertStatus(403);
+
+    $this->assertDatabaseHas('notes', ['id' => $noteAlpha->id]);
+    $this->assertDatabaseHas('notes', ['id' => $noteBeta->id]);
+
+    // Beta attempts bulk-update including Alpha\'s note -> 403 Forbidden and no notes modified
+    $this->actingAs($userBeta)->postJson('/api/notes/bulk-update', [
+        'ids' => [$noteAlpha->id, $noteBeta->id],
+        'is_pinned' => true,
+    ])->assertStatus(403);
+
+    expect($noteAlpha->fresh()->is_pinned)->toBeFalse()
+        ->and($noteBeta->fresh()->is_pinned)->toBeFalse();
+
+    // Beta attempts AI assistant invocation on Alpha\'s note -> 403 Forbidden
+    $this->actingAs($userBeta)->postJson("/api/notes/{$noteAlpha->id}/assistant", [
+        'action' => 'improve',
+        'content' => 'Tamper test',
+    ])->assertStatus(403);
+});
+
+test('black-box: multi-tenant player telemetry and HUD stats isolate words, XP, and chunk counts', function () {
+    $userAlpha = User::factory()->create();
+    $userBeta = User::factory()->create();
+
+    Note::factory()->create([
+        'user_id' => $userAlpha->id,
+        'word_count' => 100,
+        'xp' => 150,
+        'is_pinned' => true,
+        'is_favorite' => false,
+    ]);
+
+    Note::factory()->create([
+        'user_id' => $userBeta->id,
+        'word_count' => 500,
+        'xp' => 750,
+        'is_pinned' => true,
+        'is_favorite' => true,
+    ]);
+
+    $resAlpha = $this->actingAs($userAlpha)->getJson('/api/player-stats');
+    $resAlpha->assertOk();
+    $dataAlpha = $resAlpha->json('data');
+
+    expect($dataAlpha['total_notes'])->toBe(1)
+        ->and($dataAlpha['total_words'])->toBe(100)
+        ->and($dataAlpha['total_xp'])->toBe(150)
+        ->and($dataAlpha['pinned_notes'])->toBe(1)
+        ->and($dataAlpha['favorite_notes'])->toBe(0);
+
+    $resBeta = $this->actingAs($userBeta)->getJson('/api/player-stats');
+    $resBeta->assertOk();
+    $dataBeta = $resBeta->json('data');
+
+    expect($dataBeta['total_notes'])->toBe(1)
+        ->and($dataBeta['total_words'])->toBe(500)
+        ->and($dataBeta['total_xp'])->toBe(750)
+        ->and($dataBeta['pinned_notes'])->toBe(1)
+        ->and($dataBeta['favorite_notes'])->toBe(1);
+});

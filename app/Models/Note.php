@@ -6,6 +6,7 @@ use Database\Factories\NoteFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -29,6 +30,7 @@ class Note extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'user_id',
         'uuid',
         'title',
         'category',
@@ -52,6 +54,7 @@ class Note extends Model
     protected function casts(): array
     {
         return [
+            'user_id' => 'integer',
             'is_pinned' => 'boolean',
             'is_favorite' => 'boolean',
             'word_count' => 'integer',
@@ -59,6 +62,16 @@ class Note extends Model
             'level' => 'integer',
             'xp' => 'integer',
         ];
+    }
+
+    /**
+     * The user that owns this note.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**
@@ -79,6 +92,9 @@ class Note extends Model
         static::creating(function (Note $note) {
             if (empty($note->uuid)) {
                 $note->uuid = (string) Str::uuid();
+            }
+            if (empty($note->user_id)) {
+                $note->user_id = auth()->id() ?? User::first()?->id;
             }
         });
 
@@ -107,5 +123,20 @@ class Note extends Model
     public function scopePrioritized($query)
     {
         return $query->orderBy('is_pinned', 'desc')->orderBy('updated_at', 'desc');
+    }
+
+    /**
+     * Scope a query to only include notes belonging to the specified user.
+     *
+     * @param  Builder<Note>  $query
+     * @return Builder<Note>
+     */
+    public function scopeForUser(Builder $query, ?User $user = null): Builder
+    {
+        if ($user?->id) {
+            return $query->where('user_id', $user->id);
+        }
+
+        return $query;
     }
 }

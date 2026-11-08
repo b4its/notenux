@@ -56,7 +56,11 @@ class Category extends Model
         });
 
         static::deleting(function (Category $category): void {
-            $category->notes()->get()->each(function (Note $note): void {
+            $notesQuery = $category->notes();
+            if ($category->user_id !== null) {
+                $notesQuery->where('user_id', $category->user_id);
+            }
+            $notesQuery->get()->each(function (Note $note): void {
                 $note->chunks()->delete();
                 $note->delete();
             });

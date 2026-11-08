@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Note;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -27,6 +28,7 @@ class NoteFactory extends Factory
         $paragraphs = fake()->paragraphs(3, true);
 
         return [
+            'user_id' => auth()->id() ?? User::first()?->id ?? User::factory(),
             'uuid' => (string) Str::uuid(),
             'title' => $title,
             'category' => fake()->randomElement($categories),
@@ -50,6 +52,16 @@ class NoteFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'is_pinned' => true,
+        ]);
+    }
+
+    /**
+     * Indicate that the note belongs to the specified user.
+     */
+    public function forUser(User $user): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_id' => $user->id,
         ]);
     }
 }

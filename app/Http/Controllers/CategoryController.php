@@ -26,7 +26,7 @@ class CategoryController extends Controller
     {
         $user = $this->resolveUser($request);
         $categories = Category::forUser($user)
-            ->withCount('notes')
+            ->withCount(['notes' => fn (Builder $q) => $q->where('user_id', $user->id)])
             ->orderBy('is_system', 'desc')
             ->orderBy('name', 'asc')
             ->get();
@@ -36,7 +36,7 @@ class CategoryController extends Controller
                 Category::firstOrCreate(['slug' => $def['slug']], $def);
             }
             $categories = Category::forUser($user)
-                ->withCount('notes')
+                ->withCount(['notes' => fn (Builder $q) => $q->where('user_id', $user->id)])
                 ->orderBy('is_system', 'desc')
                 ->orderBy('name', 'asc')
                 ->get();
@@ -49,7 +49,7 @@ class CategoryController extends Controller
             ]);
         }
 
-        $stats = $this->calculatePlayerStats();
+        $stats = $this->calculatePlayerStats($user);
 
         return view('categories.index', [
             'categories' => $categories,
@@ -115,14 +115,14 @@ class CategoryController extends Controller
             'description' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $this->mutateCategories(function () use ($category, $validated): void {
+        $this->mutateCategories(function () use ($category, $validated, $user): void {
             $category->refresh();
             $oldSlug = $category->slug;
             $newSlug = isset($validated['slug']) ? $this->allocateSlug($validated['slug'], $category->id) : $oldSlug;
 
             if ($newSlug !== $oldSlug) {
-                // Safely cascade slug change to all existing notes
-                Note::where('category', $oldSlug)->update(['category' => $newSlug]);
+                // Safely cascade slug change to all existing notes belonging to this user
+                Note::where('category', $oldSlug)->where('user_id', $user->id)->update(['category' => $newSlug]);
             }
 
             $category->update([
@@ -158,11 +158,11 @@ class CategoryController extends Controller
             abort(403, 'Unauthorized access to category.');
         }
 
-        [$name, $slug, $deletedNotesCount] = $this->mutateCategories(function () use ($category): array {
+        [$name, $slug, $deletedNotesCount] = $this->mutateCategories(function () use ($category, $user): array {
             $category->refresh();
             $name = $category->name;
             $slug = $category->slug;
-            $deletedCount = $category->notes()->count();
+            $deletedCount = $category->notes()->where('user_id', $user->id)->count();
 
             $category->delete();
 
@@ -206,14 +206,14 @@ class CategoryController extends Controller
             }
         }
 
-        [$deletedCount, $deletedNotesCount, $deletedIds, $deletedSlugs] = $this->mutateCategories(function () use ($categories): array {
+        [$deletedCount, $deletedNotesCount, $deletedIds, $deletedSlugs] = $this->mutateCategories(function () use ($categories, $user): array {
             $deletedNotesCount = 0;
             $deletedIds = [];
             $deletedSlugs = [];
 
             foreach ($categories as $category) {
                 $category->refresh();
-                $deletedNotesCount += $category->notes()->count();
+                $deletedNotesCount += $category->notes()->where('user_id', $user->id)->count();
                 $deletedIds[] = $category->id;
                 $deletedSlugs[] = $category->slug;
                 $category->delete();
@@ -292,12 +292,19 @@ class CategoryController extends Controller
      *
      * @return array<string, mixed>
      */
-    protected function calculatePlayerStats(): array
+    protected function calculatePlayerStats(?User $user = null): array
     {
-        $totalNotes = Note::count();
-        $totalWords = (int) Note::sum('word_count');
-        $totalXP = (int) Note::sum('xp');
-        $totalChunks = NoteChunk::count();
+        $notesQuery = Note::query();
+        if ($user) {
+            $notesQuery->where('user_id', $user->id);
+        }
+
+        $totalNotes = (clone $notesQuery)->count();
+        $totalWords = (int) (clone $notesQuery)->sum('word_count');
+        $totalXP = (int) (clone $notesQuery)->sum('xp');
+        $totalChunks = $user
+            ? NoteChunk::whereHas('note', fn (Builder $q) => $q->where('user_id', $user->id))->count()
+            : NoteChunk::count();
 
         $level = max(1, (int) floor($totalXP / 150) + 1);
         $nextLevelXP = $level * 150;
@@ -321,8 +328,8 @@ class CategoryController extends Controller
             'total_words' => $totalWords,
             'total_xp' => $totalXP,
             'total_chunks' => $totalChunks,
-            'pinned_notes' => Note::where('is_pinned', true)->count(),
-            'favorite_notes' => Note::where('is_favorite', true)->count(),
+            'pinned_notes' => (clone $notesQuery)->where('is_pinned', true)->count(),
+            'favorite_notes' => (clone $notesQuery)->where('is_favorite', true)->count(),
             'level' => $level,
             'progress_percent' => max(5, $percent),
             'progress_xp' => $progressXP,

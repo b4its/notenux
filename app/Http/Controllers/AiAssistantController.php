@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Note;
+use App\Models\User;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,11 @@ class AiAssistantController extends Controller
 {
     public function store(Request $request, Note $note): JsonResponse
     {
+        $user = $request->user() ?? User::first();
+        if ($note->user_id !== null && $user && $note->user_id !== $user->id) {
+            abort(403, 'Akses catatan ditolak. Catatan ini milik akun lain.');
+        }
+
         $validated = $request->validate([
             'action' => ['required', 'in:improve,summarize,continue,translate,custom'],
             'content' => ['required', 'string', 'max:30000'],

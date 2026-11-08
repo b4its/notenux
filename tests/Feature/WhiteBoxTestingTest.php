@@ -1069,3 +1069,56 @@ test('white-box: note controller bulkUpdate validates request payload and handle
     expect($dataEmpty['status'])->toBe('success')
         ->and($dataEmpty['data']['updated_count'])->toBe(0);
 });
+
+test('white-box: note model scopeForUser and relationship isolate notes by user', function () {
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+
+    $note1 = Note::factory()->forUser($user1)->create(['title' => 'User1 Note']);
+    $note2 = Note::factory()->forUser($user2)->create(['title' => 'User2 Note']);
+
+    $user1Notes = Note::forUser($user1)->get();
+    expect($user1Notes->pluck('id'))->toContain($note1->id)
+        ->and($user1Notes->pluck('id'))->not->toContain($note2->id);
+
+    $user2Notes = Note::forUser($user2)->get();
+    expect($user2Notes->pluck('id'))->toContain($note2->id)
+        ->and($user2Notes->pluck('id'))->not->toContain($note1->id);
+
+    expect($user1->notes->pluck('id'))->toContain($note1->id)
+        ->and($note1->user->id)->toBe($user1->id);
+});
+
+test('white-box: note controller authorizeNote aborts with 403 on tenant mismatch', function () {
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+    $note = Note::factory()->forUser($user1)->create();
+
+    $controller = app(NoteController::class);
+    $reflection = new ReflectionClass($controller);
+    $method = $reflection->getMethod('authorizeNote');
+    $method->setAccessible(true);
+
+    // Same user: passes without exception
+    $method->invoke($controller, $note, $user1);
+    expect(true)->toBeTrue();
+
+    // Different user: throws 403
+    try {
+        $method->invoke($controller, $note, $user2);
+        $this->fail('Expected 403 HttpException was not thrown.');
+    } catch (HttpException $e) {
+        expect($e->getStatusCode())->toBe(403);
+    }
+});
+
+test('white-box: note chunk service importMarkdown assigns user_id when provided', function () {
+    $user = User::factory()->create();
+    $service = app(NoteChunkService::class);
+
+    $markdown = "# Arcane Chronicles\n\nChapter 1 text here.";
+    $note = $service->importMarkdown($markdown, 'chronicles.md', 'lore', $user);
+
+    expect($note->user_id)->toBe($user->id)
+        ->and($note->title)->toBe('Arcane Chronicles');
+});
