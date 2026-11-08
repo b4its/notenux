@@ -212,7 +212,7 @@ class AuthController extends Controller
         $user->email = trim($validated['email']);
         $user->save();
 
-        if ($request->wantsJson() || $request->ajax() || $request->is('api/*')) {
+        if ($request->wantsJson() || $request->ajax() || $request->is('api/*') || $request->is('profile')) {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Profil dan kredensial berhasil diperbarui!',

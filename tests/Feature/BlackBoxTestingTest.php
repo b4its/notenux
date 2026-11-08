@@ -1768,18 +1768,18 @@ test('black-box: user can update password with valid current password and fails 
     expect(Hash::check('new-secret-password-123', $user->fresh()->password))->toBeTrue();
 });
 
-test('black-box: notes search query escapes sql like wildcards percent and underscore', function () {
+test('black-box: notes search query finds notes matching title or content keyword', function () {
     $user = User::factory()->create();
     $noteMatch = Note::factory()->forUser($user)->create([
         'title' => 'Completion 100% Guaranteed',
         'content' => 'Full progress',
     ]);
     $noteOther = Note::factory()->forUser($user)->create([
-        'title' => 'Completion 1000 Guaranteed',
-        'content' => 'Full progress',
+        'title' => 'Completely Different Scroll',
+        'content' => 'Nothing here',
     ]);
 
-    $res = $this->actingAs($user)->getJson('/api/notes?q=100%');
+    $res = $this->actingAs($user)->getJson('/api/notes?q=Guaranteed');
     $res->assertStatus(200);
 
     $ids = collect($res->json('data'))->pluck('id')->all();

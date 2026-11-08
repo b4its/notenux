@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AiAssistantController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\NoteController;
 use App\Models\Category;
@@ -1199,23 +1200,24 @@ test('white-box: auth controller updateProfile validates unique email and preser
     $user1 = User::factory()->create(['email' => 'hero1@notenux.dev']);
     $user2 = User::factory()->create(['email' => 'hero2@notenux.dev']);
 
-    $controller = app(App\Http\Controllers\AuthController::class);
+    $controller = app(AuthController::class);
 
     // Should fail when trying to take user2's email
-    $requestDuplicate = Illuminate\Http\Request::create('/profile', 'PUT', [
+    $requestDuplicate = Request::create('/profile', 'PUT', [
         'name' => 'New Name',
         'email' => 'hero2@notenux.dev',
     ]);
     $requestDuplicate->setUserResolver(fn () => $user1);
 
     expect(fn () => $controller->updateProfile($requestDuplicate))
-        ->toThrow(Illuminate\Validation\ValidationException::class);
+        ->toThrow(ValidationException::class);
 
     // Should succeed with valid new email
-    $requestValid = Illuminate\Http\Request::create('/profile', 'PUT', [
+    $requestValid = Request::create('/api/profile', 'PUT', [
         'name' => 'Grand Scribe',
         'email' => 'grandscribe@notenux.dev',
     ]);
+    $requestValid->headers->set('Accept', 'application/json');
     $requestValid->setUserResolver(fn () => $user1);
 
     $res = $controller->updateProfile($requestValid);
