@@ -2,7 +2,7 @@
 # Dockerfile: Complete PHP 8.4-FPM + Node.js 22 LTS + Composer Environment
 # Generated automatically by Vel Engine - Laravel Engine
 # ==============================================================================
-FROM php:8.4-fpm
+FROM php:8.4.27-fpm
 
 ARG UID=1000
 ARG GID=1000
