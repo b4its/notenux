@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Folder;
 use App\Models\Note;
 use App\Models\NoteChunk;
 use App\Models\User;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class NoteController extends Controller
@@ -43,6 +45,7 @@ class NoteController extends Controller
             'uuid',
             'title',
             'category',
+            'folder_id',
             'font_family',
             'font_size',
             'theme_color',
@@ -151,11 +154,17 @@ class NoteController extends Controller
                 ->get();
         }
 
+        $folders = Folder::forUser($user)
+            ->withCount(['children', 'notes'])
+            ->orderBy('name', 'asc')
+            ->get();
+
         return view('panel', [
             'notes' => $notes,
             'activeNote' => $initialNote,
             'stats' => $stats,
             'categories' => $categories,
+            'folders' => $folders,
             'user' => $user,
         ]);
     }
@@ -169,6 +178,11 @@ class NoteController extends Controller
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'folder_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('folders', 'id')->where(fn ($q) => $q->where('user_id', $user->id)),
+            ],
             'category' => ['nullable', 'string', 'max:64'],
             'content' => ['nullable', 'string', 'max:5000000'],
             'font_family' => ['nullable', 'string', 'in:pixel,arcade,mono,sans,serif'],
@@ -185,6 +199,7 @@ class NoteController extends Controller
         $note = DB::transaction(function () use ($validated, $user): Note {
             $note = Note::create([
                 'user_id' => $user->id,
+                'folder_id' => $validated['folder_id'] ?? null,
                 'title' => $validated['title'],
                 'category' => $validated['category'] ?? 'catatan',
                 'font_family' => $validated['font_family'] ?? 'sans',
@@ -232,6 +247,12 @@ class NoteController extends Controller
 
         $validated = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'folder_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                Rule::exists('folders', 'id')->where(fn ($q) => $q->where('user_id', $note->user_id)),
+            ],
             'category' => ['sometimes', 'nullable', 'string', 'max:64'],
             'content' => ['sometimes', 'nullable', 'string', 'max:5000000'],
             'font_family' => ['sometimes', 'string', 'in:pixel,arcade,mono,sans,serif'],
@@ -331,6 +352,12 @@ class NoteController extends Controller
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'exists:notes,id'],
+            'folder_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('folders', 'id')->where(fn ($q) => $q->where('user_id', $user->id)),
+            ],
+            'clear_folder' => ['nullable', 'boolean'],
             'is_pinned' => ['nullable', 'boolean'],
             'is_favorite' => ['nullable', 'boolean'],
             'category' => ['nullable', 'string', 'max:64'],
@@ -347,6 +374,11 @@ class NoteController extends Controller
 
         $updatedCount = DB::transaction(function () use ($validated, $user): int {
             $updateData = [];
+            if (! empty($validated['clear_folder'])) {
+                $updateData['folder_id'] = null;
+            } elseif (array_key_exists('folder_id', $validated)) {
+                $updateData['folder_id'] = $validated['folder_id'];
+            }
             if (array_key_exists('is_pinned', $validated) && $validated['is_pinned'] !== null) {
                 $updateData['is_pinned'] = $validated['is_pinned'];
             }

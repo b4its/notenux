@@ -3,6 +3,7 @@
 use App\Http\Controllers\AiAssistantController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\FolderController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\NoteController;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/categories/bulk-delete', [CategoryController::class, 'bulkDestroy']);
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+    Route::get('/folders', [FolderController::class, 'index'])->name('folders.index');
+    Route::post('/folders', [FolderController::class, 'store'])->name('folders.store');
+    Route::put('/folders/{folder}', [FolderController::class, 'update'])->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderController::class, 'destroy'])->name('folders.destroy');
 });
 
 /*
@@ -65,6 +71,12 @@ Route::middleware('auth')->group(function () {
 | API Routes
 |--------------------------------------------------------------------------
 */
+Route::prefix('api/folders')->group(function () {
+    Route::get('/', [FolderController::class, 'index'])->name('api.folders.index');
+    Route::post('/', [FolderController::class, 'store'])->name('api.folders.store');
+    Route::put('/{folder}', [FolderController::class, 'update'])->name('api.folders.update');
+    Route::delete('/{folder}', [FolderController::class, 'destroy'])->name('api.folders.destroy');
+});
 Route::prefix('api/categories')->group(function () {
     Route::get('/', [CategoryController::class, 'index'])->name('api.categories.index');
     Route::post('/', [CategoryController::class, 'store'])->name('api.categories.store');

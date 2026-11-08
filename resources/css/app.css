@@ -30,6 +30,21 @@
     --retro-shadow: 4px 4px 0px #000000;
     --retro-shadow-sm: 2px 2px 0px #000000;
     --scanline-opacity: 0.02;
+
+    /* Adaptive Text Tokens (Light Mode: Deep, high-contrast dark tones) */
+    --retro-text-black: #0f172a;
+    --retro-text-charcoal: #1e293b;
+    --retro-text-slate: #475569;
+    --retro-text-white: #334155;
+    --retro-text-red: #b91c1c;
+    --retro-text-orange: #c2410c;
+    --retro-text-amber: #b45309;
+    --retro-text-lime: #3f6212;
+    --retro-text-emerald: #047857;
+    --retro-text-cyan: #0e7490;
+    --retro-text-blue: #1d4ed8;
+    --retro-text-purple: #6d28d9;
+    --retro-text-pink: #be185d;
 }
 
 .dark {
@@ -45,6 +60,63 @@
     --retro-shadow: 4px 4px 0px #000000;
     --retro-shadow-sm: 2px 2px 0px #000000;
     --scanline-opacity: 0.08;
+
+    /* Adaptive Text Tokens (Dark Mode: Bright, vibrant high-contrast tones) */
+    --retro-text-black: #f8fafc; /* Black shifts dynamically to bright white in dark mode! */
+    --retro-text-charcoal: #e2e8f0;
+    --retro-text-slate: #cbd5e1;
+    --retro-text-white: #ffffff;
+    --retro-text-red: #f87171;
+    --retro-text-orange: #fb923c;
+    --retro-text-amber: #fde047;
+    --retro-text-lime: #bef264;
+    --retro-text-emerald: #4ade80;
+    --retro-text-cyan: #38bdf8;
+    --retro-text-blue: #60a5fa;
+    --retro-text-purple: #c084fc;
+    --retro-text-pink: #f472b6;
+}
+
+/* Adaptive text color utility classes and attribute selectors */
+.retro-color-black, [data-color-token="black"], .text-token-black { color: var(--retro-text-black) !important; }
+.retro-color-charcoal, [data-color-token="charcoal"], .text-token-charcoal { color: var(--retro-text-charcoal) !important; }
+.retro-color-slate, [data-color-token="slate"], .text-token-slate { color: var(--retro-text-slate) !important; }
+.retro-color-white, [data-color-token="white"], .text-token-white { color: var(--retro-text-white) !important; }
+.retro-color-red, [data-color-token="red"], .text-token-red { color: var(--retro-text-red) !important; }
+.retro-color-orange, [data-color-token="orange"], .text-token-orange { color: var(--retro-text-orange) !important; }
+.retro-color-amber, [data-color-token="amber"], .text-token-amber { color: var(--retro-text-amber) !important; }
+.retro-color-lime, [data-color-token="lime"], .text-token-lime { color: var(--retro-text-lime) !important; }
+.retro-color-emerald, [data-color-token="emerald"], .text-token-emerald { color: var(--retro-text-emerald) !important; }
+.retro-color-cyan, [data-color-token="cyan"], .text-token-cyan { color: var(--retro-text-cyan) !important; }
+.retro-color-blue, [data-color-token="blue"], .text-token-blue { color: var(--retro-text-blue) !important; }
+.retro-color-purple, [data-color-token="purple"], .text-token-purple { color: var(--retro-text-purple) !important; }
+.retro-color-pink, [data-color-token="pink"], .text-token-pink { color: var(--retro-text-pink) !important; }
+
+/* Dark mode fallback: any legacy black font or style in editor area becomes bright white */
+html.dark #editor-area [style*="color: rgb(0, 0, 0)"],
+html.dark #editor-area [style*="color: #000000"],
+html.dark #editor-area [style*="color:#000000"],
+html.dark #editor-area [style*="color: rgb(15, 23, 42)"],
+html.dark #editor-area font[color="#000000"],
+html.dark #editor-area font[color="#0f172a"],
+html.dark .note-chunk-body [style*="color: rgb(0, 0, 0)"],
+html.dark .note-chunk-body font[color="#000000"] {
+    color: #f8fafc !important;
+}
+
+/* Recursive Folder Tree Styles */
+.folder-tree-node {
+    transition: background-color 0.15s ease;
+}
+.folder-tree-children {
+    border-left: 2px dashed rgba(59, 130, 246, 0.35);
+    margin-left: 0.6rem;
+    padding-left: 0.55rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+.dark .folder-tree-children {
+    border-left-color: rgba(6, 182, 212, 0.35);
 }
 
 /* CRT Scanline retro overlay */

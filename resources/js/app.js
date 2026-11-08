@@ -917,6 +917,8 @@ class NotenuxPanel {
         this.toast = new RetroToast(this.audio);
         this.notes = [];
         this.categories = [];
+        this.folders = [];
+        this.expandedFolderIds = new Set(JSON.parse(localStorage.getItem('notenux_expanded_folders') || '[]'));
         this.activeNote = null;
         this.activeCategory = 'all';
         this.searchQuery = '';
@@ -989,6 +991,28 @@ class NotenuxPanel {
             confirmBulkDeleteNotesBtn: document.getElementById('confirm-bulk-delete-notes-btn'),
 
             newNoteBtn: document.getElementById('new-note-btn'),
+            newFolderBtn: document.getElementById('new-folder-btn'),
+            noteFolderSelect: document.getElementById('note-folder-select'),
+            bulkMoveFolderSelect: document.getElementById('bulk-move-folder-select'),
+            folderFormModal: document.getElementById('folder-form-modal'),
+            folderModalTitle: document.getElementById('folder-modal-title'),
+            folderModalHeaderIcon: document.getElementById('folder-modal-header-icon'),
+            closeFolderModalBtn: document.getElementById('close-folder-modal-btn'),
+            cancelFolderFormBtn: document.getElementById('cancel-folder-form-btn'),
+            folderForm: document.getElementById('folder-form'),
+            folderFormId: document.getElementById('folder-form-id'),
+            folderFormParentId: document.getElementById('folder-form-parent-id'),
+            folderParentPreviewBox: document.getElementById('folder-parent-preview-box'),
+            folderParentNameText: document.getElementById('folder-parent-name-text'),
+            folderFormName: document.getElementById('folder-form-name'),
+            folderFormColor: document.getElementById('folder-form-color'),
+            folderFormIcon: document.getElementById('folder-form-icon'),
+            deleteFolderModal: document.getElementById('delete-folder-modal'),
+            closeDeleteFolderModalBtn: document.getElementById('close-delete-folder-modal-btn'),
+            cancelDeleteFolderBtn: document.getElementById('cancel-delete-folder-btn'),
+            confirmDeleteFolderBtn: document.getElementById('confirm-delete-folder-btn'),
+            deleteFolderTargetId: document.getElementById('delete-folder-target-id'),
+            deleteFolderNameText: document.getElementById('delete-folder-name-text'),
             categoryPills: document.querySelectorAll('.category-filter-btn'),
             navCategoryLinks: document.querySelectorAll('.nav-category-link'),
 
@@ -1424,6 +1448,20 @@ class NotenuxPanel {
                 btn.setAttribute('title', isDark ? `${baseName} (Mode Gelap: Terang)` : `${baseName} (Mode Terang: Gelap)`);
             }
         });
+
+        // Adapt existing formatted text in editorArea and chunk bodies
+        if (this.dom.editorArea) {
+            this.dom.editorArea.querySelectorAll('[data-color-token]').forEach(el => {
+                const token = el.getAttribute('data-color-token');
+                const swatch = document.querySelector(`[data-color-token="${token}"]`);
+                if (swatch && swatch.dataset) {
+                    const nextColor = isDark ? swatch.dataset.colorDark : swatch.dataset.colorLight;
+                    if (nextColor) {
+                        el.style.color = nextColor;
+                    }
+                }
+            });
+        }
     }
 
     updateFavicon(theme) {
@@ -2333,6 +2371,16 @@ class NotenuxPanel {
             }
         }
 
+        const initialFoldersEl = document.getElementById('initial-folders-data');
+        if (initialFoldersEl) {
+            try {
+                this.folders = JSON.parse(initialFoldersEl.textContent) || [];
+            } catch (e) {
+                this.folders = [];
+            }
+        }
+        this.syncFoldersDOM();
+
         const activeIdEl = document.getElementById('initial-active-note-id');
         const activeId = activeIdEl ? parseInt(activeIdEl.value, 10) : null;
 
@@ -2388,6 +2436,72 @@ class NotenuxPanel {
 
         this.dom.newNoteBtn?.addEventListener('click', () => {
             this.createNewNote(true);
+        });
+
+        this.dom.newFolderBtn?.addEventListener('click', () => {
+            this.openCreateFolderModal(null);
+        });
+
+        this.dom.closeFolderModalBtn?.addEventListener('click', () => {
+            this.closeFolderModals();
+        });
+
+        this.dom.cancelFolderFormBtn?.addEventListener('click', () => {
+            this.closeFolderModals();
+        });
+
+        this.dom.folderForm?.addEventListener('submit', (e) => {
+            this.handleFolderFormSubmit(e);
+        });
+
+        this.dom.closeDeleteFolderModalBtn?.addEventListener('click', () => {
+            this.closeFolderModals();
+        });
+
+        this.dom.cancelDeleteFolderBtn?.addEventListener('click', () => {
+            this.closeFolderModals();
+        });
+
+        this.dom.confirmDeleteFolderBtn?.addEventListener('click', () => {
+            const folderId = this.dom.deleteFolderTargetId?.value;
+            if (folderId) this.handleDeleteFolder(folderId);
+        });
+
+        this.dom.noteFolderSelect?.addEventListener('change', async (e) => {
+            if (!this.activeNote) return;
+            const rawVal = e.target.value;
+            const targetFolderId = rawVal === '' ? null : parseInt(rawVal, 10);
+            this.activeNote.folder_id = targetFolderId;
+            this.dirtyNotes.add(this.activeNote.id);
+            this.saveDraftLocal();
+            if (targetFolderId) {
+                this.expandedFolderIds.add(targetFolderId);
+                localStorage.setItem('notenux_expanded_folders', JSON.stringify([...this.expandedFolderIds]));
+            }
+            this.renderNotesList();
+            await this.saveNote(this.activeNote, true);
+            this.toast.show(
+                targetFolderId ? 'Scroll dipindahkan ke folder.' : 'Scroll dipindahkan ke Root Directory.',
+                'info',
+                'Pindah Folder',
+                'fa-solid fa-folder text-amber-400'
+            );
+        });
+
+        this.dom.bulkMoveFolderSelect?.addEventListener('change', async (e) => {
+            const val = e.target.value;
+            if (!val || !this.selectedNoteIds || this.selectedNoteIds.size === 0) return;
+            const isRoot = val === 'root';
+            const folderId = isRoot ? null : parseInt(val, 10);
+            await this.executeBulkUpdateNotes({
+                folder_id: folderId,
+                clear_folder: isRoot ? true : false,
+            }, isRoot ? 'Semua gulungan terpilih dipindahkan ke Root Directory.' : 'Semua gulungan terpilih dipindahkan ke folder.');
+            if (folderId) {
+                this.expandedFolderIds.add(folderId);
+                localStorage.setItem('notenux_expanded_folders', JSON.stringify([...this.expandedFolderIds]));
+            }
+            this.dom.bulkMoveFolderSelect.value = '';
         });
 
         this.dom.noteTitleInput?.addEventListener('input', () => {
@@ -3009,9 +3123,32 @@ class NotenuxPanel {
                     color = isDark ? btn.dataset.colorDark : btn.dataset.colorLight;
                 }
                 const type = btn.dataset.colorType || 'foreColor';
+                const token = btn.dataset.colorToken;
 
                 this.restoreEditorSelection();
+                document.execCommand('styleWithCSS', false, true);
                 document.execCommand(type, false, color);
+
+                if (token && type === 'foreColor') {
+                    const sel = window.getSelection ? window.getSelection() : null;
+                    if (sel && sel.rangeCount > 0) {
+                        let node = sel.anchorNode;
+                        if (node && node.nodeType === 3) node = node.parentElement;
+                        if (node && node !== this.dom.editorArea) {
+                            node.classList.add(`retro-color-${token}`);
+                            node.setAttribute('data-color-token', token);
+                        }
+                    }
+                    if (this.dom.editorArea) {
+                        this.dom.editorArea.querySelectorAll('[style*="color"]').forEach(el => {
+                            if (!el.hasAttribute('data-color-token')) {
+                                el.classList.add(`retro-color-${token}`);
+                                el.setAttribute('data-color-token', token);
+                            }
+                        });
+                    }
+                }
+
                 this.dom.editorArea.focus();
                 this.saveEditorSelection();
                 this.handleEditorInput();
@@ -4751,7 +4888,7 @@ class NotenuxPanel {
         }
     }
 
-    async createNewNote(selectImmediately = true) {
+    async createNewNote(selectImmediately = true, options = {}) {
         this.audio.playLevelUp();
         try {
             const count = this.notes.length + 1;
@@ -4759,12 +4896,15 @@ class NotenuxPanel {
                 ? this.activeCategory
                 : (this.categories?.find(category => category.slug === 'catatan')?.slug || this.categories?.[0]?.slug || 'catatan');
 
+            const folderId = options.folder_id ? Number(options.folder_id) : null;
+
             const payload = {
-                title: count === 1 ? 'Catatan Baru' : `Catatan Baru #${count}`,
-                category: defaultCategory,
+                title: options.title || (count === 1 ? 'Catatan Baru' : `Catatan Baru #${count}`),
+                category: options.category || defaultCategory,
+                folder_id: folderId,
                 is_pinned: this.activeCategory === 'pinned',
                 is_favorite: this.activeCategory === 'favorites',
-                content: '<p>Mulai tulis catatan Anda di sini...</p>',
+                content: options.content || '<p>Mulai tulis catatan Anda di sini...</p>',
                 font_family: 'sans',
                 font_size: '16px',
                 theme_color: 'blue',
@@ -4783,6 +4923,12 @@ class NotenuxPanel {
             if (response.ok && data.status === 'success') {
                 const newNote = data.data;
                 this.notes.unshift(newNote);
+
+                if (folderId) {
+                    this.expandedFolderIds.add(folderId);
+                    localStorage.setItem('notenux_expanded_folders', JSON.stringify([...this.expandedFolderIds]));
+                }
+
                 this.renderNotesList();
 
                 if (selectImmediately) {
@@ -5201,6 +5347,9 @@ class NotenuxPanel {
             this.dom.noteTitleInput.placeholder = 'Belum ada catatan dipilih...';
             this.dom.noteTitleInput.readOnly = true;
         }
+        if (this.dom.noteFolderSelect) {
+            this.dom.noteFolderSelect.value = '';
+        }
         if (this.dom.editorArea) {
             this.dom.editorArea.setAttribute?.('contenteditable', 'false');
             this.dom.editorArea.innerHTML = `
@@ -5261,6 +5410,10 @@ class NotenuxPanel {
 
         if (this.dom.noteCategorySelect) {
             this.dom.noteCategorySelect.value = note.category || 'catatan';
+        }
+
+        if (this.dom.noteFolderSelect) {
+            this.dom.noteFolderSelect.value = note.folder_id ? String(note.folder_id) : '';
         }
 
         if (this.dom.editorArea) {
@@ -5408,18 +5561,19 @@ class NotenuxPanel {
             }
         });
 
-        if (filtered.length === 0) {
-            this.dom.notesList.innerHTML = `
-                <div class="p-4 text-center text-xs font-mono text-blue-400/80 border-2 border-dashed border-blue-400/30 rounded-lg">
-                    <i class="fa-solid fa-scroll text-xl mb-1 block opacity-50"></i>
-                    [ TIDAK ADA CATATAN ]<br>
-                    <span class="text-[10px] opacity-75">Klik + Scroll untuk membuat catatan baru</span>
-                </div>
-            `;
-            return;
+        // If search query is active, auto-expand parent folders of matching notes
+        if (this.searchQuery) {
+            filtered.forEach(note => {
+                let currFolderId = note.folder_id ? Number(note.folder_id) : null;
+                while (currFolderId) {
+                    this.expandedFolderIds.add(currFolderId);
+                    const parent = this.folders.find(f => f.id === currFolderId);
+                    currFolderId = parent?.parent_id ? Number(parent.parent_id) : null;
+                }
+            });
         }
 
-        this.dom.notesList.innerHTML = filtered.map(note => {
+        const renderNoteCard = (note) => {
             const isActive = this.activeNote && this.activeNote.id === note.id;
             const isSelected = this.selectedNoteIds?.has(note.id) ?? false;
             const categoryBadge = this.getCategoryBadge(note.category);
@@ -5478,8 +5632,145 @@ class NotenuxPanel {
                     </div>
                 </div>
             `;
-        }).join('');
+        };
 
+        // Recursive renderer for folders and their children to infinite depth
+        const renderFolderNode = (folder, depth = 0) => {
+            const isExpanded = this.expandedFolderIds.has(folder.id);
+            const childFolders = (this.folders || []).filter(f => f.parent_id === folder.id);
+            const childNotes = filtered.filter(n => Number(n.folder_id) === folder.id);
+
+            // If searching or category filtering, verify if folder or any descendant matches
+            if (this.searchQuery) {
+                const folderMatches = (folder.name || '').toLowerCase().includes(this.searchQuery);
+                const hasMatchingDescendant = (fId) => {
+                    const subs = this.folders.filter(sf => sf.parent_id === fId);
+                    return subs.some(sf => (sf.name || '').toLowerCase().includes(this.searchQuery) || filtered.some(n => Number(n.folder_id) === sf.id) || hasMatchingDescendant(sf.id));
+                };
+                if (!folderMatches && childNotes.length === 0 && !hasMatchingDescendant(folder.id)) {
+                    return '';
+                }
+            }
+
+            const totalScrollsCount = childNotes.length;
+
+            return `
+                <div class="folder-tree-node mb-2" data-folder-id="${folder.id}">
+                    <!-- Folder Header Bar -->
+                    <div class="folder-header-row flex items-center justify-between p-2 rounded-lg border-2 border-black/20 dark:border-blue-900/60 bg-surface-alt/70 hover:bg-surface-alt transition-colors select-none">
+                        <div class="flex items-center gap-1.5 min-w-0 flex-1 cursor-pointer folder-toggle-btn" data-folder-id="${folder.id}">
+                            <span class="w-4 text-center text-[10px] text-slate-500 dark:text-cyan-400 shrink-0">
+                                <i class="fa-solid ${isExpanded ? 'fa-chevron-down text-cyan-500' : 'fa-chevron-right'}"></i>
+                            </span>
+                            <i class="${folder.icon || 'fa-solid fa-folder'} ${isExpanded ? 'text-amber-500 dark:text-yellow-400' : 'text-amber-600 dark:text-amber-500'} text-xs shrink-0"></i>
+                            <span class="font-bold text-xs font-mono text-main truncate hover:text-blue-600 dark:hover:text-cyan-300" title="${this.escapeHtml(folder.name)}">
+                                ${this.escapeHtml(folder.name)}
+                            </span>
+                        </div>
+
+                        <!-- Right: Item Count Badge & The 2 Explicit Markers (+ folder, + scroll) -->
+                        <div class="flex items-center gap-1 shrink-0 ml-1">
+                            <!-- Scroll Count Badge -->
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-black/10 dark:bg-black/40 text-slate-700 dark:text-slate-300 border border-black/10 font-bold" title="${totalScrollsCount} scrolls in this folder">
+                                ${totalScrollsCount}
+                            </span>
+
+                            <!-- Marker 1: + icon folder (Add Subfolder) -->
+                            <button type="button"
+                                    class="folder-add-subfolder-btn arcade-btn bg-amber-500 hover:bg-amber-400 text-white px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center gap-0.5 shadow-none hover:shadow-xs"
+                                    data-folder-id="${folder.id}"
+                                    title="Tambah Subfolder Baru didalam ${this.escapeHtml(folder.name)}">
+                                <i class="fa-solid fa-plus text-[8px]"></i>
+                                <i class="fa-solid fa-folder text-[10px]"></i>
+                            </button>
+
+                            <!-- Marker 2: + icon scroll (Add Scroll) -->
+                            <button type="button"
+                                    class="folder-add-scroll-btn arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-1.5 py-0.5 rounded text-[10px] font-mono flex items-center gap-0.5 shadow-none hover:shadow-xs"
+                                    data-folder-id="${folder.id}"
+                                    title="Tambah Scroll Catatan Baru didalam ${this.escapeHtml(folder.name)}">
+                                <i class="fa-solid fa-plus text-[8px]"></i>
+                                <i class="fa-solid fa-scroll text-[10px]"></i>
+                            </button>
+
+                            <!-- Quick Rename Button -->
+                            <button type="button"
+                                    class="folder-rename-btn text-slate-400 hover:text-cyan-400 text-[10px] p-1 shrink-0"
+                                    data-folder-id="${folder.id}"
+                                    title="Ubah Nama Folder">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+
+                            <!-- Quick Delete Button -->
+                            <button type="button"
+                                    class="folder-delete-btn text-slate-400 hover:text-rose-400 text-[10px] p-1 shrink-0"
+                                    data-folder-id="${folder.id}"
+                                    title="Hapus Folder">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Collapsible Children Container (Subfolders and Scrolls) -->
+                    ${isExpanded ? `
+                        <div class="folder-tree-children">
+                            <!-- Child Subfolders (Recursive Nesting) -->
+                            ${childFolders.map(child => renderFolderNode(child, depth + 1)).join('')}
+
+                            <!-- Child Scrolls Inside this Folder -->
+                            ${childNotes.map(note => renderNoteCard(note)).join('')}
+
+                            ${(childFolders.length === 0 && childNotes.length === 0) ? `
+                                <div class="text-[10px] font-mono text-slate-400 dark:text-slate-500 italic py-1 px-1.5 opacity-70">
+                                    [Folder kosong - Klik + folder atau + scroll]
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        };
+
+        // Root folders (parent_id is null or parent doesn't exist)
+        const rootFolders = (this.folders || []).filter(f => !f.parent_id || !this.folders.some(pf => pf.id === f.parent_id));
+
+        // Root notes (folder_id is null or folder doesn't exist)
+        const rootNotes = filtered.filter(n => !n.folder_id || !this.folders.some(f => f.id === Number(n.folder_id)));
+
+        if (rootFolders.length === 0 && filtered.length === 0) {
+            this.dom.notesList.innerHTML = `
+                <div class="p-4 text-center text-xs font-mono text-blue-400/80 border-2 border-dashed border-blue-400/30 rounded-lg">
+                    <i class="fa-solid fa-scroll text-xl mb-1 block opacity-50"></i>
+                    [ TIDAK ADA CATATAN ]<br>
+                    <span class="text-[10px] opacity-75">Klik + Scroll atau + Folder untuk membuat baru</span>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+
+        // Render root folders first
+        rootFolders.forEach(folder => {
+            html += renderFolderNode(folder, 0);
+        });
+
+        // Render root notes
+        if (rootNotes.length > 0) {
+            if (rootFolders.length > 0) {
+                html += `
+                    <div class="flex items-center gap-1.5 my-2 pt-1 border-t border-dashed border-black/15 dark:border-white/10 text-[10px] font-mono text-slate-500 dark:text-slate-400 font-bold px-1 select-none">
+                        <i class="fa-solid fa-scroll text-blue-500 text-[10px]"></i>
+                        <span>ROOT SCROLLS (${rootNotes.length})</span>
+                    </div>
+                `;
+            }
+            html += rootNotes.map(note => renderNoteCard(note)).join('');
+        }
+
+        this.dom.notesList.innerHTML = html;
+
+        // Bind Note Card events
         this.dom.notesList.querySelectorAll('.note-list-card').forEach(card => {
             card.addEventListener('click', () => {
                 const id = parseInt(card.dataset.noteId, 10);
@@ -5497,6 +5788,54 @@ class NotenuxPanel {
                 e.stopPropagation();
                 const id = parseInt(card.dataset.noteId, 10);
                 this.toggleSelectNote(id);
+            });
+        });
+
+        // Bind Folder Events
+        this.dom.notesList.querySelectorAll('.folder-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const folderId = Number(btn.dataset.folderId);
+                if (this.expandedFolderIds.has(folderId)) {
+                    this.expandedFolderIds.delete(folderId);
+                } else {
+                    this.expandedFolderIds.add(folderId);
+                }
+                localStorage.setItem('notenux_expanded_folders', JSON.stringify([...this.expandedFolderIds]));
+                this.audio?.playBlip?.();
+                this.renderNotesList();
+            });
+        });
+
+        this.dom.notesList.querySelectorAll('.folder-add-subfolder-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const folderId = Number(btn.dataset.folderId);
+                this.openCreateFolderModal(folderId);
+            });
+        });
+
+        this.dom.notesList.querySelectorAll('.folder-add-scroll-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const folderId = Number(btn.dataset.folderId);
+                this.createNewNote(true, { folder_id: folderId });
+            });
+        });
+
+        this.dom.notesList.querySelectorAll('.folder-rename-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const folderId = Number(btn.dataset.folderId);
+                this.openEditFolderModal(folderId);
+            });
+        });
+
+        this.dom.notesList.querySelectorAll('.folder-delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const folderId = Number(btn.dataset.folderId);
+                this.openDeleteFolderModal(folderId);
             });
         });
     }
@@ -5670,11 +6009,24 @@ class NotenuxPanel {
                 const idSet = new Set(ids);
                 this.notes.forEach(note => {
                     if (idSet.has(note.id)) {
+                        if (updates.clear_folder) {
+                            note.folder_id = null;
+                        } else if ('folder_id' in updates) {
+                            note.folder_id = updates.folder_id;
+                        }
                         Object.assign(note, updates);
                     }
                 });
 
                 if (this.activeNote && idSet.has(this.activeNote.id)) {
+                    if (updates.clear_folder) {
+                        this.activeNote.folder_id = null;
+                    } else if ('folder_id' in updates) {
+                        this.activeNote.folder_id = updates.folder_id;
+                    }
+                    if (this.dom.noteFolderSelect) {
+                        this.dom.noteFolderSelect.value = this.activeNote.folder_id ? String(this.activeNote.folder_id) : '';
+                    }
                     Object.assign(this.activeNote, updates);
                     if (this.dom.pinBtn && 'is_pinned' in updates) {
                         this.dom.pinBtn.classList.toggle('text-amber-500', Boolean(this.activeNote.is_pinned));
@@ -6174,6 +6526,211 @@ class NotenuxPanel {
                 });
             });
             this.dom.navCategoryLinks = document.querySelectorAll('.nav-category-link');
+        }
+    }
+
+    /* ---------------- FOLDER DIRECTORY MANAGEMENT ---------------- */
+    syncFoldersDOM() {
+        const buildFolderOptions = (parentId = null, prefix = '') => {
+            const children = (this.folders || []).filter(f => (f.parent_id ?? null) === parentId);
+            let opts = '';
+            for (const f of children) {
+                opts += `<option value="${f.id}">${prefix}${prefix ? '└── 📁 ' : '📁 '}${this.escapeHtml(f.name)}</option>`;
+                opts += buildFolderOptions(f.id, prefix + '    ');
+            }
+            return opts;
+        };
+
+        if (this.dom.noteFolderSelect) {
+            const currentVal = this.activeNote?.folder_id ? String(this.activeNote.folder_id) : '';
+            this.dom.noteFolderSelect.innerHTML = `<option value="">[ROOT] Tanpa Folder</option>` + buildFolderOptions();
+            this.dom.noteFolderSelect.value = currentVal;
+        }
+
+        if (this.dom.bulkMoveFolderSelect) {
+            this.dom.bulkMoveFolderSelect.innerHTML = `<option value="">PINDAH FOLDER...</option><option value="root">[ROOT] Tanpa Folder</option>` + buildFolderOptions();
+        }
+    }
+
+    openCreateFolderModal(parentId = null) {
+        if (!this.dom.folderFormModal) return;
+        this.audio.playBlip();
+
+        if (this.dom.folderForm) this.dom.folderForm.reset();
+        if (this.dom.folderFormId) this.dom.folderFormId.value = '';
+
+        if (parentId) {
+            const parent = this.folders.find(f => f.id === Number(parentId));
+            if (this.dom.folderFormParentId) this.dom.folderFormParentId.value = parentId;
+            if (this.dom.folderParentPreviewBox) this.dom.folderParentPreviewBox.classList.remove('hidden');
+            if (this.dom.folderParentNameText) this.dom.folderParentNameText.textContent = parent ? parent.name : 'Parent';
+            if (this.dom.folderModalTitle) this.dom.folderModalTitle.textContent = 'TAMBAH SUBFOLDER';
+            if (this.dom.folderModalHeaderIcon) this.dom.folderModalHeaderIcon.className = 'fa-solid fa-folder-tree text-lg text-amber-200';
+        } else {
+            if (this.dom.folderFormParentId) this.dom.folderFormParentId.value = '';
+            if (this.dom.folderParentPreviewBox) this.dom.folderParentPreviewBox.classList.add('hidden');
+            if (this.dom.folderModalTitle) this.dom.folderModalTitle.textContent = 'BUAT FOLDER BARU';
+            if (this.dom.folderModalHeaderIcon) this.dom.folderModalHeaderIcon.className = 'fa-solid fa-folder-plus text-lg text-amber-200';
+        }
+
+        this.dom.folderFormModal.classList.remove('hidden');
+        setTimeout(() => this.dom.folderFormName?.focus(), 50);
+    }
+
+    openEditFolderModal(folderId) {
+        if (!this.dom.folderFormModal) return;
+        const folder = this.folders.find(f => f.id === Number(folderId));
+        if (!folder) return;
+        this.audio.playBlip();
+
+        if (this.dom.folderFormId) this.dom.folderFormId.value = folder.id;
+        if (this.dom.folderFormParentId) this.dom.folderFormParentId.value = folder.parent_id || '';
+        if (this.dom.folderParentPreviewBox) this.dom.folderParentPreviewBox.classList.add('hidden');
+        if (this.dom.folderFormName) this.dom.folderFormName.value = folder.name;
+        if (this.dom.folderFormColor) this.dom.folderFormColor.value = folder.color || 'amber';
+        if (this.dom.folderFormIcon) this.dom.folderFormIcon.value = folder.icon || 'fa-solid fa-folder';
+        if (this.dom.folderModalTitle) this.dom.folderModalTitle.textContent = 'EDIT FOLDER';
+        if (this.dom.folderModalHeaderIcon) this.dom.folderModalHeaderIcon.className = 'fa-solid fa-pen-to-square text-lg text-amber-200';
+
+        this.dom.folderFormModal.classList.remove('hidden');
+        setTimeout(() => this.dom.folderFormName?.focus(), 50);
+    }
+
+    closeFolderModals() {
+        if (this.dom.folderFormModal) this.dom.folderFormModal.classList.add('hidden');
+        if (this.dom.deleteFolderModal) this.dom.deleteFolderModal.classList.add('hidden');
+    }
+
+    async handleFolderFormSubmit(e) {
+        e.preventDefault();
+        const id = this.dom.folderFormId?.value ? Number(this.dom.folderFormId.value) : null;
+        const parentId = this.dom.folderFormParentId?.value ? Number(this.dom.folderFormParentId.value) : null;
+        const name = (this.dom.folderFormName?.value || '').trim();
+        const color = this.dom.folderFormColor?.value || 'amber';
+        const icon = this.dom.folderFormIcon?.value || 'fa-solid fa-folder';
+
+        if (!name) {
+            this.toast.show('Nama folder wajib diisi.', 'warning');
+            return;
+        }
+
+        const url = id ? `/api/folders/${id}` : '/api/folders';
+        const method = id ? 'PUT' : 'POST';
+        const payload = {
+            name,
+            parent_id: parentId,
+            color,
+            icon,
+        };
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                const savedFolder = data.data;
+                if (id) {
+                    const idx = this.folders.findIndex(f => f.id === id);
+                    if (idx !== -1) this.folders[idx] = savedFolder;
+                } else {
+                    this.folders.push(savedFolder);
+                    if (parentId) this.expandedFolderIds.add(parentId);
+                    this.expandedFolderIds.add(savedFolder.id);
+                    localStorage.setItem('notenux_expanded_folders', JSON.stringify([...this.expandedFolderIds]));
+                }
+
+                this.syncFoldersDOM();
+                this.renderNotesList();
+                this.closeFolderModals();
+                this.audio.playLevelUp();
+                this.toast.show(
+                    id ? `Folder "${savedFolder.name}" berhasil diperbarui.` : `Folder "${savedFolder.name}" berhasil dibuat.`,
+                    'success',
+                    'Folder Directory',
+                    'fa-solid fa-folder-open text-amber-400'
+                );
+            } else {
+                throw new Error(data.message || 'Gagal menyimpan folder.');
+            }
+        } catch (err) {
+            this.toast.show(err.message || 'Gagal menyimpan folder.', 'danger');
+        }
+    }
+
+    openDeleteFolderModal(folderId) {
+        if (!this.dom.deleteFolderModal) return;
+        const folder = this.folders.find(f => f.id === Number(folderId));
+        if (!folder) return;
+        this.audio.playBlip();
+
+        if (this.dom.deleteFolderTargetId) this.dom.deleteFolderTargetId.value = folder.id;
+        if (this.dom.deleteFolderNameText) this.dom.deleteFolderNameText.textContent = `"${folder.name}"`;
+
+        this.dom.deleteFolderModal.classList.remove('hidden');
+    }
+
+    async handleDeleteFolder(folderId) {
+        if (!folderId) return;
+        const id = Number(folderId);
+        const folder = this.folders.find(f => f.id === id);
+        const folderName = folder ? folder.name : 'Folder';
+
+        try {
+            const res = await fetch(`/api/folders/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                // Collect all descendant folder IDs
+                const getDescendantIds = (rootId) => {
+                    const desc = [];
+                    const directChildren = this.folders.filter(f => f.parent_id === rootId);
+                    for (const child of directChildren) {
+                        desc.push(child.id);
+                        desc.push(...getDescendantIds(child.id));
+                    }
+                    return desc;
+                };
+
+                const allDeletedIds = new Set([id, ...getDescendantIds(id)]);
+
+                // Remove from this.folders
+                this.folders = this.folders.filter(f => !allDeletedIds.has(f.id));
+
+                // Notes whose folder_id was deleted become root notes
+                this.notes.forEach(note => {
+                    if (allDeletedIds.has(Number(note.folder_id))) {
+                        note.folder_id = null;
+                    }
+                });
+
+                // Remove from expanded folders
+                allDeletedIds.forEach(did => this.expandedFolderIds.delete(did));
+                localStorage.setItem('notenux_expanded_folders', JSON.stringify([...this.expandedFolderIds]));
+
+                this.syncFoldersDOM();
+                this.renderNotesList();
+                this.closeFolderModals();
+                this.audio.playBlip();
+                this.toast.show(`Folder "${folderName}" berhasil dihapus.`, 'success', 'Folder Deleted');
+            } else {
+                throw new Error(data.message || 'Gagal menghapus folder.');
+            }
+        } catch (err) {
+            this.toast.show(err.message || 'Gagal menghapus folder.', 'danger');
         }
     }
 

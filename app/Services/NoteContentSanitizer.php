@@ -37,7 +37,7 @@ class NoteContentSanitizer
             foreach (iterator_to_array($element->attributes) as $attribute) {
                 $name = strtolower($attribute->name);
                 $value = $attribute->value;
-                $safe = in_array($name, ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable'], true)
+                $safe = in_array($name, ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable', 'data-color-token'], true)
                     || ($name === 'id' && preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*$/', $value) && ! in_array(strtolower($value), self::RESERVED_DOM_IDS, true))
                     || (in_array($name, ['checked', 'disabled'], true) && $tag === 'input')
                     || ($name === 'type' && $tag === 'input' && $value === 'checkbox')

@@ -539,14 +539,20 @@
                     </button>
                 </div>
 
-                <!-- New Note Action & Import Button Row -->
-                <div class="flex items-center gap-2 mb-3">
+                <!-- New Note Action, Folder Action & Import Button Row -->
+                <div class="flex items-center gap-1.5 mb-3">
                     <button id="new-note-btn"
-                            class="arcade-btn flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-2.5 rounded text-xs font-mono tracking-wider">
-                        <i class="fa-solid fa-plus mr-1.5"></i> NEW SCROLL
+                            class="arcade-btn flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-2 rounded text-[11px] font-mono tracking-wider"
+                            title="Create a new root Scroll">
+                        <i class="fa-solid fa-plus mr-1"></i> SCROLL
+                    </button>
+                    <button id="new-folder-btn"
+                            class="arcade-btn bg-amber-600 hover:bg-amber-500 text-white py-2 px-2 rounded text-[11px] font-mono tracking-wider"
+                            title="Create a new root Folder in Directory">
+                        <i class="fa-solid fa-folder-plus mr-1"></i> FOLDER
                     </button>
                     <button id="import-note-btn"
-                            class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-2.5 rounded text-xs font-mono tracking-wider"
+                            class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white py-2 px-2 rounded text-[11px] font-mono tracking-wider"
                             title="Import Markdown (.md) or Text file into a new Scroll">
                         <i class="fa-solid fa-file-import mr-1"></i> IMPORT
                     </button>
@@ -621,6 +627,18 @@
                             @if(isset($categories) && $categories->isNotEmpty())
                                 @foreach($categories as $category)
                                     <option value="{{ $category->slug }}">{{ $category->name }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <select id="bulk-move-folder-select"
+                                disabled
+                                class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed text-main py-1 px-1.5 rounded text-[10px] font-mono font-bold border border-black/40 shadow-[1px_1px_0px_#000] cursor-pointer"
+                                title="Pindahkan gulungan terpilih ke folder">
+                            <option value="">PINDAH FOLDER...</option>
+                            <option value="root">[ROOT] Tanpa Folder</option>
+                            @if(isset($folders) && $folders->isNotEmpty())
+                                @foreach($folders as $folder)
+                                    <option value="{{ $folder->id }}">{{ $folder->name }}</option>
                                 @endforeach
                             @endif
                         </select>
@@ -722,6 +740,19 @@
                                     @else
                                         <option value="catatan">[CATATAN] Catatan</option>
                                         <option value="tugas">[TUGAS] Tugas</option>
+                                    @endif
+                                </select>
+                            </div>
+
+                            <!-- Compact Folder Pill Dropdown -->
+                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-0 flex-1 sm:flex-initial max-w-[130px] sm:max-w-[150px]" title="Folder Naskah / Direktori Gulungan">
+                                <i class="fa-solid fa-folder text-amber-500 dark:text-yellow-400 text-xs shrink-0"></i>
+                                <select id="note-folder-select" class="w-full bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer truncate">
+                                    <option value="">[ROOT] Tanpa Folder</option>
+                                    @if(isset($folders) && $folders->isNotEmpty())
+                                        @foreach($folders as $folder)
+                                            <option value="{{ $folder->id }}" {{ isset($activeNote) && $activeNote->folder_id === $folder->id ? 'selected' : '' }}>{{ $folder->name }}</option>
+                                        @endforeach
                                     @endif
                                 </select>
                             </div>
@@ -1011,31 +1042,31 @@
                                     <div id="editor-deck-2-palette" class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] px-1.5 h-7 shrink-0" title="Palet Pewarnaan Naskah & Teks (Adaptif Dark & Light Mode)">
                                         <span class="text-[10px] font-mono font-bold text-slate-500 mr-0.5 shrink-0" title="Warna Font"><i class="fa-solid fa-palette text-blue-500"></i></span>
                                         <!-- Black / Theme Text (Auto Contrast) -->
-                                        <button data-color="#000000" data-color-light="#0f172a" data-color-dark="#f8fafc" data-color-name="Kontras Utama (Hitam/Putih)" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-black dark:bg-slate-100 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0 shadow-xs" title="Kontras Utama (Hitam di Terang, Putih di Gelap)"></button>
+                                        <button data-color="#000000" data-color-light="#0f172a" data-color-dark="#f8fafc" data-color-token="black" data-color-name="Kontras Utama (Hitam/Putih)" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-black dark:bg-slate-100 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0 shadow-xs" title="Kontras Utama (Hitam di Terang, Putih di Gelap)"></button>
                                         <!-- Charcoal -->
-                                        <button data-color="#1f2937" data-color-light="#1e293b" data-color-dark="#cbd5e1" data-color-name="Charcoal / Abu Tua" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-gray-800 dark:bg-slate-300 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Dark Charcoal (Gelap di Terang, Terang di Gelap)"></button>
+                                        <button data-color="#1f2937" data-color-light="#1e293b" data-color-dark="#cbd5e1" data-color-token="charcoal" data-color-name="Charcoal / Abu Tua" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-gray-800 dark:bg-slate-300 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Dark Charcoal (Gelap di Terang, Terang di Gelap)"></button>
                                         <!-- Slate Gray -->
-                                        <button data-color="#64748b" data-color-light="#475569" data-color-dark="#94a3b8" data-color-name="Slate Gray" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-slate-600 dark:bg-slate-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Slate Gray (Gelap di Terang, Terang di Gelap)"></button>
+                                        <button data-color="#64748b" data-color-light="#475569" data-color-dark="#94a3b8" data-color-token="slate" data-color-name="Slate Gray" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-slate-600 dark:bg-slate-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Slate Gray (Gelap di Terang, Terang di Gelap)"></button>
                                         <!-- White / Light -->
-                                        <button data-color="#f8fafc" data-color-light="#334155" data-color-dark="#ffffff" data-color-name="Monokrom Terang" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-slate-200 dark:bg-white border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Putih / Monokrom (Gelap di Terang, Putih Terang di Gelap)"></button>
+                                        <button data-color="#f8fafc" data-color-light="#334155" data-color-dark="#ffffff" data-color-token="white" data-color-name="Monokrom Terang" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-slate-200 dark:bg-white border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Putih / Monokrom (Gelap di Terang, Putih Terang di Gelap)"></button>
                                         <!-- Crimson Red -->
-                                        <button data-color="#ef4444" data-color-light="#991b1b" data-color-dark="#f87171" data-color-name="Merah Crimson" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-red-800 dark:bg-red-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Merah Crimson (Merah Tua di Terang, Merah Terang di Gelap)"></button>
+                                        <button data-color="#ef4444" data-color-light="#991b1b" data-color-dark="#f87171" data-color-token="red" data-color-name="Merah Crimson" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-red-800 dark:bg-red-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Merah Crimson (Merah Tua di Terang, Merah Terang di Gelap)"></button>
                                         <!-- Flame Orange -->
-                                        <button data-color="#f97316" data-color-light="#c2410c" data-color-dark="#fb923c" data-color-name="Jingga / Retro Orange" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-orange-700 dark:bg-orange-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Jingga / Retro Orange (Jingga Tua di Terang, Oranye Terang di Gelap)"></button>
+                                        <button data-color="#f97316" data-color-light="#c2410c" data-color-dark="#fb923c" data-color-token="orange" data-color-name="Jingga / Retro Orange" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-orange-700 dark:bg-orange-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Jingga / Retro Orange (Jingga Tua di Terang, Oranye Terang di Gelap)"></button>
                                         <!-- Pixel Gold / Amber -->
-                                        <button data-color="#f59e0b" data-color-light="#b45309" data-color-dark="#fde047" data-color-name="Pixel Gold / Amber" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-amber-700 dark:bg-yellow-300 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Pixel Gold / Amber (Coklat Emas di Terang, Kuning Terang di Gelap)"></button>
+                                        <button data-color="#f59e0b" data-color-light="#b45309" data-color-dark="#fde047" data-color-token="amber" data-color-name="Pixel Gold / Amber" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-amber-700 dark:bg-yellow-300 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Pixel Gold / Amber (Coklat Emas di Terang, Kuning Terang di Gelap)"></button>
                                         <!-- Lime Green -->
-                                        <button data-color="#84cc16" data-color-light="#3f6212" data-color-dark="#bef264" data-color-name="Hijau Lime" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-lime-800 dark:bg-lime-300 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Hijau Lime (Hijau Tua di Terang, Neon Lime Terang di Gelap)"></button>
+                                        <button data-color="#84cc16" data-color-light="#3f6212" data-color-dark="#bef264" data-color-token="lime" data-color-name="Hijau Lime" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-lime-800 dark:bg-lime-300 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Hijau Lime (Hijau Tua di Terang, Neon Lime Terang di Gelap)"></button>
                                         <!-- Emerald Green -->
-                                        <button data-color="#10b981" data-color-light="#065f46" data-color-dark="#4ade80" data-color-name="Emerald Glow" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-emerald-800 dark:bg-emerald-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Emerald Glow (Hijau Tua di Terang, Hijau Terang di Gelap)"></button>
+                                        <button data-color="#10b981" data-color-light="#065f46" data-color-dark="#4ade80" data-color-token="emerald" data-color-name="Emerald Glow" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-emerald-800 dark:bg-emerald-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Emerald Glow (Hijau Tua di Terang, Hijau Terang di Gelap)"></button>
                                         <!-- Neon Cyan -->
-                                        <button data-color="#06b6d4" data-color-light="#0e7490" data-color-dark="#38bdf8" data-color-name="Neon Cyan" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-cyan-800 dark:bg-cyan-300 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Neon Cyan (Cyan Tua di Terang, Neon Cyan Terang di Gelap)"></button>
+                                        <button data-color="#06b6d4" data-color-light="#0e7490" data-color-dark="#38bdf8" data-color-token="cyan" data-color-name="Neon Cyan" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-cyan-800 dark:bg-cyan-300 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Neon Cyan (Cyan Tua di Terang, Neon Cyan Terang di Gelap)"></button>
                                         <!-- Arcade Blue -->
-                                        <button data-color="#3b82f6" data-color-light="#1e40af" data-color-dark="#60a5fa" data-color-name="Arcade Blue" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-blue-800 dark:bg-blue-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Arcade Blue (Biru Tua di Terang, Biru Terang di Gelap)"></button>
+                                        <button data-color="#3b82f6" data-color-light="#1e40af" data-color-dark="#60a5fa" data-color-token="blue" data-color-name="Arcade Blue" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-blue-800 dark:bg-blue-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Arcade Blue (Biru Tua di Terang, Biru Terang di Gelap)"></button>
                                         <!-- Mystic Purple -->
-                                        <button data-color="#a855f7" data-color-light="#581c87" data-color-dark="#c084fc" data-color-name="Mystic Purple" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-purple-900 dark:bg-purple-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Mystic Purple (Ungu Tua di Terang, Lavender Terang di Gelap)"></button>
+                                        <button data-color="#a855f7" data-color-light="#581c87" data-color-dark="#c084fc" data-color-token="purple" data-color-name="Mystic Purple" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-purple-900 dark:bg-purple-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Mystic Purple (Ungu Tua di Terang, Lavender Terang di Gelap)"></button>
                                         <!-- Retro Pink / Magenta -->
-                                        <button data-color="#ec4899" data-color-light="#9d174d" data-color-dark="#f472b6" data-color-name="Retro Pink / Magenta" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-pink-800 dark:bg-pink-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Retro Pink / Magenta (Magenta Tua di Terang, Pink Terang di Gelap)"></button>
+                                        <button data-color="#ec4899" data-color-light="#9d174d" data-color-dark="#f472b6" data-color-token="pink" data-color-name="Retro Pink / Magenta" data-color-type="foreColor" class="adaptive-color-swatch w-3.5 h-3.5 rounded-full bg-pink-800 dark:bg-pink-400 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Retro Pink / Magenta (Magenta Tua di Terang, Pink Terang di Gelap)"></button>
                                         <!-- Custom Text Color Input -->
                                         <label class="relative inline-flex items-center cursor-pointer shrink-0" title="Pilih Warna Teks Bebas (RGB Custom Color)">
                                             <input type="color" id="custom-text-color-picker" value="#000000" class="w-3.5 h-3.5 rounded-full cursor-pointer border border-black/50 p-0 overflow-hidden opacity-0 absolute inset-0">
@@ -1918,6 +1949,109 @@
     </div>
 
     <!-- ============================================================================== -->
+    <!-- FOLDER CREATE & EDIT MODAL -->
+    <!-- ============================================================================== -->
+    <div id="folder-form-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-md bg-[var(--bg-surface)] rounded-xl border-4 border-amber-500 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden">
+            <div class="p-3.5 bg-amber-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i id="folder-modal-header-icon" class="fa-solid fa-folder-plus text-lg text-amber-200"></i>
+                    <h3 id="folder-modal-title" class="font-pixel text-xs tracking-wider">NEW FOLDER</h3>
+                </div>
+                <button type="button" id="close-folder-modal-btn" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="folder-form" class="p-4 space-y-3 font-mono text-xs">
+                <input type="hidden" id="folder-form-id" value="">
+                <input type="hidden" id="folder-form-parent-id" value="">
+
+                <div id="folder-parent-preview-box" class="hidden p-2 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-[11px] text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-turn-up rotate-90 text-amber-600 dark:text-amber-400"></i>
+                    <span>Subfolder didalam: <strong id="folder-parent-name-text">Root</strong></span>
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Nama Folder <span class="text-rose-500">*</span></label>
+                    <input type="text" id="folder-form-name" required placeholder="Contoh: Projek Rahasia, Lore Bab 1..." class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none focus:border-amber-400">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">Warna Folder</label>
+                        <select id="folder-form-color" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
+                            <option value="amber" selected>Amber Gold</option>
+                            <option value="cyan">Neon Cyan</option>
+                            <option value="blue">Arcade Blue</option>
+                            <option value="emerald">Emerald Glow</option>
+                            <option value="rose">Crimson Red</option>
+                            <option value="purple">Arcane Purple</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Icon Folder</label>
+                        <select id="folder-form-icon" class="w-full p-2 bg-surface-alt border border-black/30 rounded text-xs focus:outline-none">
+                            <option value="fa-solid fa-folder">Folder Standar</option>
+                            <option value="fa-solid fa-folder-closed">Folder Rapat</option>
+                            <option value="fa-solid fa-box-archive">Arsip Box</option>
+                            <option value="fa-solid fa-book-bookmark">Grimoire Book</option>
+                            <option value="fa-solid fa-scroll">Ancient Scroll</option>
+                            <option value="fa-solid fa-shield-halved">Shield Vault</option>
+                            <option value="fa-solid fa-gem">Gem Matrix</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2 border-t border-black/10">
+                    <button type="button" id="cancel-folder-form-btn" class="arcade-btn bg-surface hover:bg-slate-200 dark:hover:bg-slate-800 text-main px-3 py-1.5 rounded text-xs">
+                        BATAL
+                    </button>
+                    <button type="submit" id="save-folder-form-btn" class="arcade-btn bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded text-xs flex items-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-check"></i> SIMPAN FOLDER
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- QUICK DELETE FOLDER CONFIRMATION MODAL -->
+    <!-- ============================================================================== -->
+    <div id="delete-folder-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
+        <div class="arcade-card w-full max-w-md bg-[var(--bg-surface)] rounded-xl border-4 border-rose-600 shadow-[8px_8px_0px_#000] flex flex-col overflow-hidden">
+            <div class="p-3.5 bg-rose-600 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-lg text-yellow-300"></i>
+                    <h3 class="font-pixel text-xs tracking-wider">BANISH FOLDER</h3>
+                </div>
+                <button type="button" id="close-delete-folder-modal-btn" class="arcade-btn bg-black text-white px-2 py-0.5 rounded text-xs font-mono">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-4 space-y-3 font-mono text-xs">
+                <input type="hidden" id="delete-folder-target-id" value="">
+                <p class="text-main leading-relaxed">
+                    Apakah Anda yakin ingin memusnahkan folder <strong id="delete-folder-name-text" class="text-rose-600 dark:text-rose-400">...</strong>?
+                </p>
+                <div class="p-2.5 rounded bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900 text-[11px] text-rose-800 dark:text-rose-200">
+                    <i class="fa-solid fa-circle-info mr-1"></i> Subfolder didalamnya akan ikut terhapus. Gulungan catatan yang ada didalam folder ini tidak akan terhapus, melainkan otomatis dialihkan menjadi gulungan di Root Directory.
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2 border-t border-black/10">
+                    <button type="button" id="cancel-delete-folder-btn" class="arcade-btn bg-surface hover:bg-slate-200 dark:hover:bg-slate-800 text-main px-3 py-1.5 rounded text-xs">
+                        BATAL
+                    </button>
+                    <button type="button" id="confirm-delete-folder-btn" class="arcade-btn bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded text-xs flex items-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-trash-can"></i> BANISH FOLDER
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
     <!-- MARKDOWN EDITOR & LIVE PREVIEW MODAL -->
     <!-- ============================================================================== -->
     <div id="markdown-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 hidden">
@@ -2207,6 +2341,9 @@
     </script>
     <script id="initial-categories-data" type="application/json">
         {!! json_encode($categories ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
+    </script>
+    <script id="initial-folders-data" type="application/json">
+        {!! json_encode($folders ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
     </script>
     <input type="hidden" id="initial-active-note-id" value="{{ $activeNote->id ?? '' }}">
 

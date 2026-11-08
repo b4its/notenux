@@ -31,6 +31,7 @@ class Note extends Model
      */
     protected $fillable = [
         'user_id',
+        'folder_id',
         'uuid',
         'title',
         'category',
@@ -55,6 +56,7 @@ class Note extends Model
     {
         return [
             'user_id' => 'integer',
+            'folder_id' => 'integer',
             'is_pinned' => 'boolean',
             'is_favorite' => 'boolean',
             'word_count' => 'integer',
@@ -72,6 +74,16 @@ class Note extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * The folder that contains this note.
+     *
+     * @return BelongsTo<Folder, $this>
+     */
+    public function folder(): BelongsTo
+    {
+        return $this->belongsTo(Folder::class);
     }
 
     /**

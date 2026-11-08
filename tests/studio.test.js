@@ -3091,6 +3091,184 @@ test('white-box: updateAdaptiveColorPalette dynamically switches text colors bet
     assert.equal(mockSwatches[1].style.backgroundColor, '#0e7490');
 });
 
+test('white-box: renderNotesList recursively renders nested folders and includes both marker buttons', async () => {
+    const { panel, context } = harness(() => Promise.resolve(response({})));
+
+    panel.renderNotesList = context.Panel.prototype.renderNotesList.bind(panel);
+    panel.getFilteredNotes = context.Panel.prototype.getFilteredNotes.bind(panel);
+    panel.getCategoryBadge = context.Panel.prototype.getCategoryBadge.bind(panel);
+    panel.escapeHtml = context.Panel.prototype.escapeHtml.bind(panel);
+    panel.formatDateTime = context.Panel.prototype.formatDateTime.bind(panel);
+    panel.formatDateCompact = context.Panel.prototype.formatDateCompact.bind(panel);
+
+    panel.dom.notesList = {
+        innerHTML: '',
+        querySelectorAll: () => [],
+    };
+
+    // Create 3-level folder hierarchy: Root -> Child -> Grandchild
+    panel.folders = [
+        { id: 1, name: 'Root Lore', parent_id: null, color: 'amber', icon: 'fa-solid fa-folder' },
+        { id: 2, name: 'Arcane Subfolder', parent_id: 1, color: 'cyan', icon: 'fa-solid fa-folder' },
+        { id: 3, name: 'Deep Secret Vault', parent_id: 2, color: 'purple', icon: 'fa-solid fa-folder' },
+    ];
+    panel.expandedFolderIds = new Set([1, 2, 3]);
+
+    panel.notes = [
+        { id: 101, title: 'Scroll in Root', folder_id: 1, category: 'catatan', chunks_count: 2 },
+        { id: 102, title: 'Scroll in Arcane', folder_id: 2, category: 'catatan', chunks_count: 1 },
+        { id: 103, title: 'Scroll in Deep Vault', folder_id: 3, category: 'catatan', chunks_count: 3 },
+        { id: 104, title: 'Unbound Root Scroll', folder_id: null, category: 'catatan', chunks_count: 1 },
+    ];
+    panel.activeCategory = 'all';
+    panel.searchQuery = '';
+
+    panel.renderNotesList();
+
+    const renderedHtml = panel.dom.notesList.innerHTML;
+
+    // Verify all folders are present
+    assert.match(renderedHtml, /Root Lore/);
+    assert.match(renderedHtml, /Arcane Subfolder/);
+    assert.match(renderedHtml, /Deep Secret Vault/);
+
+    // Verify all notes are present
+    assert.match(renderedHtml, /Scroll in Root/);
+    assert.match(renderedHtml, /Scroll in Arcane/);
+    assert.match(renderedHtml, /Scroll in Deep Vault/);
+    assert.match(renderedHtml, /Unbound Root Scroll/);
+
+    // Verify the TWO EXPLICIT MARKER BUTTONS exist on folder badges
+    // Marker 1: folder-add-subfolder-btn with + icon and folder icon
+    assert.match(renderedHtml, /folder-add-subfolder-btn/);
+    assert.match(renderedHtml, /fa-solid fa-plus text-\[8px\]/);
+    assert.match(renderedHtml, /fa-solid fa-folder text-\[10px\]/);
+
+    // Marker 2: folder-add-scroll-btn with + icon and scroll icon
+    assert.match(renderedHtml, /folder-add-scroll-btn/);
+    assert.match(renderedHtml, /fa-solid fa-scroll text-\[10px\]/);
+
+    // Verify tree indentation container
+    assert.match(renderedHtml, /folder-tree-children/);
+});
+
+test('white-box: updateAdaptiveColorPalette synchronizes elements with data-color-token in editor area', async () => {
+    const { panel, context } = harness(() => Promise.resolve(response({})));
+    panel.updateAdaptiveColorPalette = context.Panel.prototype.updateAdaptiveColorPalette.bind(panel);
+
+    const mockTaggedSpan = {
+        style: { color: '#0f172a' },
+        getAttribute: (attr) => attr === 'data-color-token' ? 'black' : null,
+    };
+
+    const mockBlackSwatch = {
+        dataset: {
+            color: '#0f172a',
+            colorLight: '#0f172a',
+            colorDark: '#f8fafc',
+            colorToken: 'black',
+            colorName: 'Kontras Utama',
+        },
+        style: { backgroundColor: '#0f172a' },
+        getAttribute: (attr) => attr === 'data-color-name' ? 'Kontras Utama' : null,
+        setAttribute: () => {},
+    };
+
+    context.document.querySelectorAll = (sel) => {
+        if (sel.includes('adaptive-color-swatch') || sel.includes('[data-color]')) {
+            return [mockBlackSwatch];
+        }
+        return [];
+    };
+
+    panel.dom.editorArea = {
+        querySelectorAll: (sel) => {
+            if (sel.includes('[data-color-token]')) {
+                return [mockTaggedSpan];
+            }
+            return [];
+        },
+    };
+
+    context.document.querySelector = (sel) => {
+        if (sel.includes('data-color-token="black"')) {
+            return mockBlackSwatch;
+        }
+        return null;
+    };
+
+    // In dark mode: Black shifts to bright white (#f8fafc)
+    panel.updateAdaptiveColorPalette('dark');
+    assert.equal(mockTaggedSpan.style.color, '#f8fafc');
+    assert.equal(mockBlackSwatch.dataset.color, '#f8fafc');
+
+    // In light mode: Black shifts to deep dark (#0f172a)
+    panel.updateAdaptiveColorPalette('light');
+    assert.equal(mockTaggedSpan.style.color, '#0f172a');
+    assert.equal(mockBlackSwatch.dataset.color, '#0f172a');
+});
+
+test('white-box: openCreateFolderModal configures subfolder state when parentId is passed', async () => {
+    const { panel, context } = harness(() => Promise.resolve(response({})));
+    panel.openCreateFolderModal = context.Panel.prototype.openCreateFolderModal.bind(panel);
+
+    panel.folders = [
+        { id: 42, name: 'Dungeon Codex', parent_id: null },
+    ];
+
+    panel.dom.folderFormModal = { classList: { remove: () => {}, add: () => {} } };
+    panel.dom.folderForm = { reset: () => {} };
+    panel.dom.folderFormId = { value: '' };
+    panel.dom.folderFormParentId = { value: '' };
+    panel.dom.folderParentPreviewBox = { classList: { remove: () => {}, add: () => {} } };
+    panel.dom.folderParentNameText = { textContent: '' };
+    panel.dom.folderModalTitle = { textContent: '' };
+    panel.dom.folderModalHeaderIcon = { className: '' };
+
+    // Create root folder (parentId = null)
+    panel.openCreateFolderModal(null);
+    assert.equal(panel.dom.folderFormParentId.value, '');
+    assert.equal(panel.dom.folderModalTitle.textContent, 'BUAT FOLDER BARU');
+
+    // Create subfolder inside folder 42
+    panel.openCreateFolderModal(42);
+    assert.equal(panel.dom.folderFormParentId.value, 42);
+    assert.equal(panel.dom.folderParentNameText.textContent, 'Dungeon Codex');
+    assert.equal(panel.dom.folderModalTitle.textContent, 'TAMBAH SUBFOLDER');
+});
+
+test('white-box: syncFoldersDOM builds indented tree options for note and bulk move selects', async () => {
+    const { panel, context } = harness(() => Promise.resolve(response({})));
+    panel.syncFoldersDOM = context.Panel.prototype.syncFoldersDOM.bind(panel);
+    panel.escapeHtml = context.Panel.prototype.escapeHtml.bind(panel);
+
+    panel.folders = [
+        { id: 10, name: 'Root Folder', parent_id: null },
+        { id: 20, name: 'Nested Subfolder', parent_id: 10 },
+    ];
+
+    panel.dom.noteFolderSelect = { innerHTML: '', value: '' };
+    panel.dom.bulkMoveFolderSelect = { innerHTML: '', value: '' };
+    panel.activeNote = { id: 1, folder_id: 20 };
+
+    panel.syncFoldersDOM();
+
+    // Verify option text and values
+    assert.match(panel.dom.noteFolderSelect.innerHTML, /\[ROOT\] Tanpa Folder/);
+    assert.match(panel.dom.noteFolderSelect.innerHTML, /value="10"/);
+    assert.match(panel.dom.noteFolderSelect.innerHTML, /📁 Root Folder/);
+    assert.match(panel.dom.noteFolderSelect.innerHTML, /value="20"/);
+    assert.match(panel.dom.noteFolderSelect.innerHTML, /└── 📁 Nested Subfolder/);
+
+    // Verify selected value is set to active note's folder_id
+    assert.equal(panel.dom.noteFolderSelect.value, '20');
+
+    // Verify bulk move folder select
+    assert.match(panel.dom.bulkMoveFolderSelect.innerHTML, /PINDAH FOLDER\.\.\./);
+    assert.match(panel.dom.bulkMoveFolderSelect.innerHTML, /\[ROOT\] Tanpa Folder/);
+});
+
+
 
 
 
