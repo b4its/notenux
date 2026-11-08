@@ -2234,6 +2234,316 @@ test('white-box: sanitizeHtml allows target and rel on anchor tags and disabled 
     assert.equal(isRemoved, false);
 });
 
+test('white-box: initPasteInterceptor wraps pasted image in retro figure with center align and editable caption', () => {
+    const listeners = new Map();
+    const mockEditorArea = {
+        addEventListener(event, fn) { listeners.set(event, fn); },
+        cloneNode: () => ({ innerHTML: '', querySelectorAll: () => [] }),
+        innerText: '',
+        querySelector: () => null
+    };
+
+    const { panel, messages, context } = harness(() => Promise.resolve({ ok: true }));
+    panel.dom.editorArea = mockEditorArea;
+
+    let insertedHtml = '';
+    context.document.execCommand = (cmd, showUi, val) => {
+        insertedHtml = val;
+    };
+
+    context.document.createElement = (tag) => {
+        const el = {
+            tagName: tag.toUpperCase(),
+            src: '',
+            alt: '',
+            className: '',
+            innerHTML: '',
+            textContent: '',
+            children: [],
+            appendChild(child) { this.children.push(child); },
+            setAttribute(k, v) { this[k] = v; },
+            get outerHTML() {
+                if (this.tagName === 'IMG') {
+                    return `<img src="${this.src}" alt="${this.alt}" class="${this.className}">`;
+                }
+                const alignAttr = this['data-align'] ? ` data-align="${this['data-align']}"` : '';
+                const body = (this.children.length > 0) ? this.children.map(c => c.outerHTML).join('') : (this.innerHTML || this.textContent || '');
+                return `<${this.tagName.toLowerCase()}${alignAttr} class="${this.className}">${body}</${this.tagName.toLowerCase()}>`;
+            }
+        };
+        return el;
+    };
+
+    context.FileReader = class {
+        readAsDataURL() {
+            this.onload({ target: { result: 'data:image/png;base64,MYPASTEDIMAGE' } });
+        }
+    };
+
+    panel.initPasteInterceptor();
+    const pasteHandler = listeners.get('paste');
+    assert.ok(pasteHandler);
+
+    const fakeImageFile = { type: 'image/png', name: 'screenshot.png' };
+    const fakeEvent = {
+        clipboardData: {
+            items: [{ type: 'image/png', getAsFile: () => fakeImageFile }],
+            getData: () => '',
+        },
+        preventDefault() {}
+    };
+
+    pasteHandler(fakeEvent);
+
+    assert.ok(insertedHtml.includes('<figure'));
+    assert.ok(insertedHtml.includes('retro-align-center'));
+    assert.ok(insertedHtml.includes('data-align="center"'));
+    assert.ok(insertedHtml.includes('data:image/png;base64,MYPASTEDIMAGE'));
+    assert.ok(insertedHtml.includes('<figcaption'));
+    assert.ok(insertedHtml.includes('Tambahkan caption gambar...'));
+    assert.ok(messages.some(m => m[0] === 'Image pasted into scroll!'));
+});
+
+test('white-box: alignActiveImage updates alignment to left, center, right and adapts classes and styles', () => {
+    const { panel } = harness();
+    panel.dom.editorArea = {
+        innerText: '',
+        querySelector: () => null,
+        cloneNode: () => ({ innerHTML: '', querySelectorAll: () => [] })
+    };
+    panel.updateWordAndCharMetrics = () => {};
+    let badgeText = '';
+    let barClasses = new Set(['hidden']);
+
+    panel.dom.imageAlignBadge = {
+        get textContent() { return badgeText; },
+        set textContent(v) { badgeText = v; }
+    };
+    panel.dom.imageToolkitBar = {
+        classList: {
+            remove(c) { barClasses.delete(c); },
+            add(c) { barClasses.add(c); },
+            contains(c) { return barClasses.has(c); }
+        }
+    };
+
+    const figureClasses = new Set(['retro-image-figure', 'retro-align-center']);
+    const mockFigure = {
+        style: {},
+        dataset: { align: 'center' },
+        classList: {
+            add(...args) { args.forEach(c => figureClasses.add(c)); },
+            remove(...args) { args.forEach(c => figureClasses.delete(c)); },
+            contains(c) { return figureClasses.has(c); }
+        },
+        setAttribute(k, v) { this.dataset[k.replace('data-', '')] = v; }
+    };
+
+    const imgClasses = new Set();
+    const mockImg = {
+        tagName: 'IMG',
+        classList: {
+            add(...args) { args.forEach(c => imgClasses.add(c)); },
+            remove(...args) { args.forEach(c => imgClasses.delete(c)); },
+            contains(c) { return imgClasses.has(c); }
+        },
+        closest(sel) { return sel === 'figure' ? mockFigure : null; }
+    };
+
+    panel.setActiveImage(mockImg);
+    assert.equal(panel.activeImage, mockImg);
+    assert.equal(panel.activeImageFigure, mockFigure);
+    assert.equal(barClasses.has('hidden'), false);
+    assert.equal(badgeText, 'CENTER');
+
+    // Align left
+    panel.alignActiveImage('left');
+    assert.equal(badgeText, 'LEFT');
+    assert.equal(mockFigure.dataset.align, 'left');
+    assert.equal(mockFigure.style.textAlign, 'left');
+    assert.equal(mockFigure.style.marginLeft, '0');
+    assert.equal(figureClasses.has('retro-align-left'), true);
+    assert.equal(figureClasses.has('retro-align-center'), false);
+
+    // Align right
+    panel.alignActiveImage('right');
+    assert.equal(badgeText, 'RIGHT');
+    assert.equal(mockFigure.dataset.align, 'right');
+    assert.equal(mockFigure.style.textAlign, 'right');
+    assert.equal(mockFigure.style.marginRight, '0');
+    assert.equal(figureClasses.has('retro-align-right'), true);
+    assert.equal(figureClasses.has('retro-align-left'), false);
+
+    // Align center
+    panel.alignActiveImage('center');
+    assert.equal(badgeText, 'CENTER');
+    assert.equal(mockFigure.dataset.align, 'center');
+    assert.equal(mockFigure.style.textAlign, 'center');
+    assert.equal(figureClasses.has('retro-align-center'), true);
+});
+
+test('white-box: promptActiveImageCaption sets and updates figcaption on active image figure', () => {
+    const { panel, context } = harness();
+    panel.dom.editorArea = {
+        innerText: '',
+        querySelector: () => null,
+        cloneNode: () => ({ innerHTML: '', querySelectorAll: () => [] })
+    };
+    panel.updateWordAndCharMetrics = () => {};
+
+    let promptAnswer = 'Kucing Arcade';
+    context.prompt = () => promptAnswer;
+
+    let figcaptionText = '';
+    const mockFigcaption = {
+        get textContent() { return figcaptionText; },
+        set textContent(v) { figcaptionText = v; },
+        remove() { isFigcaptionRemoved = true; },
+        setAttribute() {}
+    };
+    let isFigcaptionRemoved = false;
+
+    const mockFigure = {
+        querySelector(sel) {
+            if (sel === 'figcaption') return mockFigcaption;
+            return null;
+        },
+        appendChild() {}
+    };
+
+    const mockImg = {
+        tagName: 'IMG',
+        closest(sel) { return sel === 'figure' ? mockFigure : null; },
+        classList: { add() {}, remove() {} }
+    };
+
+    panel.setActiveImage(mockImg);
+
+    // Prompt sets new caption
+    panel.promptActiveImageCaption();
+    assert.equal(figcaptionText, 'Kucing Arcade');
+
+    // Prompt empty clears/removes caption
+    promptAnswer = '';
+    panel.promptActiveImageCaption();
+    assert.equal(isFigcaptionRemoved, true);
+});
+
+test('white-box: deleteActiveImage removes active image figure and closes toolkit bar', () => {
+    const { panel } = harness();
+    panel.dom.editorArea = {
+        innerText: '',
+        querySelector: () => null,
+        cloneNode: () => ({ innerHTML: '', querySelectorAll: () => [] })
+    };
+    panel.updateWordAndCharMetrics = () => {};
+
+    let barHidden = false;
+    panel.dom.imageToolkitBar = {
+        classList: {
+            add(c) { if (c === 'hidden') barHidden = true; },
+            remove(c) { if (c === 'hidden') barHidden = false; }
+        }
+    };
+
+    let isFigureRemoved = false;
+    const mockFigure = {
+        remove() { isFigureRemoved = true; }
+    };
+    const mockImg = {
+        tagName: 'IMG',
+        closest(sel) { return sel === 'figure' ? mockFigure : null; },
+        classList: { add() {}, remove() {} }
+    };
+
+    panel.setActiveImage(mockImg);
+    panel.deleteActiveImage();
+
+    assert.equal(isFigureRemoved, true);
+    assert.equal(panel.activeImage, null);
+    assert.equal(panel.activeImageFigure, null);
+    assert.equal(barHidden, true);
+});
+
+test('white-box: MarkdownEngine and PlainTextEngine convert retro image figures and captions accurately', () => {
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({
+                querySelectorAll: () => [],
+                set innerHTML(val) { this._val = val; },
+                get value() { return this._val || ''; }
+            }),
+            addEventListener() {},
+            querySelector() { return null; }
+        }
+    });
+    vm.runInContext(source + '\nglobalThis.MarkdownEngine = MarkdownEngine;\nglobalThis.PlainTextEngine = PlainTextEngine;', context);
+
+    const html = `<figure class="retro-image-figure retro-align-center" data-align="center">
+        <img src="https://notenux.dev/avatar.png" alt="Cyber Knight">
+        <figcaption class="retro-image-caption">Legenda Pahlawan Cyber</figcaption>
+    </figure>`;
+
+    const md = context.MarkdownEngine.toMarkdown(html);
+    assert.ok(md.includes('![Cyber Knight](https://notenux.dev/avatar.png)'));
+    assert.ok(md.includes('*Legenda Pahlawan Cyber*'));
+
+    const plain = context.PlainTextEngine.toPlainText(html);
+    assert.ok(plain.includes('Legenda Pahlawan Cyber'));
+    assert.ok(!plain.includes('Tambahkan caption gambar...'));
+});
+
+test('white-box: sanitizeHtml in app.js preserves figure, figcaption, data-align, and alignment styles', () => {
+    const retainedAttrs = [];
+    let removedAttrs = [];
+    const mockFigure = {
+        localName: 'figure',
+        attributes: [
+            { name: 'class', value: 'retro-image-figure retro-align-center text-center my-3 block' },
+            { name: 'data-align', value: 'center' },
+            { name: 'style', value: 'text-align: center; margin-left: auto; margin-right: auto;' },
+            { name: 'onmouseover', value: 'hack()' }
+        ],
+        removeAttribute(name) { removedAttrs.push(name); }
+    };
+
+    const mockFigcaption = {
+        localName: 'figcaption',
+        attributes: [
+            { name: 'class', value: 'retro-image-caption text-xs' },
+            { name: 'contenteditable', value: 'true' },
+            { name: 'data-placeholder', value: 'Tambahkan caption gambar...' },
+            { name: 'onclick', value: 'steal()' }
+        ],
+        removeAttribute(name) { removedAttrs.push(name); }
+    };
+
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({
+                content: {
+                    querySelectorAll: () => [mockFigure, mockFigcaption]
+                },
+                innerHTML: 'cleaned'
+            }),
+            addEventListener() {},
+            querySelector() { return null; }
+        }
+    });
+
+    vm.runInContext(source + '\nglobalThis.sanitizeHtml = sanitizeHtml;', context);
+    context.sanitizeHtml('sample');
+
+    assert.ok(removedAttrs.includes('onmouseover'));
+    assert.ok(removedAttrs.includes('onclick'));
+    assert.ok(!removedAttrs.includes('data-align'));
+    assert.ok(!removedAttrs.includes('data-placeholder'));
+    assert.ok(!removedAttrs.includes('contenteditable'));
+    assert.ok(!removedAttrs.includes('style'));
+});
+
 
 
 

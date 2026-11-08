@@ -979,3 +979,48 @@ test('white-box: note content sanitizer preserves safe link targets, rels, and d
         ->and($clean)->not->toContain('<script>')
         ->and($clean)->not->toContain('type="text"');
 });
+
+test('white-box: note content sanitizer preserves figure, figcaption, data-align, and alignment styles while stripping xss', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+
+    $html = '<figure class="retro-image-figure retro-align-center text-center my-3" data-align="center" style="text-align: center; margin-left: auto; margin-right: auto;" onmouseover="alert(1)">'
+        .'<img src="https://notenux.dev/artifact.png" alt="Crystal" onerror="steal()">'
+        .'<figcaption class="retro-image-caption" contenteditable="true" data-placeholder="Tambahkan caption gambar..." onclick="hack()">Ancient Mana Crystal</figcaption>'
+        .'</figure>';
+
+    $clean = $sanitizer->sanitize($html);
+
+    expect($clean)->toContain('<figure')
+        ->and($clean)->toContain('retro-align-center')
+        ->and($clean)->toContain('data-align="center"')
+        ->and($clean)->toContain('text-align: center')
+        ->and($clean)->toContain('margin-left: auto')
+        ->and($clean)->toContain('margin-right: auto')
+        ->and($clean)->toContain('<img')
+        ->and($clean)->toContain('https://notenux.dev/artifact.png')
+        ->and($clean)->toContain('<figcaption')
+        ->and($clean)->toContain('contenteditable="true"')
+        ->and($clean)->toContain('data-placeholder="Tambahkan caption gambar..."')
+        ->and($clean)->toContain('Ancient Mana Crystal')
+        ->and($clean)->not->toContain('onmouseover')
+        ->and($clean)->not->toContain('onerror')
+        ->and($clean)->not->toContain('onclick')
+        ->and($clean)->not->toContain('alert(1)');
+});
+
+test('white-box: note controller exports figure with caption to markdown and plain text accurately', function () {
+    $controller = app(NoteController::class);
+
+    $html = '<figure class="retro-image-figure retro-align-right" data-align="right">'
+        .'<img src="https://notenux.dev/blade.png" alt="Legendary Blade">'
+        .'<figcaption class="retro-image-caption">Bilah Cahaya Bintang</figcaption>'
+        .'</figure>';
+
+    $md = $controller->convertToMarkdown($html);
+    expect($md)->toContain('![Legendary Blade](https://notenux.dev/blade.png)')
+        ->and($md)->toContain('*Bilah Cahaya Bintang*');
+
+    $plain = $controller->convertToPlainText($html);
+    expect($plain)->toContain('Bilah Cahaya Bintang')
+        ->and($plain)->not->toContain('Tambahkan caption gambar...');
+});

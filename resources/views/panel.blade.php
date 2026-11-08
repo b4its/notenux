@@ -1154,6 +1154,48 @@
                     </div>
                 </div>
 
+                <!-- Detailed Image Artifact Matrix Toolkit -->
+                <div id="image-toolkit-bar" class="shrink-0 hidden p-2 bg-surface-alt border-2 border-black dark:border-blue-700 rounded-lg flex items-center justify-between gap-2 flex-wrap shadow-[3px_3px_0px_#000] text-xs font-mono select-none transition-all">
+                    <!-- Left: Image Info & Alignment Operations -->
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-100 dark:bg-blue-950/80 border border-blue-400 dark:border-blue-700 text-blue-900 dark:text-cyan-300">
+                            <i class="fa-solid fa-image text-blue-600 dark:text-cyan-400"></i>
+                            <span class="font-pixel text-[10px] hidden sm:inline">IMAGE MATRIX</span>
+                            <span id="image-align-badge" class="font-bold text-[10px] font-mono text-cyan-700 dark:text-cyan-300 uppercase">CENTER</span>
+                        </div>
+
+                        <!-- Alignment Actions Group -->
+                        <div class="flex items-center gap-0.5 bg-surface p-0.5 rounded border border-black/20 dark:border-blue-900">
+                            <button id="img-align-left-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-2 py-1 rounded text-[11px]" title="Ratakan Gambar ke Kiri">
+                                <i class="fa-solid fa-align-left text-cyan-600 dark:text-cyan-400 sm:mr-1"></i><span class="hidden md:inline">Kiri</span>
+                            </button>
+                            <button id="img-align-center-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-2 py-1 rounded text-[11px]" title="Ratakan Gambar ke Tengah">
+                                <i class="fa-solid fa-align-center text-cyan-600 dark:text-cyan-400 sm:mr-1"></i><span class="hidden md:inline">Tengah</span>
+                            </button>
+                            <button id="img-align-right-btn" type="button" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 px-2 py-1 rounded text-[11px]" title="Ratakan Gambar ke Kanan">
+                                <i class="fa-solid fa-align-right text-cyan-600 dark:text-cyan-400 sm:mr-1"></i><span class="hidden md:inline">Kanan</span>
+                            </button>
+                        </div>
+
+                        <!-- Caption Actions Group -->
+                        <div class="flex items-center gap-1">
+                            <button id="img-caption-btn" type="button" class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-950/60 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded text-[11px] font-mono border border-amber-300 dark:border-amber-700/60 shadow-[1px_1px_0px_#000]" title="Beri atau Ubah Caption Gambar">
+                                <i class="fa-solid fa-comment-dots mr-1"></i><span class="inline">Beri Caption</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Delete Image & Close Toolbar -->
+                    <div class="flex items-center gap-1">
+                        <button id="img-delete-btn" type="button" class="arcade-btn bg-red-600 hover:bg-red-500 text-white px-2.5 py-1 rounded text-[11px] font-mono shadow-[1px_1px_0px_#000]" title="Hapus Gambar Terpilih">
+                            <i class="fa-solid fa-trash mr-1"></i>Hapus Gambar
+                        </button>
+                        <button id="close-image-bar-btn" type="button" class="arcade-btn bg-surface hover:bg-slate-200 dark:hover:bg-slate-800 px-2 py-1 rounded text-[10px]" title="Tutup Toolbar Gambar">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Zoomable Editable Content Area (The Core Canvas) -->
                 <div class="arcade-card flex-1 min-h-0 p-4 sm:p-6 rounded-xl overflow-y-auto overflow-x-auto relative shadow-[4px_4px_0px_#000] bg-[var(--bg-surface)]">
                     <div id="editor-zoom-wrapper" class="zoom-canvas-container min-h-full flex flex-col">

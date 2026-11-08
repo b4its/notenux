@@ -264,6 +264,81 @@
 }
 
 /* ============================================================================== */
+/* RETRO ARTIFACT IMAGE FIGURES & ALIGNMENT */
+/* ============================================================================== */
+.notenux-editor figure.retro-image-figure,
+figure.retro-image-figure {
+    margin: 1.25rem 0;
+    display: block;
+    position: relative;
+    max-width: 100%;
+    clear: both;
+}
+
+.notenux-editor figure.retro-image-figure.retro-align-left,
+figure.retro-image-figure.retro-align-left,
+figure.retro-image-figure[data-align="left"] {
+    text-align: left !important;
+    margin-right: auto !important;
+    margin-left: 0 !important;
+}
+
+.notenux-editor figure.retro-image-figure.retro-align-center,
+figure.retro-image-figure.retro-align-center,
+figure.retro-image-figure[data-align="center"] {
+    text-align: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.notenux-editor figure.retro-image-figure.retro-align-right,
+figure.retro-image-figure.retro-align-right,
+figure.retro-image-figure[data-align="right"] {
+    text-align: right !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+}
+
+.notenux-editor figure.retro-image-figure img,
+figure.retro-image-figure img {
+    display: inline-block;
+    max-width: 100%;
+    border-radius: 8px;
+    box-shadow: 2px 2px 0px #000;
+    transition: outline 0.15s ease-in-out;
+}
+
+.notenux-editor figure.retro-image-figure.active-image-figure img,
+.notenux-editor img.active-image-artifact {
+    outline: 3px solid #06b6d4 !important;
+    outline-offset: 3px !important;
+}
+
+.notenux-editor figcaption.retro-image-caption,
+figcaption.retro-image-caption {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--text-muted, #64748b);
+    margin-top: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    display: block;
+    min-height: 1.5rem;
+    border-radius: 4px;
+}
+
+.notenux-editor figcaption.retro-image-caption:focus {
+    outline: 1px dashed #06b6d4;
+    background-color: rgba(6, 182, 212, 0.08);
+}
+
+.notenux-editor figcaption.retro-image-caption:empty::before {
+    content: attr(data-placeholder);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+/* ============================================================================== */
 /* ZOOM WRAPPER */
 /* ============================================================================== */
 .zoom-canvas-container {

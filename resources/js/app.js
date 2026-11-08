@@ -14,7 +14,7 @@ const fetch = (url, options = {}) => window.fetch(url, {
 function sanitizeHtml(html) {
     const template = document.createElement('template');
     template.innerHTML = html;
-    const allowed = new Set('p div span br h1 h2 h3 h4 h5 h6 strong b em i u s del sub sup blockquote pre code ul ol li table thead tbody tfoot tr th td hr a img input font'.split(' '));
+    const allowed = new Set('p div span br h1 h2 h3 h4 h5 h6 strong b em i u s del sub sup blockquote pre code ul ol li table thead tbody tfoot tr th td hr a img input font figure figcaption'.split(' '));
     for (const element of template.content.querySelectorAll('*')) {
         if (!allowed.has(element.localName)) {
             element.remove();
@@ -22,13 +22,13 @@ function sanitizeHtml(html) {
         }
         for (const attribute of [...element.attributes]) {
             const { name, value } = attribute;
-            const safe = ['class', 'title', 'alt', 'id'].includes(name)
+            const safe = ['class', 'title', 'alt', 'id', 'data-align', 'data-placeholder', 'contenteditable'].includes(name)
                 || (name === 'type' && element.localName === 'input' && value === 'checkbox')
                 || (['checked', 'disabled'].includes(name) && element.localName === 'input')
                 || (['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'].includes(name) && /^\d+$/.test(value))
                 || (['color', 'bgcolor', 'bordercolor'].includes(name) && /^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i.test(value))
                 || (['align', 'valign'].includes(name) && ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'].includes((value || '').toLowerCase()))
-                || (name === 'style' && /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value))
+                || (name === 'style' && /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value))
                 || (name === 'href' && element.localName === 'a' && /^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(value))
                 || (name === 'target' && element.localName === 'a' && ['_blank', '_self'].includes((value || '').toLowerCase()))
                 || (name === 'rel' && element.localName === 'a' && /^[a-z\s_-]+$/i.test(value))
@@ -322,6 +322,24 @@ class MarkdownEngine {
         let md = html;
 
         md = md.replace(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)');
+
+        // Figure and Figcaption to Markdown
+        md = md.replace(/<figure\b[^>]*>([\s\S]*?)<\/figure>/gi, (_, figureContent) => {
+            let imgMd = '';
+            const imgMatch = figureContent.match(/<img\b[^>]*>/i);
+            if (imgMatch) {
+                const url = imgMatch[0].match(/\bsrc="([^"]*)"/i)?.[1] || '';
+                const alt = imgMatch[0].match(/\balt="([^"]*)"/i)?.[1] || '';
+                imgMd = `![${alt}](${url})`;
+            }
+            const capMatch = figureContent.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i);
+            const caption = capMatch ? capMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+            if (caption && caption !== 'Tambahkan caption gambar...' && caption !== 'Tambah caption...') {
+                return (imgMd ? `${imgMd}\n*${caption}*` : `*${caption}*`) + '\n\n';
+            }
+            return (imgMd || '') + '\n\n';
+        });
+
         md = md.replace(/<img\b[^>]*>/gi, image => {
             const url = image.match(/\bsrc="([^"]*)"/i)?.[1] || '';
             const alt = image.match(/\balt="([^"]*)"/i)?.[1] || '';
@@ -434,7 +452,9 @@ class PlainTextEngine {
         text = text.replace(/<\/?(thead|tbody|tfoot)[^>]*>\s*/gi, '');
 
         // Handle block elements
-        text = text.replace(/<\/(p|div|h[1-6]|blockquote|pre|table)>/gi, '\n\n');
+        text = text.replace(/<\/(p|div|h[1-6]|blockquote|pre|table|figure|figcaption)>/gi, '\n\n');
+        text = text.replace(/Tambahkan caption gambar\.\.\./g, '');
+        text = text.replace(/Tambah caption\.\.\./g, '');
 
         // Replace horizontal rules
         text = text.replace(/<hr\s*[\/]?>/gi, '\n---\n');
@@ -904,6 +924,8 @@ class NotenuxPanel {
         this.selectionVersion = 0;
         this.dirtyNotes = new Set();
         this.activeTableCell = null;
+        this.activeImage = null;
+        this.activeImageFigure = null;
 
         this.undoStack = [];
         this.redoStack = [];
@@ -1032,6 +1054,15 @@ class NotenuxPanel {
             tableDeleteTableBtn: document.getElementById('table-delete-table-btn'),
             tableCloseToolkitBtn: document.getElementById('table-close-toolkit-btn'),
 
+            imageToolkitBar: document.getElementById('image-toolkit-bar'),
+            imageAlignBadge: document.getElementById('image-align-badge'),
+            imgAlignLeftBtn: document.getElementById('img-align-left-btn'),
+            imgAlignCenterBtn: document.getElementById('img-align-center-btn'),
+            imgAlignRightBtn: document.getElementById('img-align-right-btn'),
+            imgCaptionBtn: document.getElementById('img-caption-btn'),
+            imgDeleteBtn: document.getElementById('img-delete-btn'),
+            closeImageBarBtn: document.getElementById('close-image-bar-btn'),
+
             questGoalText: document.getElementById('quest-goal-text'),
             questGoalSelect: document.getElementById('quest-goal-select'),
 
@@ -1119,6 +1150,7 @@ class NotenuxPanel {
         this.initEditorToolbar();
         this.initPasteInterceptor();
         this.initTableToolkit();
+        this.initImageToolkit();
         this.initGoalTracking();
         this.initFindReplace();
         this.initImportModal();
@@ -2613,7 +2645,7 @@ class NotenuxPanel {
 
     /* ---------------- RICH TEXT TOOLBAR ---------------- */
     initEditorToolbar() {
-        document.querySelectorAll('[data-command], [data-color], #insert-table-btn, #insert-task-btn, #insert-media-btn').forEach(button => {
+        document.querySelectorAll('[data-command], [data-color], #insert-table-btn, #insert-task-btn, #insert-media-btn, #img-align-left-btn, #img-align-center-btn, #img-align-right-btn, #img-caption-btn, #img-delete-btn').forEach(button => {
             button.addEventListener('mousedown', event => event.preventDefault());
         });
         document.querySelectorAll('[data-command]').forEach(btn => {
@@ -2629,6 +2661,12 @@ class NotenuxPanel {
                 }
                 if (command === 'redo') {
                     this.redo();
+                    return;
+                }
+
+                if (['justifyLeft', 'justifyCenter', 'justifyRight'].includes(command) && this.activeImage) {
+                    const align = command === 'justifyLeft' ? 'left' : (command === 'justifyRight' ? 'right' : 'center');
+                    this.alignActiveImage(align);
                     return;
                 }
 
@@ -2699,20 +2737,41 @@ class NotenuxPanel {
                     img.alt = 'Pasted Image';
 
                     if (targetCell) {
-                        img.className = 'max-w-full max-h-48 object-contain rounded border border-blue-400 my-1 inline-block';
+                        img.className = 'max-w-full max-h-48 object-contain rounded border border-blue-400 my-1 inline-block cursor-pointer';
                         targetCell.appendChild(img);
                         this.handleEditorInput();
+                        this.setActiveImage(img);
                         this.toast.show('Image pasted into table cell!', 'success', 'Cell Image Inscribed', 'fa-solid fa-table-cells text-cyan-400');
                     } else {
-                        img.className = 'rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2';
-                        const container = document.createElement('p');
-                        container.appendChild(img);
+                        img.className = 'retro-image rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2 object-contain inline-block cursor-pointer';
+                        const figure = document.createElement('figure');
+                        figure.className = 'retro-image-figure retro-align-center text-center my-3 mx-auto max-w-full block';
+                        if (figure.setAttribute) figure.setAttribute('data-align', 'center');
+                        if (figure.dataset) figure.dataset.align = 'center';
+                        if (figure.style) {
+                            figure.style.textAlign = 'center';
+                            figure.style.marginLeft = 'auto';
+                            figure.style.marginRight = 'auto';
+                        }
+                        figure.appendChild(img);
+
+                        const figcaption = document.createElement('figcaption');
+                        figcaption.className = 'retro-image-caption text-xs font-mono text-slate-500 dark:text-slate-400 mt-1.5 italic outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 py-0.5 inline-block text-center cursor-text';
+                        if (figcaption.setAttribute) {
+                            figcaption.setAttribute('contenteditable', 'true');
+                            figcaption.setAttribute('data-placeholder', 'Tambahkan caption gambar...');
+                        }
+                        figcaption.textContent = 'Tambahkan caption gambar...';
+                        figure.appendChild(figcaption);
+
                         const breakP = document.createElement('p');
                         breakP.innerHTML = '<br>';
-                        const htmlToInsert = container.outerHTML + breakP.outerHTML;
+                        const htmlToInsert = figure.outerHTML + breakP.outerHTML;
 
                         document.execCommand('insertHTML', false, htmlToInsert);
                         this.handleEditorInput();
+                        const insertedImg = this.dom.editorArea?.querySelector ? (this.dom.editorArea.querySelector(`img[src="${dataUrl}"]`) || img) : img;
+                        this.setActiveImage(insertedImg);
                         this.toast.show('Image pasted into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
                     }
                 }
@@ -3284,6 +3343,222 @@ class NotenuxPanel {
         }
     }
 
+    /* ---------------- IMAGE ARTIFACT MATRIX TOOLKIT ---------------- */
+    setActiveImage(img) {
+        if (this.activeImage && this.activeImage !== img) {
+            this.activeImage.classList?.remove?.('active-image-artifact');
+            if (this.activeImageFigure) {
+                this.activeImageFigure.classList?.remove?.('active-image-figure');
+            }
+        }
+
+        this.activeImage = img;
+
+        if (img) {
+            img.classList?.add?.('active-image-artifact');
+            this.activeImageFigure = img.closest ? img.closest('figure') : null;
+            if (this.activeImageFigure) {
+                this.activeImageFigure.classList?.add?.('active-image-figure');
+                const align = this.activeImageFigure.dataset?.align
+                    || (this.activeImageFigure.classList?.contains?.('retro-align-left') ? 'left' : (this.activeImageFigure.classList?.contains?.('retro-align-right') ? 'right' : 'center'));
+                if (this.dom.imageAlignBadge) {
+                    this.dom.imageAlignBadge.textContent = align.toUpperCase();
+                }
+            } else {
+                if (this.dom.imageAlignBadge) {
+                    this.dom.imageAlignBadge.textContent = 'CENTER';
+                }
+            }
+            if (this.dom.imageToolkitBar) {
+                this.dom.imageToolkitBar.classList?.remove?.('hidden');
+            }
+        } else {
+            this.activeImageFigure = null;
+            if (this.dom.imageToolkitBar) {
+                this.dom.imageToolkitBar.classList?.add?.('hidden');
+            }
+        }
+    }
+
+    alignActiveImage(align) {
+        if (!this.activeImage) return;
+        const validAlign = ['left', 'center', 'right'].includes(align) ? align : 'center';
+        this.audio?.playClick?.();
+        this.pushUndoSnapshot();
+
+        let figure = this.activeImageFigure || (this.activeImage.closest ? this.activeImage.closest('figure') : null);
+
+        // If not inside a <figure>, wrap it into a <figure>
+        if (!figure && this.activeImage.parentNode) {
+            figure = document.createElement('figure');
+            figure.className = `retro-image-figure retro-align-${validAlign} text-${validAlign} my-3 block`;
+            if (figure.setAttribute) figure.setAttribute('data-align', validAlign);
+            if (figure.dataset) figure.dataset.align = validAlign;
+            this.activeImage.parentNode.insertBefore(figure, this.activeImage);
+            figure.appendChild(this.activeImage);
+            this.activeImageFigure = figure;
+        }
+
+        if (figure) {
+            figure.classList?.remove?.('retro-align-left', 'retro-align-center', 'retro-align-right', 'text-left', 'text-center', 'text-right');
+            figure.classList?.add?.(`retro-align-${validAlign}`, `text-${validAlign}`);
+            if (figure.setAttribute) figure.setAttribute('data-align', validAlign);
+            if (figure.dataset) figure.dataset.align = validAlign;
+
+            if (figure.style) {
+                if (validAlign === 'left') {
+                    figure.style.textAlign = 'left';
+                    figure.style.marginLeft = '0';
+                    figure.style.marginRight = 'auto';
+                } else if (validAlign === 'right') {
+                    figure.style.textAlign = 'right';
+                    figure.style.marginLeft = 'auto';
+                    figure.style.marginRight = '0';
+                } else {
+                    figure.style.textAlign = 'center';
+                    figure.style.marginLeft = 'auto';
+                    figure.style.marginRight = 'auto';
+                }
+            }
+            this.activeImageFigure = figure;
+        }
+
+        if (this.dom.imageAlignBadge) {
+            this.dom.imageAlignBadge.textContent = validAlign.toUpperCase();
+        }
+
+        this.handleEditorInput();
+        const alignLabel = validAlign === 'left' ? 'Kiri' : (validAlign === 'right' ? 'Kanan' : 'Tengah');
+        this.toast.show(`Gambar diratakan ke ${alignLabel}`, 'info', 'Perataan Gambar');
+    }
+
+    promptActiveImageCaption() {
+        if (!this.activeImage) return;
+        this.audio?.playClick?.();
+
+        let figure = this.activeImageFigure || (this.activeImage.closest ? this.activeImage.closest('figure') : null);
+        if (!figure && this.activeImage.parentNode) {
+            figure = document.createElement('figure');
+            figure.className = 'retro-image-figure retro-align-center text-center my-3 mx-auto max-w-full block';
+            if (figure.setAttribute) figure.setAttribute('data-align', 'center');
+            this.activeImage.parentNode.insertBefore(figure, this.activeImage);
+            figure.appendChild(this.activeImage);
+            this.activeImageFigure = figure;
+        }
+
+        const placeholder = 'Tambahkan caption gambar...';
+        let figcaption = figure?.querySelector ? figure.querySelector('figcaption') : null;
+        const currentText = figcaption ? (figcaption.textContent || '').trim() : '';
+        const initialVal = (currentText && currentText !== placeholder) ? currentText : '';
+
+        const captionInput = prompt('Masukkan caption untuk gambar ini (kosongkan untuk menghapus):', initialVal);
+        if (captionInput === null) return; // User cancelled prompt
+
+        this.pushUndoSnapshot();
+
+        if (captionInput.trim() === '') {
+            if (figcaption) {
+                figcaption.remove();
+            }
+            this.toast.show('Caption gambar dihapus', 'info', 'Caption Dihapus');
+        } else {
+            if (!figcaption) {
+                figcaption = document.createElement('figcaption');
+                figcaption.className = 'retro-image-caption text-xs font-mono text-slate-500 dark:text-slate-400 mt-1.5 italic outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 py-0.5 inline-block text-center cursor-text';
+                if (figcaption.setAttribute) {
+                    figcaption.setAttribute('contenteditable', 'true');
+                    figcaption.setAttribute('data-placeholder', placeholder);
+                }
+                figure.appendChild(figcaption);
+            }
+            figcaption.textContent = captionInput.trim();
+            this.toast.show('Caption gambar berhasil disimpan', 'success', 'Caption Disimpan');
+        }
+
+        this.handleEditorInput();
+    }
+
+    deleteActiveImage() {
+        if (!this.activeImage) return;
+        this.audio?.playDelete?.();
+        this.pushUndoSnapshot();
+
+        const figure = this.activeImageFigure || (this.activeImage.closest ? this.activeImage.closest('figure') : null);
+        if (figure) {
+            figure.remove();
+        } else {
+            this.activeImage.remove();
+        }
+
+        this.setActiveImage(null);
+        this.handleEditorInput();
+        this.toast.show('Gambar berhasil dihapus dari catatan', 'info', 'Gambar Dihapus');
+    }
+
+    initImageToolkit() {
+        if (!this.dom.editorArea) return;
+
+        this.dom.editorArea.addEventListener('click', (e) => {
+            const img = e.target?.closest ? e.target.closest('img') : (e.target?.tagName === 'IMG' ? e.target : null);
+            const figure = e.target?.closest ? e.target.closest('figure') : null;
+            const figcaption = e.target?.closest ? e.target.closest('figcaption') : null;
+
+            if (img && (typeof this.dom.editorArea.contains !== 'function' || this.dom.editorArea.contains(img))) {
+                this.setActiveImage(img);
+            } else if (figure && (typeof this.dom.editorArea.contains !== 'function' || this.dom.editorArea.contains(figure))) {
+                const foundImg = figure.querySelector ? figure.querySelector('img') : null;
+                this.setActiveImage(foundImg || img);
+            } else if (!figcaption && !e.target?.closest?.('#image-toolkit-bar')) {
+                this.setActiveImage(null);
+            }
+        });
+
+        // figcaption placeholder auto-clear on focus
+        this.dom.editorArea.addEventListener('focusin', (e) => {
+            const figcaption = e.target?.closest ? e.target.closest('figcaption') : null;
+            if (figcaption && figcaption.textContent?.trim() === 'Tambahkan caption gambar...') {
+                figcaption.textContent = '';
+            }
+        });
+
+        this.dom.editorArea.addEventListener('focusout', (e) => {
+            const figcaption = e.target?.closest ? e.target.closest('figcaption') : null;
+            if (figcaption && figcaption.textContent?.trim() === '') {
+                figcaption.textContent = 'Tambahkan caption gambar...';
+            }
+        });
+
+        this.dom.imgAlignLeftBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.alignActiveImage('left');
+        });
+
+        this.dom.imgAlignCenterBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.alignActiveImage('center');
+        });
+
+        this.dom.imgAlignRightBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.alignActiveImage('right');
+        });
+
+        this.dom.imgCaptionBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.promptActiveImageCaption();
+        });
+
+        this.dom.imgDeleteBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.deleteActiveImage();
+        });
+
+        this.dom.closeImageBarBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.setActiveImage(null);
+        });
+    }
+
     insertInteractiveTask() {
         this.audio.playClick();
         this.pushUndoSnapshot();
@@ -3330,11 +3605,36 @@ class NotenuxPanel {
         const image = document.createElement('img');
         image.src = src;
         image.alt = alt;
-        image.className = 'rounded-lg border-2 border-blue-500 max-h-72 shadow-md my-2';
-        const imgHtml = `<p>${image.outerHTML}</p><p><br></p>`;
+        image.className = 'retro-image rounded-lg border-2 border-blue-500 max-h-72 shadow-md my-2 object-contain inline-block cursor-pointer';
+
+        const figure = document.createElement('figure');
+        figure.className = 'retro-image-figure retro-align-center text-center my-3 mx-auto max-w-full block';
+        if (figure.setAttribute) figure.setAttribute('data-align', 'center');
+        if (figure.dataset) figure.dataset.align = 'center';
+        if (figure.style) {
+            figure.style.textAlign = 'center';
+            figure.style.marginLeft = 'auto';
+            figure.style.marginRight = 'auto';
+        }
+        figure.appendChild(image);
+
+        const figcaption = document.createElement('figcaption');
+        figcaption.className = 'retro-image-caption text-xs font-mono text-slate-500 dark:text-slate-400 mt-1.5 italic outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 py-0.5 inline-block text-center cursor-text';
+        if (figcaption.setAttribute) {
+            figcaption.setAttribute('contenteditable', 'true');
+            figcaption.setAttribute('data-placeholder', 'Tambahkan caption gambar...');
+        }
+        figcaption.textContent = alt || 'Tambahkan caption gambar...';
+        figure.appendChild(figcaption);
+
+        const breakP = document.createElement('p');
+        breakP.innerHTML = '<br>';
+        const imgHtml = figure.outerHTML + breakP.outerHTML;
         document.execCommand('insertHTML', false, imgHtml);
         this.dom.editorArea.focus();
         this.handleEditorInput();
+        const insertedImg = this.dom.editorArea?.querySelector ? (this.dom.editorArea.querySelector(`img[src="${src}"]`) || image) : image;
+        this.setActiveImage(insertedImg);
         this.toast.show('Artifact image injected into scroll', 'success', 'Media Ready');
     }
 

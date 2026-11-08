@@ -463,6 +463,27 @@ class NoteController extends Controller
         // Links
         $md = preg_replace('/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/i', '[$2]($1)', $md);
 
+        // Figure with Caption
+        $md = preg_replace_callback('/<figure\b[^>]*>([\s\S]*?)<\/figure>/i', function ($match) {
+            $figureContent = $match[1];
+            preg_match('/<img\b[^>]*>/i', $figureContent, $imgMatch);
+            $imgMd = '';
+            if (! empty($imgMatch[0])) {
+                preg_match('/\bsrc="([^"]*)"/i', $imgMatch[0], $src);
+                preg_match('/\balt="([^"]*)"/i', $imgMatch[0], $alt);
+                $url = $src[1] ?? '';
+                $desc = $alt[1] ?? '';
+                $imgMd = "![{$desc}]({$url})";
+            }
+            preg_match('/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i', $figureContent, $capMatch);
+            $caption = ! empty($capMatch[1]) ? trim(strip_tags($capMatch[1])) : '';
+            if ($caption !== '' && $caption !== 'Tambahkan caption gambar...' && $caption !== 'Tambah caption...') {
+                return ($imgMd ? "{$imgMd}\n*{$caption}*" : "*{$caption}*")."\n\n";
+            }
+
+            return ($imgMd ?: '')."\n\n";
+        }, $md);
+
         // Images
         $md = preg_replace_callback('/<img\b[^>]*>/i', function ($m) {
             preg_match('/\bsrc="([^"]*)"/i', $m[0], $src);
@@ -586,7 +607,8 @@ class NoteController extends Controller
         $text = preg_replace('/<\/?(thead|tbody|tfoot)[^>]*>\s*/i', '', $text);
 
         // Block elements
-        $text = preg_replace('/<\/(p|div|h[1-6]|blockquote|pre|table)>/i', "\n\n", $text);
+        $text = preg_replace('/<\/(p|div|h[1-6]|blockquote|pre|table|figure|figcaption)>/i', "\n\n", $text);
+        $text = str_replace(['Tambahkan caption gambar...', 'Tambah caption...'], '', $text);
 
         // Horizontal rules
         $text = preg_replace('/<hr\s*[\/]?>/i', "\n---\n", $text);

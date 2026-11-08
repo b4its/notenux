@@ -1185,3 +1185,43 @@ test('black-box: user creates note with external links and checklist and attribu
         ->and($note->content)->toContain('disabled')
         ->and($note->content)->toContain('checked');
 });
+
+test('black-box: studio view features image artifact matrix toolkit and user persists note with aligned figure and caption', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('studio'));
+    $response->assertOk()
+        ->assertSee('image-toolkit-bar')
+        ->assertSee('image-align-badge')
+        ->assertSee('img-align-left-btn')
+        ->assertSee('img-align-center-btn')
+        ->assertSee('img-align-right-btn')
+        ->assertSee('img-caption-btn')
+        ->assertSee('img-delete-btn')
+        ->assertSee('Beri Caption');
+
+    // Create note with aligned figure and caption
+    $figureHtml = '<figure class="retro-image-figure retro-align-center text-center my-3" data-align="center">'
+        .'<img src="https://notenux.dev/emblem.png" alt="Guild Emblem" class="retro-image rounded-lg">'
+        .'<figcaption class="retro-image-caption" contenteditable="true">Lambang Serikat Petualang</figcaption>'
+        .'</figure>';
+
+    $createRes = $this->actingAs($user)->postJson('/api/notes', [
+        'title' => 'Scroll of Guild Heraldry',
+        'category' => 'lore',
+        'content' => $figureHtml,
+    ]);
+
+    $createRes->assertCreated()
+        ->assertJsonPath('status', 'success');
+
+    $noteId = $createRes->json('data.id');
+    $note = Note::with('chunks')->findOrFail($noteId);
+
+    expect($note->content)->toContain('<figure')
+        ->and($note->content)->toContain('retro-align-center')
+        ->and($note->content)->toContain('data-align="center"')
+        ->and($note->content)->toContain('https://notenux.dev/emblem.png')
+        ->and($note->content)->toContain('Lambang Serikat Petualang')
+        ->and($note->chunks)->not->toBeEmpty();
+});
