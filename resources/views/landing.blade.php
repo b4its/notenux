@@ -299,7 +299,7 @@
             </a>
 
             <!-- Navigation Links (Desktop) -->
-            <nav aria-label="Navigasi Utama" class="hidden md:flex items-center gap-5 lg:gap-6 font-mono text-xs font-bold shrink-0">
+            <nav aria-label="Navigasi Utama" class="hidden xl:flex items-center gap-5 lg:gap-6 font-mono text-xs font-bold shrink-0">
                 <a href="#fitur" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">MANFAAT & FITUR</a>
                 <a href="#playground" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">DEMO INTERAKTIF</a>
                 <a href="#keamanan" class="hover:text-blue-600 dark:hover:text-cyan-400 transition-colors">UJI PROTEKSI</a>
@@ -308,19 +308,29 @@
             </nav>
 
             <!-- Right Controls & Authentication Actions -->
-            <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
-                <!-- Sound Toggle -->
-                <button id="sound-toggle-btn"
-                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono shrink-0"
-                        title="Toggle 8-bit Audio SFX">
-                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 sm:mr-1"></i> <span class="hidden xl:inline">SFX</span>
+            <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+                <!-- Mobile Navigation Menu Toggle Button (Screens < xl) -->
+                <button type="button"
+                        id="landing-mobile-menu-btn"
+                        class="xl:hidden arcade-btn bg-surface hover:bg-slate-200 dark:hover:bg-blue-900/60 text-main px-2 py-1.5 rounded text-xs font-mono border border-black/30 dark:border-blue-700 flex items-center justify-center shrink-0"
+                        title="Buka Menu Navigasi"
+                        aria-label="Toggle Navigation Menu"
+                        aria-expanded="false">
+                    <i class="fa-solid fa-bars text-sm"></i>
                 </button>
 
-                <!-- CRT Scanline Toggle -->
+                <!-- Sound Toggle (Visible on larger screens) -->
+                <button id="sound-toggle-btn"
+                        class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden lg:inline-flex shrink-0"
+                        title="Toggle 8-bit Audio SFX">
+                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 sm:mr-1"></i> <span class="hidden 2xl:inline">SFX</span>
+                </button>
+
+                <!-- CRT Scanline Toggle (Visible on larger screens) -->
                 <button id="crt-toggle-btn"
-                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden sm:inline-flex shrink-0"
+                        class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2 sm:px-2.5 py-1.5 rounded text-xs font-mono hidden lg:inline-flex shrink-0"
                         title="Toggle Retro CRT Scanlines">
-                    <i class="fa-solid fa-tv sm:mr-1 text-purple-600 dark:text-purple-400"></i> <span class="hidden xl:inline">CRT</span>
+                    <i class="fa-solid fa-tv sm:mr-1 text-purple-600 dark:text-purple-400"></i> <span class="hidden 2xl:inline">CRT</span>
                 </button>
 
                 <!-- Theme Toggle Button -->
@@ -333,19 +343,19 @@
                 <!-- Auth State -->
                 @auth
                     <!-- User is logged in -->
-                    <div class="flex items-center gap-1.5 sm:gap-2">
-                        <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-black dark:border-blue-700 bg-[var(--bg-surface-alt)] text-xs font-mono">
+                    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                        <div class="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-lg border border-black dark:border-blue-700 bg-[var(--bg-surface-alt)] text-xs font-mono shrink-0">
                             <i class="fa-solid fa-user-ninja text-emerald-500"></i>
-                            <span class="font-bold truncate max-w-[120px]">{{ auth()->user()->name }}</span>
+                            <span class="font-bold truncate max-w-[105px]">{{ auth()->user()->name }}</span>
                         </div>
 
                         <a href="{{ route('studio') }}"
                            id="nav-studio-btn"
-                           class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2.5 sm:px-4 py-1.5 rounded text-xs font-mono font-bold tracking-wider shrink-0">
-                            <i class="fa-solid fa-terminal sm:mr-1.5"></i> <span class="hidden xs:inline">STUDIO</span>
+                           class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-2.5 sm:px-3.5 py-1.5 rounded text-xs font-mono font-bold tracking-wider shrink-0 flex items-center">
+                            <i class="fa-solid fa-terminal mr-1 sm:mr-1.5"></i> <span>STUDIO</span>
                         </a>
 
-                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                        <form method="POST" action="{{ route('logout') }}" class="inline shrink-0">
                             @csrf
                             <button type="submit"
                                     id="nav-logout-btn"
@@ -379,6 +389,35 @@
 
         </div>
     </header>
+
+    <!-- Mobile & Tablet Navigation Menu Drawer (Collapsible) -->
+    <div id="landing-mobile-menu" class="hidden xl:hidden bg-[var(--bg-surface)] border-b-2 border-black dark:border-blue-900 shadow-[0_4px_0_rgba(0,0,0,0.25)] px-4 py-3 font-mono text-xs font-bold transition-all z-35 sticky top-[53px]">
+        <div class="flex flex-col space-y-2.5 max-w-7xl mx-auto">
+            <a href="#fitur" class="landing-mobile-nav-link py-1 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-blue-500"></i> MANFAAT & FITUR
+            </a>
+            <a href="#playground" class="landing-mobile-nav-link py-1 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-terminal text-emerald-500"></i> DEMO INTERAKTIF
+            </a>
+            <a href="#keamanan" class="landing-mobile-nav-link py-1 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-shield-halved text-amber-500"></i> UJI PROTEKSI
+            </a>
+            <a href="#rank-codex" class="landing-mobile-nav-link py-1 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-trophy text-purple-500"></i> RANK SCRIBE
+            </a>
+            <a href="#faq" class="landing-mobile-nav-link py-1 hover:text-blue-600 dark:hover:text-cyan-400 transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-circle-question text-cyan-500"></i> FAQ
+            </a>
+            <div class="flex items-center gap-2 pt-2 border-t border-black/10 dark:border-white/10 lg:hidden">
+                <button type="button" id="drawer-sound-toggle-btn" class="arcade-btn bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-300 px-2.5 py-1 rounded text-xs">
+                    <i class="fa-solid fa-volume-high text-blue-600 dark:text-cyan-400 mr-1"></i> Audio SFX
+                </button>
+                <button type="button" id="drawer-crt-toggle-btn" class="arcade-btn bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 text-purple-900 dark:text-purple-300 px-2.5 py-1 rounded text-xs">
+                    <i class="fa-solid fa-tv text-purple-600 dark:text-purple-400 mr-1"></i> Scanlines CRT
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content Area -->
     <main id="main-content" class="flex-1">
@@ -1204,7 +1243,7 @@ Coba ketuk tombol Spell Bar di atas atau ubah font sesukamu!</textarea>
 
     <!-- Floating Scribe Companion Widget (Mascot Sprite) -->
     <div id="scribe-companion" class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 font-mono hidden sm:flex items-end gap-2 pointer-events-auto max-w-[calc(100vw-2rem)]">
-        <div id="companion-bubble" class="arcade-card p-3 rounded-xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[4px_4px_0px_#000] text-xs max-w-[220px] transition-all">
+        <div id="companion-bubble" class="hidden arcade-card p-3 rounded-xl border-2 border-black dark:border-blue-700 bg-[var(--bg-surface)] shadow-[4px_4px_0px_#000] text-xs max-w-[220px] transition-all">
             <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
                 <span class="font-pixel text-cyan-400">SCRIBE SPRITE</span>
                 <button type="button" id="companion-close-btn" class="hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
@@ -1878,9 +1917,13 @@ Catatan kode rapi dan siap diekspor kapan saja!`;
             if (companionAvatarBtn && companionText) {
                 companionAvatarBtn.addEventListener('click', () => {
                     playSound('blip');
-                    companionIndex = (companionIndex + 1) % companionTips.length;
-                    companionText.textContent = companionTips[companionIndex];
-                    if (companionBubble) companionBubble.classList.remove('hidden');
+                    if (companionBubble && !companionBubble.classList.contains('hidden')) {
+                        companionBubble.classList.add('hidden');
+                    } else {
+                        companionIndex = (companionIndex + 1) % companionTips.length;
+                        companionText.textContent = companionTips[companionIndex];
+                        if (companionBubble) companionBubble.classList.remove('hidden');
+                    }
                 });
             }
 
@@ -1890,6 +1933,35 @@ Catatan kode rapi dan siap diekspor kapan saja!`;
                     companionBubble.classList.add('hidden');
                 });
             }
+
+            // --------------------------------------------------------------------------
+            // 7. Responsive Mobile/Tablet Navigation Drawer Toggle
+            // --------------------------------------------------------------------------
+            const mobileMenuBtn = document.getElementById('landing-mobile-menu-btn');
+            const mobileMenu = document.getElementById('landing-mobile-menu');
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    playSound('blip');
+                    const isExpanded = mobileMenuBtn.getAttribute('aria-expanded') === 'true';
+                    mobileMenuBtn.setAttribute('aria-expanded', !isExpanded);
+                    mobileMenu.classList.toggle('hidden');
+                });
+
+                document.querySelectorAll('.landing-mobile-nav-link').forEach(link => {
+                    link.addEventListener('click', () => {
+                        mobileMenu.classList.add('hidden');
+                        mobileMenuBtn.setAttribute('aria-expanded', 'false');
+                    });
+                });
+            }
+
+            // Drawer SFX and CRT toggle shortcuts
+            document.getElementById('drawer-sound-toggle-btn')?.addEventListener('click', () => {
+                document.getElementById('sound-toggle-btn')?.click();
+            });
+            document.getElementById('drawer-crt-toggle-btn')?.addEventListener('click', () => {
+                document.getElementById('crt-toggle-btn')?.click();
+            });
 
         });
     </script>

@@ -227,3 +227,13 @@ test('sitemap and robots.txt are accessible and properly configured', function (
     expect($robotsContent)->toContain('Sitemap: https://notenux.oryphem.com/sitemap.xml')
         ->and($robotsContent)->toContain('Allow: /login');
 });
+
+test('landing page header renders responsive mobile menu drawer and mascot sprite starts collapsed', function () {
+    $response = $this->get(route('landing'));
+
+    $response->assertOk()
+        ->assertSee('id="landing-mobile-menu-btn"', false)
+        ->assertSee('id="landing-mobile-menu"', false)
+        ->assertSee('hidden xl:flex', false)
+        ->assertSee('id="companion-bubble" class="hidden', false);
+});

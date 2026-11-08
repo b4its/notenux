@@ -3204,6 +3204,7 @@ class NotenuxPanel {
                 }
 
                 this.pushUndoSnapshot();
+                this.restoreEditorSelection();
 
                 if (command === 'createLink') {
                     let url = prompt('Enter link URL (https://...):');
@@ -3212,6 +3213,7 @@ class NotenuxPanel {
                         if (!/^(https?:\/\/|mailto:|#|\/)/i.test(url)) {
                             url = 'https://' + url;
                         }
+                        this.restoreEditorSelection();
                         const sel = window.getSelection ? window.getSelection() : null;
                         const isCollapsed = !sel || sel.isCollapsed || !sel.toString().trim();
                         if (isCollapsed) {
@@ -3226,6 +3228,21 @@ class NotenuxPanel {
                         this.handleEditorInput();
                         this.toast.show('Hyperlink inserted', 'info');
                     }
+                } else if (command === 'unlink') {
+                    this.restoreEditorSelection();
+                    const sel = window.getSelection ? window.getSelection() : null;
+                    if (sel && sel.rangeCount > 0) {
+                        let node = sel.getRangeAt(0).startContainer;
+                        if (node && node.nodeType === 3) node = node.parentNode;
+                        const link = node?.closest ? node.closest('a') : null;
+                        if (link && sel.isCollapsed) {
+                            const range = document.createRange();
+                            range.selectNodeContents(link);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        }
+                    }
+                    document.execCommand('unlink', false, null);
                 } else if (command === 'formatBlock' && value) {
                     document.execCommand('formatBlock', false, value);
                 } else {
@@ -4424,7 +4441,7 @@ class NotenuxPanel {
     insertMedia() {
         this.saveEditorSelection();
         this.audio?.playClick?.();
-        const choice = prompt('Masukkan URL Gambar (atau kosongkan untuk upload file dari perangkat, atau ketik "crystal", "sword", "shield"):', 'crystal');
+        const choice = prompt('Masukkan URL Gambar (atau kosongkan untuk upload file dari perangkat, atau ketik "crystal", "sword", "shield"):', '');
         if (choice === null) return;
 
         const trimmed = choice.trim();
@@ -4729,7 +4746,7 @@ class NotenuxPanel {
             serif: "'Merriweather', Georgia, serif",
         };
 
-        this.dom.editorArea.style.fontFamily = fontMap[font] || fontMap.pixel;
+        this.dom.editorArea.style.fontFamily = fontMap[font] || fontMap.sans;
         if (this.activeNote) {
             this.activeNote.font_family = font;
         }
@@ -5631,8 +5648,10 @@ class NotenuxPanel {
             this.updatePlainTextStats();
         }
 
-        const font = note.font_family || 'pixel';
+        const font = note.font_family || 'sans';
         const size = note.font_size || '16px';
+        note.font_family = font;
+        note.font_size = size;
 
         if (this.dom.fontFamilySelect) this.dom.fontFamilySelect.value = font;
         if (this.dom.fontSizeSelect) this.dom.fontSizeSelect.value = size;

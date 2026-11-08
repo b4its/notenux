@@ -122,3 +122,17 @@ test('it renders undo and redo toolbar buttons and cheat sheet keyboard shortcut
         ->assertSee('Ctrl + Z')
         ->assertSee('Ctrl + Y / Ctrl + Shift + Z');
 });
+
+test('it renders dynamic island 2-tier HUD capsule with full width title input and decoupled metadata', function () {
+    $response = $this->get(route('studio'));
+
+    $response->assertOk()
+        ->assertSee('dynamic-island-capsule')
+        ->assertSee('id="note-title-input"', false)
+        ->assertSee('id="save-now-btn"', false)
+        ->assertSee('id="dynamic-island-toggle-btn"', false)
+        ->assertSee('id="note-category-select"', false)
+        ->assertSee('id="note-folder-select"', false)
+        ->assertSee('id="favorite-note-btn"', false)
+        ->assertSee('id="pin-note-btn"', false);
+});

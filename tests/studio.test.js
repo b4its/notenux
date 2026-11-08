@@ -3494,6 +3494,87 @@ test('white-box: filterIslandSection selectively displays target tool decks', ()
     assert.equal(deckOps.classList.contains('hidden'), false);
 });
 
+test('white-box: loadNoteIntoEditor defaults font_family to sans for clean modern typography', () => {
+    const { panel, context } = harness(() => Promise.resolve({ ok: true, json: async () => ({}) }));
+    delete panel.loadNoteIntoEditor;
+    panel.clearFindHighlights = () => {};
+    panel.initHistory = () => {};
+    panel.updateWordAndCharMetrics = () => {};
+    panel.updatePinButtonUI = () => {};
+    panel.updateFavoriteButtonUI = () => {};
+    panel.updatePlainTextStats = () => {};
+
+    context.document.createElement = (tag) => ({
+        content: { querySelectorAll: () => [] },
+        querySelectorAll: () => [],
+        setAttribute() {},
+        style: {},
+        innerHTML: '',
+        childNodes: [],
+        appendChild() {},
+    });
+
+    const editorArea = { style: {}, setAttribute() {} };
+    const fontFamilySelect = { value: '' };
+    panel.dom = {
+        ...(panel.dom || {}),
+        editorArea,
+        fontFamilySelect,
+    };
+
+    const noteWithoutFont = {
+        id: 99,
+        title: 'Modern Scroll',
+        content: '<p>Content</p>',
+        font_family: null,
+        font_size: null,
+    };
+
+    panel.loadNoteIntoEditor(noteWithoutFont);
+    assert.equal(noteWithoutFont.font_family, 'sans');
+    assert.equal(fontFamilySelect.value, 'sans');
+    assert.ok(editorArea.style.fontFamily.includes('Instrument Sans'));
+});
+
+test('white-box: dynamic island capsule 2-tier HUD architecture decouples scroll title from metadata', () => {
+    const panelHtml = readFileSync(new URL('../resources/views/panel.blade.php', import.meta.url), 'utf8');
+
+    // Verify capsule exists and has 2 distinct tiers
+    assert.ok(panelHtml.includes('dynamic-island-capsule'));
+    assert.ok(panelHtml.includes('Tier 1: Scroll Command Bar'));
+    assert.ok(panelHtml.includes('Tier 2: Metadata & Property Rail'));
+
+    // Verify note-title-input is in Tier 1 with flex-1 min-w-0
+    const titleInputMatch = panelHtml.match(/id="note-title-input"[\s\S]*?class="([^"]*)"/);
+    assert.ok(titleInputMatch, 'note-title-input must exist in panel markup');
+    assert.ok(titleInputMatch[1].includes('flex-1') && titleInputMatch[1].includes('min-w-0'), 'Title input must have flex-1 min-w-0 to claim available row space');
+
+    // Verify Save and Tools toggle buttons are in Tier 1 with note title
+    assert.ok(panelHtml.includes('id="save-now-btn"'));
+    assert.ok(panelHtml.includes('id="dynamic-island-toggle-btn"'));
+
+    // Verify Category and Folder selects are in Tier 2
+    assert.ok(panelHtml.includes('id="note-category-select"'));
+    assert.ok(panelHtml.includes('id="note-folder-select"'));
+});
+
+test('white-box: landing page header provides mobile menu drawer and mascot bubble hidden default', () => {
+    const landingHtml = readFileSync(new URL('../resources/views/landing.blade.php', import.meta.url), 'utf8');
+
+    // Verify landing mobile menu button and drawer exist
+    assert.ok(landingHtml.includes('id="landing-mobile-menu-btn"'));
+    assert.ok(landingHtml.includes('id="landing-mobile-menu"'));
+
+    // Verify companion bubble starts with class="hidden"
+    const companionBubbleMatch = landingHtml.match(/id="companion-bubble"[^>]*class="([^"]*)"/);
+    assert.ok(companionBubbleMatch, 'companion-bubble must exist');
+    assert.ok(companionBubbleMatch[1].includes('hidden'), 'companion-bubble must start hidden so mascot sprite does not cover cards');
+
+    // Verify nav links are hidden on small/medium screens (< xl) to prevent header collisions
+    assert.ok(landingHtml.includes('hidden xl:flex'));
+});
+
+
 
 
 

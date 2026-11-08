@@ -383,7 +383,7 @@
         <!-- SIDEBAR 1: PRIMARY NAVIGATION & PLAYER PROFILE SIDEBAR -->
         <!-- ============================================================================== -->
         <aside id="primary-nav-sidebar"
-               class="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-64 max-w-[85vw] shrink-0 h-full bg-[var(--bg-surface)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
+               class="fixed inset-y-0 left-0 z-40 lg:static lg:z-auto w-60 lg:w-56 xl:w-60 2xl:w-64 max-w-[85vw] shrink-0 h-full bg-[var(--bg-surface)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
 
             <div class="p-3 border-b-2 border-black/10 dark:border-white/10 flex items-center justify-between lg:hidden">
                 <div class="flex items-center gap-2">
@@ -523,7 +523,7 @@
         <!-- SIDEBAR 2: SCROLL / NOTES EXPLORER SIDEBAR (Dedicated Inner Sidebar) -->
         <!-- ============================================================================== -->
         <aside id="notes-explorer-sidebar"
-               class="fixed inset-y-0 left-0 lg:left-auto z-40 lg:static lg:z-auto w-80 max-w-[88vw] sm:w-80 shrink-0 h-full bg-[var(--bg-surface-alt)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
+               class="fixed inset-y-0 left-0 lg:left-auto z-40 lg:static lg:z-auto w-72 lg:w-72 xl:w-80 max-w-[88vw] shrink-0 h-full bg-[var(--bg-surface-alt)] border-r-2 border-black dark:border-blue-900 flex flex-col transition-all duration-200 ease-in-out -translate-x-full lg:translate-x-0 overflow-hidden">
 
             <div class="p-3.5 flex-1 flex flex-col overflow-hidden">
                 <!-- Explorer Header -->
@@ -716,118 +716,107 @@
                 <!-- DYNAMIC ISLAND: FLOATING ADAPTIVE RETRO-MODERN HUD & COMMAND CAPSULE -->
                 <!-- ============================================================================== -->
                 <div id="studio-dynamic-island" class="dynamic-island-container sticky top-0 z-30 w-full transition-all duration-300">
-                    <!-- Island Capsule Pill (Compact Header / Always Visible & Interactive) -->
-                    <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
-                        <!-- Top on Mobile / Left on Desktop: Scroll Icon & Full-Width Scroll Title + Mobile Quick Actions -->
-                        <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 w-full sm:w-auto sm:flex-1">
-                            <!-- Retro Scroll Pill Icon -->
-                            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
-                                <i class="fa-solid fa-scroll text-xs sm:text-sm text-blue-600 dark:text-cyan-400"></i>
+                    <!-- Island Capsule Pill (Unified 2-Tier HUD / Document Title + Quick Actions + Metadata Rail) -->
+                    <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex flex-col gap-1.5 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
+                        <!-- Tier 1: Scroll Command Bar (Scroll Title is 100% visible and prominent on all viewports without squashing) -->
+                        <div class="flex items-center justify-between gap-2 min-w-0 w-full">
+                            <!-- Left: Retro Scroll Pill Icon & Title Input -->
+                            <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
+                                    <i class="fa-solid fa-scroll text-xs sm:text-sm text-blue-600 dark:text-cyan-400"></i>
+                                </div>
+
+                                <input type="text"
+                                       id="note-title-input"
+                                       placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
+                                       value="{{ $activeNote->title ?? '' }}"
+                                       {{ $activeNote ? '' : 'readonly' }}
+                                       class="w-full min-w-0 flex-1 text-sm sm:text-base font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-0.5 truncate"
+                                       title="Scroll Title">
                             </div>
 
-                            <!-- Scroll Title (Always 100% visible, prominent, and editable without compression) -->
-                            <input type="text"
-                                   id="note-title-input"
-                                   placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
-                                   value="{{ $activeNote->title ?? '' }}"
-                                   {{ $activeNote ? '' : 'readonly' }}
-                                   class="w-full min-w-0 flex-1 text-sm sm:text-base font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-0.5 truncate"
-                                   title="Scroll Title">
-
-                            <!-- Mobile Quick Save & Tools Toggle (Visible only on mobile < sm) -->
-                            <div class="flex items-center gap-1 sm:hidden shrink-0">
-                                <button type="button"
-                                        id="mobile-save-now-btn"
-                                        class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2 h-7 rounded-lg text-[10px] font-mono font-bold flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]"
-                                        title="Simpan naskah catatan sekarang">
-                                    <i class="fa-solid fa-floppy-disk mr-1"></i> <span>SAVE</span>
-                                </button>
-                                <button type="button"
-                                        id="mobile-dynamic-island-toggle-btn"
-                                        class="arcade-btn bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white px-2 h-7 rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0"
-                                        title="Buka / Tutup Dynamic Island Tools"
-                                        aria-expanded="false"
-                                        aria-controls="dynamic-island-tray">
-                                    <i class="fa-solid fa-layer-group text-cyan-300 text-[10px]"></i>
-                                    <span class="font-pixel text-[8px]">TOOLS</span>
-                                    <i class="fa-solid fa-chevron-down text-[8px] transition-transform duration-300"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Bottom on Mobile / Right on Desktop: Category, Live Telemetry, Actions & Dynamic Island Toggle -->
-                        <div class="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto shrink-0 min-w-0">
-                            <!-- Compact Category Pill Dropdown -->
-                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-0 flex-1 sm:flex-initial sm:w-36 max-w-[145px] sm:max-w-[155px]">
-                                <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
-                                <select id="note-category-select" class="w-full bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer truncate">
-                                    @if(isset($categories) && $categories->isNotEmpty())
-                                        @foreach($categories as $category)
-                                            <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
-                                        @endforeach
-                                    @else
-                                        <option value="catatan">[CATATAN] Catatan</option>
-                                        <option value="tugas">[TUGAS] Tugas</option>
-                                    @endif
-                                </select>
-                            </div>
-
-                            <!-- Compact Folder Pill Dropdown -->
-                            <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-0 flex-1 sm:flex-initial sm:w-36 max-w-[145px] sm:max-w-[155px]" title="Folder Naskah / Direktori Gulungan">
-                                <i class="fa-solid fa-folder text-amber-500 dark:text-yellow-400 text-xs shrink-0"></i>
-                                <select id="note-folder-select" class="w-full bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer truncate">
-                                    <option value="">[ROOT] Tanpa Folder</option>
-                                    @if(isset($folders) && $folders->isNotEmpty())
-                                        @foreach($folders as $folder)
-                                            <option value="{{ $folder->id }}" {{ isset($activeNote) && $activeNote->folder_id === $folder->id ? 'selected' : '' }}>{{ $folder->name }}</option>
-                                        @endforeach
-                                    @endif
-                                </select>
-                            </div>
-
-                            <!-- Live Synchronized Status -->
-                            <span id="save-status-text" class="hidden xl:inline-flex px-2 py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-surface-alt text-emerald-700 dark:text-emerald-400 text-[11px] font-bold items-center gap-1.5 shadow-[1px_1px_0px_#000] shrink-0">
-                                <i class="fa-solid fa-circle-check"></i> Synchronized
-                            </span>
-
-                            <!-- Word Count Quick Badge -->
-                            <span id="word-count-badge" class="hidden 2xl:inline-flex px-2 py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0">
-                                <i class="fa-solid fa-pen-nib text-blue-600 dark:text-blue-400"></i> 0 Words
-                            </span>
-
-                            <!-- Action Buttons Group: Favorite, Pin, Save, Tools Toggle -->
+                            <!-- Right: Primary Save & Dynamic Island Toggle Actions (Always full and accessible) -->
                             <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                                <!-- Favorite Bookmark -->
-                                <button id="favorite-note-btn"
-                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs flex items-center justify-center shrink-0"
-                                        title="Toggle Favorite Bookmark">
-                                    <i class="fa-regular fa-star text-amber-600 dark:text-yellow-400"></i>
-                                </button>
-
-                                <!-- Pin Button -->
-                                <button id="pin-note-btn"
-                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs font-mono flex items-center justify-center shrink-0"
-                                        title="Toggle Pinned Note">
-                                    <i class="fa-solid fa-thumbtack"></i>
-                                </button>
-
-                                <!-- Save Now Button (Desktop only) -->
+                                <!-- Save Now Button -->
                                 <button id="save-now-btn"
-                                        class="hidden sm:flex arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]"
-                                        title="Simpan naskah catatan sekarang">
+                                        class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]"
+                                        title="Simpan naskah catatan sekarang (Ctrl+S)">
                                     <i class="fa-solid fa-floppy-disk mr-1"></i> <span>SAVE</span>
                                 </button>
+                                <button type="button" id="mobile-save-now-btn" class="hidden" aria-hidden="true"></button>
 
-                                <!-- Dynamic Island Slide Toggle Button (Desktop only) -->
+                                <!-- Dynamic Island Slide Toggle Button -->
                                 <button type="button"
                                         id="dynamic-island-toggle-btn"
-                                        class="hidden sm:flex arcade-btn bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white px-2 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold items-center gap-1 sm:gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95"
+                                        class="arcade-btn bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold flex items-center gap-1 sm:gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 transition-all hover:scale-105 active:scale-95"
                                         title="Buka / Tutup Dynamic Island Tools (Alt+T)"
                                         aria-expanded="false"
                                         aria-controls="dynamic-island-tray">
                                     <i class="fa-solid fa-layer-group text-cyan-300"></i>
                                     <span class="font-pixel text-[9px] sm:text-[10px]">TOOLS</span>
                                     <i id="island-chevron-icon" class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
+                                </button>
+                                <button type="button" id="mobile-dynamic-island-toggle-btn" class="hidden" aria-hidden="true"></button>
+                            </div>
+                        </div>
+
+                        <!-- Tier 2: Metadata & Property Rail (Category, Folder, Telemetry, Star Bookmark, Pin) -->
+                        <div class="flex items-center justify-between gap-1.5 sm:gap-2 w-full min-w-0 pt-1.5 border-t border-black/10 dark:border-cyan-500/20 overflow-x-auto no-scrollbar scroll-smooth">
+                            <!-- Left: Category & Folder Selectors + Status -->
+                            <div class="flex items-center gap-1.5 min-w-0 flex-1 sm:flex-initial">
+                                <!-- Compact Category Pill Dropdown -->
+                                <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-[105px] max-w-[145px] sm:max-w-[160px] flex-1 sm:flex-initial" title="Kategori Naskah">
+                                    <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
+                                    <select id="note-category-select" class="w-full bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer truncate">
+                                        @if(isset($categories) && $categories->isNotEmpty())
+                                            @foreach($categories as $category)
+                                                <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
+                                            @endforeach
+                                        @else
+                                            <option value="catatan">[CATATAN] Catatan</option>
+                                            <option value="tugas">[TUGAS] Tugas</option>
+                                        @endif
+                                    </select>
+                                </div>
+
+                                <!-- Compact Folder Pill Dropdown -->
+                                <div class="flex items-center gap-1 bg-surface-alt px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] min-w-[105px] max-w-[145px] sm:max-w-[160px] flex-1 sm:flex-initial" title="Folder Naskah / Direktori Gulungan">
+                                    <i class="fa-solid fa-folder text-amber-500 dark:text-yellow-400 text-xs shrink-0"></i>
+                                    <select id="note-folder-select" class="w-full bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer truncate">
+                                        <option value="">[ROOT] Tanpa Folder</option>
+                                        @if(isset($folders) && $folders->isNotEmpty())
+                                            @foreach($folders as $folder)
+                                                <option value="{{ $folder->id }}" {{ isset($activeNote) && $activeNote->folder_id === $folder->id ? 'selected' : '' }}>{{ $folder->name }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+
+                                <!-- Live Synchronized Status -->
+                                <span id="save-status-text" class="hidden xl:inline-flex px-2 py-0.5 sm:py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-surface-alt text-emerald-700 dark:text-emerald-400 text-[11px] font-bold items-center gap-1.5 shadow-[1px_1px_0px_#000] shrink-0">
+                                    <i class="fa-solid fa-circle-check"></i> Synchronized
+                                </span>
+
+                                <!-- Word Count Quick Badge -->
+                                <span id="word-count-badge" class="hidden 2xl:inline-flex px-2 py-0.5 sm:py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0">
+                                    <i class="fa-solid fa-pen-nib text-blue-600 dark:text-blue-400"></i> 0 Words
+                                </span>
+                            </div>
+
+                            <!-- Right: Star Bookmark & Pin Note Actions -->
+                            <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto">
+                                <!-- Favorite Bookmark -->
+                                <button id="favorite-note-btn"
+                                        class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs flex items-center justify-center shrink-0 shadow-[1px_1px_0px_#000]"
+                                        title="Toggle Favorite Bookmark">
+                                    <i class="fa-regular fa-star text-amber-600 dark:text-yellow-400"></i>
+                                </button>
+
+                                <!-- Pin Button -->
+                                <button id="pin-note-btn"
+                                        class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs font-mono flex items-center justify-center shrink-0 shadow-[1px_1px_0px_#000]"
+                                        title="Toggle Pinned Note">
+                                    <i class="fa-solid fa-thumbtack"></i>
                                 </button>
                             </div>
                         </div>
