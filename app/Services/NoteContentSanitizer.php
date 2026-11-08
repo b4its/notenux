@@ -32,7 +32,7 @@ class NoteContentSanitizer
                     || (in_array($name, ['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'], true) && ctype_digit($value))
                     || (in_array($name, ['color', 'bgcolor', 'bordercolor'], true) && preg_match('/^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i', $value))
                     || (in_array($name, ['align', 'valign'], true) && in_array(strtolower($value), ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'], true))
-                    || ($name === 'style' && preg_match('/^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s\'"-]+;?\s*)+$/i', $value))
+                    || ($name === 'style' && preg_match('/^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s\'"-]+;?\s*)+$/i', $value) && ! preg_match('/(expression|behavior|javascript|vbscript|data:|url\s*\()/i', $value))
                     || ($name === 'href' && $tag === 'a' && preg_match('~^(https?://|mailto:|\#|/(?!/))~i', $value))
                     || ($name === 'target' && $tag === 'a' && in_array(strtolower($value), ['_blank', '_self'], true))
                     || ($name === 'rel' && $tag === 'a' && preg_match('/^[a-z\s_-]+$/i', $value))
@@ -40,6 +40,13 @@ class NoteContentSanitizer
 
                 if (! $safe) {
                     $element->removeAttribute($attribute->name);
+                }
+            }
+
+            if ($tag === 'a' && strtolower((string) $element->getAttribute('target')) === '_blank') {
+                $existingRel = trim((string) $element->getAttribute('rel'));
+                if (! str_contains($existingRel, 'noopener')) {
+                    $element->setAttribute('rel', $existingRel !== '' ? $existingRel.' noopener' : 'noopener');
                 }
             }
 

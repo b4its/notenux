@@ -163,7 +163,7 @@ class NoteController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:64'],
-            'content' => ['nullable', 'string'],
+            'content' => ['nullable', 'string', 'max:5000000'],
             'font_family' => ['nullable', 'string', 'in:pixel,arcade,mono,sans,serif'],
             'font_size' => ['nullable', 'string', 'max:16'],
             'theme_color' => ['nullable', 'string', 'max:32'],
@@ -222,7 +222,7 @@ class NoteController extends Controller
         $validated = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'category' => ['sometimes', 'nullable', 'string', 'max:64'],
-            'content' => ['sometimes', 'nullable', 'string'],
+            'content' => ['sometimes', 'nullable', 'string', 'max:5000000'],
             'font_family' => ['sometimes', 'string', 'in:pixel,arcade,mono,sans,serif'],
             'font_size' => ['sometimes', 'string', 'max:16'],
             'theme_color' => ['sometimes', 'string', 'max:32'],
@@ -273,7 +273,7 @@ class NoteController extends Controller
         $user = $this->resolveUser($request);
 
         $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'exists:notes,id'],
         ]);
 
@@ -314,7 +314,7 @@ class NoteController extends Controller
         $user = $this->resolveUser($request);
 
         $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'exists:notes,id'],
             'is_pinned' => ['nullable', 'boolean'],
             'is_favorite' => ['nullable', 'boolean'],
@@ -432,8 +432,8 @@ class NoteController extends Controller
             $stream = fopen('php://memory', 'r+');
             fputcsv($stream, ['Title', 'Category', 'Level', 'XP', 'Words', 'Chars', 'Pinned', 'Favorite', 'Created', 'Updated', 'Content']);
             fputcsv($stream, [
-                $note->title,
-                $note->category,
+                $this->sanitizeCsvCell($note->title),
+                $this->sanitizeCsvCell($note->category),
                 $note->level,
                 $note->xp,
                 $note->word_count,
@@ -442,7 +442,7 @@ class NoteController extends Controller
                 $note->is_favorite ? 'Yes' : 'No',
                 $note->created_at?->toIso8601String() ?? '',
                 $note->updated_at?->toIso8601String() ?? '',
-                $this->convertToPlainText($note->content),
+                $this->sanitizeCsvCell($this->convertToPlainText($note->content)),
             ]);
             rewind($stream);
             $csv = stream_get_contents($stream);
@@ -832,8 +832,8 @@ class NoteController extends Controller
         $user = $this->resolveUser($request);
 
         $validated = $request->validate([
-            'file' => ['nullable', 'file', 'max:5120'],
-            'content' => ['required_without:file', 'nullable', 'string'],
+            'file' => ['nullable', 'file', 'max:5120', 'extensions:md,txt,markdown,json'],
+            'content' => ['required_without:file', 'nullable', 'string', 'max:5000000'],
             'category' => ['nullable', 'string', 'max:64'],
             'title' => ['nullable', 'string', 'max:255'],
         ]);
@@ -934,15 +934,23 @@ class NoteController extends Controller
             $notesQuery->whereRaw('1 = 0');
         }
 
-        $totalNotes = (clone $notesQuery)->count();
-        $totalWords = (int) (clone $notesQuery)->sum('word_count');
-        $totalXP = (int) (clone $notesQuery)->sum('xp');
+        $aggregates = (clone $notesQuery)->selectRaw('
+            COUNT(*) as total_notes,
+            COALESCE(SUM(word_count), 0) as total_words,
+            COALESCE(SUM(xp), 0) as total_xp,
+            COALESCE(SUM(CASE WHEN is_pinned = 1 THEN 1 ELSE 0 END), 0) as pinned_notes,
+            COALESCE(SUM(CASE WHEN is_favorite = 1 THEN 1 ELSE 0 END), 0) as favorite_notes
+        ')->first();
+
+        $totalNotes = (int) ($aggregates->total_notes ?? 0);
+        $totalWords = (int) ($aggregates->total_words ?? 0);
+        $totalXP = (int) ($aggregates->total_xp ?? 0);
+        $pinnedNotes = (int) ($aggregates->pinned_notes ?? 0);
+        $favoriteNotes = (int) ($aggregates->favorite_notes ?? 0);
+
         $totalChunks = $userId
             ? NoteChunk::whereHas('note', fn (Builder $q) => $q->where('user_id', $userId))->count()
             : 0;
-
-        $pinnedNotes = (clone $notesQuery)->where('is_pinned', true)->count();
-        $favoriteNotes = (clone $notesQuery)->where('is_favorite', true)->count();
 
         $level = max(1, (int) floor($totalXP / 150) + 1);
         $nextLevelXP = $level * 150;
@@ -977,5 +985,18 @@ class NoteController extends Controller
             'needed_xp' => $neededXP,
             'next_level_xp' => $nextLevelXP,
         ];
+    }
+
+    /**
+     * Sanitize cell value to prevent CSV Formula / DDE Injection (CWE-1236).
+     */
+    protected function sanitizeCsvCell(mixed $value): string
+    {
+        $str = (string) $value;
+        if ($str !== '' && in_array($str[0], ['=', '+', '-', '@', "\t", "\r", '%'], true)) {
+            return "'".$str;
+        }
+
+        return $str;
     }
 }

@@ -21,9 +21,9 @@ Route::get('/', [LandingController::class, 'index'])->name('landing');
 */
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
 });
 
 /*
@@ -67,7 +67,7 @@ Route::prefix('api/categories')->group(function () {
 Route::prefix('api/notes')->group(function () {
     Route::get('/', [NoteController::class, 'index'])->name('notes.index');
     Route::post('/', [NoteController::class, 'store'])->name('notes.store');
-    Route::post('/import', [NoteController::class, 'import'])->name('notes.import');
+    Route::post('/import', [NoteController::class, 'import'])->middleware('throttle:30,1')->name('notes.import');
     Route::post('/bulk-delete', [NoteController::class, 'bulkDestroy'])->name('notes.bulk-delete');
     Route::delete('/bulk-delete', [NoteController::class, 'bulkDestroy']);
     Route::post('/bulk-update', [NoteController::class, 'bulkUpdate'])->name('notes.bulk-update');

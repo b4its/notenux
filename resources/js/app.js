@@ -28,12 +28,21 @@ function sanitizeHtml(html) {
                 || (['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'].includes(name) && /^\d+$/.test(value))
                 || (['color', 'bgcolor', 'bordercolor'].includes(name) && /^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i.test(value))
                 || (['align', 'valign'].includes(name) && ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'].includes((value || '').toLowerCase()))
-                || (name === 'style' && /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value))
+                || (name === 'style' && /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value) && !/(expression|behavior|javascript|vbscript|data:|url\s*\()/i.test(value))
                 || (name === 'href' && element.localName === 'a' && /^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(value))
                 || (name === 'target' && element.localName === 'a' && ['_blank', '_self'].includes((value || '').toLowerCase()))
                 || (name === 'rel' && element.localName === 'a' && /^[a-z\s_-]+$/i.test(value))
                 || (name === 'src' && element.localName === 'img' && /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)/i.test((value || '').trim()));
             if (!safe) element.removeAttribute(name);
+        }
+        if (element.localName === 'a' && typeof element.getAttribute === 'function' && typeof element.setAttribute === 'function') {
+            const target = (element.getAttribute('target') || '').toLowerCase();
+            if (target === '_blank') {
+                const existingRel = (element.getAttribute('rel') || '').trim();
+                if (!existingRel.includes('noopener')) {
+                    element.setAttribute('rel', existingRel ? `${existingRel} noopener` : 'noopener');
+                }
+            }
         }
         if (element.localName === 'input' && element.type !== 'checkbox') element.remove();
     }

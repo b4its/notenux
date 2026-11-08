@@ -60,8 +60,10 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            ], fn ($val, $key) => $key === PDO::ATTR_EMULATE_PREPARES || ! empty($val), ARRAY_FILTER_USE_BOTH) : [],
         ],
 
         'mariadb' => [
@@ -80,8 +82,10 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            ], fn ($val, $key) => $key === PDO::ATTR_EMULATE_PREPARES || ! empty($val), ARRAY_FILTER_USE_BOTH) : [],
         ],
 
         'pgsql' => [

@@ -310,9 +310,20 @@ class CategoryController extends Controller
             $notesQuery->whereRaw('1 = 0');
         }
 
-        $totalNotes = (clone $notesQuery)->count();
-        $totalWords = (int) (clone $notesQuery)->sum('word_count');
-        $totalXP = (int) (clone $notesQuery)->sum('xp');
+        $aggregates = (clone $notesQuery)->selectRaw('
+            COUNT(*) as total_notes,
+            COALESCE(SUM(word_count), 0) as total_words,
+            COALESCE(SUM(xp), 0) as total_xp,
+            COALESCE(SUM(CASE WHEN is_pinned = 1 THEN 1 ELSE 0 END), 0) as pinned_notes,
+            COALESCE(SUM(CASE WHEN is_favorite = 1 THEN 1 ELSE 0 END), 0) as favorite_notes
+        ')->first();
+
+        $totalNotes = (int) ($aggregates->total_notes ?? 0);
+        $totalWords = (int) ($aggregates->total_words ?? 0);
+        $totalXP = (int) ($aggregates->total_xp ?? 0);
+        $pinnedNotes = (int) ($aggregates->pinned_notes ?? 0);
+        $favoriteNotes = (int) ($aggregates->favorite_notes ?? 0);
+
         $totalChunks = $userId
             ? NoteChunk::whereHas('note', fn (Builder $q) => $q->where('user_id', $userId))->count()
             : 0;
@@ -339,8 +350,8 @@ class CategoryController extends Controller
             'total_words' => $totalWords,
             'total_xp' => $totalXP,
             'total_chunks' => $totalChunks,
-            'pinned_notes' => (clone $notesQuery)->where('is_pinned', true)->count(),
-            'favorite_notes' => (clone $notesQuery)->where('is_favorite', true)->count(),
+            'pinned_notes' => $pinnedNotes,
+            'favorite_notes' => $favoriteNotes,
             'level' => $level,
             'progress_percent' => max(5, $percent),
             'progress_xp' => $progressXP,
