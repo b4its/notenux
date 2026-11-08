@@ -1054,3 +1054,18 @@ test('white-box: note controller bulkUpdate updates pinned, favorite, and catego
         ->and($note2->is_favorite)->toBeTrue()
         ->and($note2->category)->toBe('spellbook');
 });
+
+test('white-box: note controller bulkUpdate validates request payload and handles empty updates safely', function () {
+    $note = Note::factory()->create();
+    $controller = app(NoteController::class);
+
+    // Empty updates payload
+    $reqEmpty = Request::create('/api/notes/bulk-update', 'POST', [
+        'ids' => [$note->id],
+    ]);
+    $resEmpty = $controller->bulkUpdate($reqEmpty);
+    expect($resEmpty->getStatusCode())->toBe(200);
+    $dataEmpty = $resEmpty->getData(true);
+    expect($dataEmpty['status'])->toBe('success')
+        ->and($dataEmpty['data']['updated_count'])->toBe(0);
+});

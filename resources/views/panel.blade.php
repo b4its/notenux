@@ -583,6 +583,17 @@
                                 title="Favoritkan / Batal Favorit semua terpilih">
                             <i class="fa-solid fa-star"></i> FAV
                         </button>
+                        <select id="bulk-move-category-select"
+                                disabled
+                                class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed text-main py-1 px-1.5 rounded text-[10px] font-mono font-bold border border-black/40 shadow-[1px_1px_0px_#000] cursor-pointer"
+                                title="Pindahkan gulungan terpilih ke kategori lain">
+                            <option value="">PINDAH KATEGORI...</option>
+                            @if(isset($categories) && $categories->isNotEmpty())
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->slug }}">{{ $category->name }}</option>
+                                @endforeach
+                            @endif
+                        </select>
                         <button id="bulk-delete-notes-btn"
                                 type="button"
                                 disabled

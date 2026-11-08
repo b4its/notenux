@@ -2578,6 +2578,41 @@ test('white-box: executeBulkPinNotes and executeBulkFavoriteNotes toggle flags a
     assert.equal(panel.notes[1].is_favorite, true);
 });
 
+test('white-box: executeBulkMoveCategory moves selected notes to target category and updates active note select', async () => {
+    const payloads = [];
+    const { panel } = harness(async (url, options) => {
+        if (options && options.body) {
+            payloads.push(JSON.parse(options.body));
+        }
+        return response({ updated_count: 2 });
+    });
+
+    panel.categories = [
+        { id: 10, name: 'Archive Vault', slug: 'archive' },
+        { id: 11, name: 'Quests', slug: 'quest' },
+    ];
+    panel.notes = [
+        { id: 1, title: 'Note 1', category: 'quest' },
+        { id: 2, title: 'Note 2', category: 'quest' },
+    ];
+    panel.activeNote = panel.notes[0];
+    panel.selectedNoteIds = new Set([1, 2]);
+    panel.dom.noteCategorySelect = { value: 'quest' };
+    panel.renderNotesList = () => {};
+    panel.syncCategoriesDOM = () => {};
+
+    await panel.executeBulkMoveCategory('archive');
+
+    assert.equal(payloads.length, 1);
+    assert.equal(payloads[0].category, 'archive');
+    assert.equal(payloads[0].ids.length, 2);
+    assert.equal(panel.notes[0].category, 'archive');
+    assert.equal(panel.notes[1].category, 'archive');
+    assert.equal(panel.activeNote.category, 'archive');
+    assert.equal(panel.dom.noteCategorySelect.value, 'archive');
+});
+
+
 
 
 

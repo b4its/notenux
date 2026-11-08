@@ -1245,3 +1245,22 @@ test('black-box: user bulk updates pinned and favorite flags across multiple not
     $this->assertDatabaseHas('notes', ['id' => $note2->id, 'is_pinned' => true, 'is_favorite' => true]);
     $this->assertDatabaseHas('notes', ['id' => $note3->id, 'is_pinned' => false, 'is_favorite' => false]);
 });
+
+test('black-box: user bulk moves multiple notes to another category via api', function () {
+    $note1 = Note::factory()->create(['category' => 'quest']);
+    $note2 = Note::factory()->create(['category' => 'quest']);
+    $note3 = Note::factory()->create(['category' => 'lore']);
+
+    $res = $this->postJson('/api/notes/bulk-update', [
+        'ids' => [$note1->id, $note2->id],
+        'category' => 'archive',
+    ]);
+
+    $res->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.updated_count', 2);
+
+    $this->assertDatabaseHas('notes', ['id' => $note1->id, 'category' => 'archive']);
+    $this->assertDatabaseHas('notes', ['id' => $note2->id, 'category' => 'archive']);
+    $this->assertDatabaseHas('notes', ['id' => $note3->id, 'category' => 'lore']);
+});

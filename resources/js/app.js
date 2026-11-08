@@ -965,6 +965,7 @@ class NotenuxPanel {
             bulkDeleteNotesBtn: document.getElementById('bulk-delete-notes-btn'),
             bulkPinNotesBtn: document.getElementById('bulk-pin-notes-btn'),
             bulkFavNotesBtn: document.getElementById('bulk-fav-notes-btn'),
+            bulkMoveCategorySelect: document.getElementById('bulk-move-category-select'),
             bulkCancelNotesBtn: document.getElementById('bulk-cancel-notes-btn'),
 
             bulkDeleteNotesModal: document.getElementById('bulk-delete-notes-modal'),
@@ -2305,6 +2306,13 @@ class NotenuxPanel {
 
         this.dom.bulkFavNotesBtn?.addEventListener('click', () => {
             this.executeBulkFavoriteNotes();
+        });
+
+        this.dom.bulkMoveCategorySelect?.addEventListener('change', async (e) => {
+            const targetCategory = e.target.value;
+            if (!targetCategory) return;
+            await this.executeBulkMoveCategory(targetCategory);
+            e.target.value = '';
         });
 
         this.dom.bulkDeleteNotesBtn?.addEventListener('click', () => {
@@ -4839,6 +4847,12 @@ class NotenuxPanel {
         if (this.dom.bulkFavNotesBtn) {
             this.dom.bulkFavNotesBtn.disabled = count === 0;
         }
+        if (this.dom.bulkMoveCategorySelect) {
+            this.dom.bulkMoveCategorySelect.disabled = count === 0;
+            if (count === 0) {
+                this.dom.bulkMoveCategorySelect.value = '';
+            }
+        }
         if (this.dom.bulkSelectAllNotesCb) {
             const filtered = this.getFilteredNotes();
             this.dom.bulkSelectAllNotesCb.checked = filtered.length > 0 && filtered.every(n => this.selectedNoteIds?.has(n.id));
@@ -4950,6 +4964,9 @@ class NotenuxPanel {
                     if (this.dom.favoriteBtn && 'is_favorite' in updates) {
                         this.dom.favoriteBtn.classList.toggle('text-yellow-400', Boolean(this.activeNote.is_favorite));
                     }
+                    if (this.dom.noteCategorySelect && 'category' in updates) {
+                        this.dom.noteCategorySelect.value = this.activeNote.category;
+                    }
                 }
 
                 this.renderNotesList();
@@ -4961,6 +4978,19 @@ class NotenuxPanel {
         } catch {
             this.toast?.show?.('Kesalahan jaringan saat memperbarui gulungan.', 'danger', 'Koneksi Gagal');
         }
+    }
+
+    async executeBulkMoveCategory(targetCategory) {
+        const ids = Array.from(this.selectedNoteIds || []);
+        if (ids.length === 0 || !targetCategory) return;
+
+        const catObj = this.categories?.find(c => c.slug === targetCategory);
+        const catName = catObj ? catObj.name : targetCategory;
+
+        await this.executeBulkUpdateNotes(
+            { category: targetCategory },
+            `${ids.length} gulungan dipindahkan ke kategori "${catName}"!`
+        );
     }
 
     async executeBulkPinNotes() {
@@ -5321,6 +5351,14 @@ class NotenuxPanel {
                 `<option value="${this.escapeHtml(cat.slug)}">${this.escapeHtml(cat.name)}</option>`
             ).join('');
             if (this.categories.some(category => category.slug === currentValue)) this.dom.importCategorySelect.value = currentValue;
+        }
+
+        // Sync bulk move category dropdown options
+        if (this.dom.bulkMoveCategorySelect) {
+            const options = (this.categories || []).map(cat =>
+                `<option value="${this.escapeHtml(cat.slug)}">${this.escapeHtml(cat.name)}</option>`
+            ).join('');
+            this.dom.bulkMoveCategorySelect.innerHTML = `<option value="">PINDAH KATEGORI...</option>${options}`;
         }
 
         // Sync filter pills row
