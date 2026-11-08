@@ -194,7 +194,7 @@ class CategoryController extends Controller
         $user = $this->resolveUser($request);
 
         $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
             'ids.*' => ['required', 'integer', 'exists:categories,id'],
         ]);
 

@@ -48,9 +48,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/panel', fn () => redirect()->route('studio'))->name('panel');
 
     Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile.show');
-    Route::put('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/profile', [AuthController::class, 'updateProfile'])->middleware('throttle:15,1')->name('profile.update');
     Route::get('/api/profile', [AuthController::class, 'showProfile'])->name('api.profile.show');
-    Route::put('/api/profile', [AuthController::class, 'updateProfile'])->name('api.profile.update');
+    Route::put('/api/profile', [AuthController::class, 'updateProfile'])->middleware('throttle:15,1')->name('api.profile.update');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');

@@ -47,12 +47,20 @@ class SecurityHeadersMiddleware
             ."img-src 'self' data: blob: https:; "
             ."connect-src 'self'; "
             ."frame-ancestors 'self'; "
-            ."form-action 'self';";
+            ."form-action 'self'; "
+            ."base-uri 'self'; "
+            ."object-src 'none'; "
+            .'upgrade-insecure-requests;';
         $response->headers->set('Content-Security-Policy', $csp);
 
         // Strict-Transport-Security when HTTPS is used
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
+
+        // High-performance cache headers for immutable Vite assets
+        if ($request->is('build/*')) {
+            $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
         }
 
         return $response;

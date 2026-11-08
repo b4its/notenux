@@ -489,7 +489,9 @@ class NoteController extends Controller
 
         if ($format === 'html') {
             $title = e($note->title);
-            $html = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{$title}</title>\n";
+            $html = "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n";
+            $html .= "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data: https:;\">\n";
+            $html .= "<title>{$title}</title>\n";
             $html .= "<style>body{font-family:sans-serif;max-width:800px;margin:2rem auto;line-height:1.6;padding:1rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px}</style>\n";
             $html .= "</head>\n<body>\n<h1>{$title}</h1>\n{$note->content}\n</body>\n</html>";
 
@@ -1008,11 +1010,13 @@ class NoteController extends Controller
 
     /**
      * Sanitize cell value to prevent CSV Formula / DDE Injection (CWE-1236).
+     * Neutralizes formulas even when preceded by leading whitespace or pipe character.
      */
     protected function sanitizeCsvCell(mixed $value): string
     {
         $str = (string) $value;
-        if ($str !== '' && in_array($str[0], ['=', '+', '-', '@', "\t", "\r", '%'], true)) {
+        $trimmed = ltrim($str);
+        if ($trimmed !== '' && in_array($trimmed[0], ['=', '+', '-', '@', "\t", "\r", '%', '|'], true)) {
             return "'".$str;
         }
 

@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Services\NoteContentSanitizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -112,4 +113,63 @@ test('performance: telemetry stats calculates aggregated metrics via single data
         ->assertJsonPath('data.total_xp', 1500)
         ->assertJsonPath('data.pinned_notes', 5)
         ->assertJsonPath('data.favorite_notes', 0);
+});
+
+test('security: csp policy enforces base-uri self, object-src none, and upgrade-insecure-requests', function () {
+    $response = $this->get('/');
+    $csp = (string) $response->headers->get('Content-Security-Policy');
+
+    expect($csp)->toContain("base-uri 'self'")
+        ->and($csp)->toContain("object-src 'none'")
+        ->and($csp)->toContain('upgrade-insecure-requests');
+});
+
+test('security: csv export neutralizes formula triggers with leading whitespace and pipe symbols', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->create([
+        'user_id' => $user->id,
+        'title' => '   =cmd|\' /C calc\'!A0',
+        'category' => ' |123456789',
+        'content' => '<p>  -DangerousFormulaWithSpaces</p>',
+    ]);
+
+    $response = $this->actingAs($user)->get("/api/notes/{$note->id}/export/csv");
+    $response->assertOk();
+
+    $csv = $response->getContent();
+    expect($csv)->toContain("'   =cmd|' /C calc'!A0")
+        ->and($csv)->toContain("' |123456789")
+        ->and($csv)->toContain("'-DangerousFormulaWithSpaces");
+});
+
+test('security: html export attaches strict content security policy meta tag', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->create([
+        'user_id' => $user->id,
+        'title' => 'Secure Export Scroll',
+        'content' => '<p>Sanitized content</p>',
+    ]);
+
+    $response = $this->actingAs($user)->get("/api/notes/{$note->id}/export/html");
+    $response->assertOk();
+
+    $html = $response->getContent();
+    expect($html)->toContain('<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; img-src data: https:;">');
+});
+
+test('security: category bulk delete rejects arrays exceeding 100 items', function () {
+    $user = User::factory()->create();
+    $tooManyIds = range(1, 101);
+
+    $response = $this->actingAs($user)->postJson('/api/categories/bulk-delete', [
+        'ids' => $tooManyIds,
+    ]);
+
+    $response->assertStatus(422)
+        ->assertJsonValidationErrors('ids');
+});
+
+test('performance: composite indexes exist on notes table for user_id, pinned, and category', function () {
+    expect(Schema::hasIndex('notes', 'notes_user_id_pinned_updated_index'))->toBeTrue()
+        ->and(Schema::hasIndex('notes', 'notes_user_id_category_updated_index'))->toBeTrue();
 });

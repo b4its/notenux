@@ -22,7 +22,8 @@ class RestoreDatabaseCommand extends Command
         $fileName = $this->argument('file');
 
         if ($fileName) {
-            $filePath = str_starts_with($fileName, '/') ? $fileName : "{$backupDir}/{$fileName}";
+            $safeName = basename($fileName);
+            $filePath = "{$backupDir}/{$safeName}";
         } else {
             $files = File::glob("{$backupDir}/*.json");
             if (empty($files)) {
