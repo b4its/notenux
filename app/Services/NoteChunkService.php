@@ -332,7 +332,7 @@ class NoteChunkService
     /**
      * Imports raw Markdown, JSON backup, or text content into a newly created Note with chunking.
      */
-    public function importMarkdown(string $rawMarkdown, ?string $filename = null, ?string $category = 'quest', ?User $user = null): Note
+    public function importMarkdown(string $rawMarkdown, ?string $filename = null, ?string $category = 'catatan', ?User $user = null): Note
     {
         return DB::transaction(function () use ($rawMarkdown, $filename, $category, $user): Note {
             $trimmed = trim($rawMarkdown);
@@ -343,7 +343,7 @@ class NoteChunkService
                 $decoded = json_decode($trimmed, true);
                 if (is_array($decoded) && (isset($decoded['content']) || isset($decoded['title']))) {
                     $jsonTitle = ! empty($decoded['title']) ? trim((string) $decoded['title']) : null;
-                    $jsonCategory = ! empty($decoded['category']) ? trim((string) $decoded['category']) : ($category ?: 'quest');
+                    $jsonCategory = ! empty($decoded['category']) ? trim((string) $decoded['category']) : ($category ?: 'catatan');
                     $jsonFont = in_array($decoded['font_family'] ?? '', ['pixel', 'arcade', 'mono', 'sans', 'serif'], true) ? $decoded['font_family'] : 'pixel';
                     $jsonFontSize = ! empty($decoded['font_size']) ? (string) $decoded['font_size'] : '16px';
                     $jsonTheme = ! empty($decoded['theme_color']) ? (string) $decoded['theme_color'] : 'blue';
@@ -389,7 +389,7 @@ class NoteChunkService
             $html = str_replace('<table>', '<table class="retro-table">', $html);
             $html = app(NoteContentSanitizer::class)->sanitize($html);
 
-            $validCategory = ! empty($category) ? trim($category) : 'quest';
+            $validCategory = ! empty($category) ? trim($category) : 'catatan';
 
             $note = Note::create([
                 'user_id' => $userId,

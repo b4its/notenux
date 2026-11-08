@@ -21,7 +21,7 @@ class NoteFactory extends Factory
      */
     public function definition(): array
     {
-        $categories = ['quest', 'lore', 'spellbook', 'strategy', 'journal'];
+        $categories = ['catatan', 'tugas', 'quest', 'lore', 'spellbook', 'strategy', 'journal'];
         $fonts = ['pixel', 'sans', 'mono', 'serif'];
         $sizes = ['14px', '16px', '18px', '20px'];
         $title = fake()->catchPhrase();

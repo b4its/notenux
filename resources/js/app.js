@@ -1440,7 +1440,7 @@ class NotenuxPanel {
                 const file = this.dom.importFileInput?.files?.[0];
                 const rawContent = this.dom.importRawContent?.value || '';
                 const title = this.dom.importTitleInput?.value || '';
-                const category = this.dom.importCategorySelect?.value || 'quest';
+                const category = this.dom.importCategorySelect?.value || 'catatan';
 
                 if (!file && !rawContent.trim()) {
                     this.toast.show('Please upload a file or paste Markdown content.', 'warning');
@@ -1788,7 +1788,7 @@ class NotenuxPanel {
     }
 
     clearFindHighlights() {
-        if (!this.dom.editorArea) return;
+        if (!this.dom.editorArea || typeof this.dom.editorArea.querySelectorAll !== 'function') return;
         const marks = this.dom.editorArea.querySelectorAll('mark.search-match');
         marks.forEach(m => {
             const parent = m.parentNode;
@@ -1797,7 +1797,7 @@ class NotenuxPanel {
             }
             parent.removeChild(m);
         });
-        this.dom.editorArea.normalize();
+        this.dom.editorArea.normalize?.();
         this.findMatches = [];
         this.currentMatchIndex = -1;
         if (this.dom.findMatchBadge) this.dom.findMatchBadge.textContent = '0 matches';
@@ -2251,7 +2251,7 @@ class NotenuxPanel {
             this.renderNotesList();
             this.loadNoteIntoEditor(this.activeNote);
         } else {
-            this.createNewNote(true);
+            this.clearEditorToEmptyState();
         }
     }
 
@@ -4128,7 +4128,15 @@ class NotenuxPanel {
     }
 
     updateWordAndCharMetrics() {
-        const text = this.dom.editorArea.innerText || '';
+        if (!this.activeNote) {
+            if (this.dom.wordCountBadge) this.dom.wordCountBadge.innerHTML = '<i class="fa-solid fa-pen-nib mr-1 text-blue-500"></i> 0 Words';
+            if (this.dom.charCountBadge) this.dom.charCountBadge.innerHTML = '<i class="fa-solid fa-font mr-1 text-blue-500"></i> 0 Chars';
+            if (this.dom.readingTimeBadge) this.dom.readingTimeBadge.innerHTML = '<i class="fa-solid fa-clock mr-1 text-cyan-500"></i> 0m Read';
+            if (this.dom.questGoalText) this.dom.questGoalText.textContent = `Goal: 0/${this.wordGoal}w (0%)`;
+            return;
+        }
+
+        const text = this.dom.editorArea?.innerText || '';
         const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
         const chars = text.length;
         const minutes = Math.max(1, Math.ceil(words / 180));
@@ -4210,6 +4218,12 @@ class NotenuxPanel {
 
     /* ---------------- CRUD & API SYNC ---------------- */
     saveActiveNote(manual = false) {
+        if (!this.activeNote) {
+            if (manual) {
+                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+            }
+            return Promise.resolve(false);
+        }
         if (this.activeNote && this.dom.editorArea && !this.isRawMarkdownMode && !this.isPlainTextMode) {
             const content = this.dom.editorArea.cloneNode(true);
             content.querySelectorAll('mark.search-match').forEach(mark => mark.replaceWith(...mark.childNodes));
@@ -4244,10 +4258,10 @@ class NotenuxPanel {
 
         try {
             const payload = {
-                title: snapshot.title || 'Untitled Scroll',
-                category: snapshot.category || 'quest',
+                title: snapshot.title || 'Catatan Baru',
+                category: snapshot.category || 'catatan',
                 content: snapshot.content || '',
-                font_family: snapshot.font_family || 'pixel',
+                font_family: snapshot.font_family || 'sans',
                 font_size: snapshot.font_size || '16px',
                 theme_color: snapshot.theme_color || 'blue',
             };
@@ -4317,13 +4331,17 @@ class NotenuxPanel {
         this.audio.playLevelUp();
         try {
             const count = this.notes.length + 1;
+            const defaultCategory = (this.activeCategory && this.activeCategory !== 'all' && this.activeCategory !== 'pinned' && this.activeCategory !== 'favorites')
+                ? this.activeCategory
+                : (this.categories?.find(category => category.slug === 'catatan')?.slug || this.categories?.[0]?.slug || 'catatan');
+
             const payload = {
-                title: `Quest Scroll #${count}: Arcane Expedition`,
-                category: (this.activeCategory !== 'all' && this.activeCategory !== 'pinned' && this.activeCategory !== 'favorites') ? this.activeCategory : (this.categories?.find(category => category.slug === 'quest')?.slug || this.categories?.[0]?.slug || 'quest'),
+                title: count === 1 ? 'Catatan Baru' : `Catatan Baru #${count}`,
+                category: defaultCategory,
                 is_pinned: this.activeCategory === 'pinned',
                 is_favorite: this.activeCategory === 'favorites',
-                content: `<h2>Chapter ${count}</h2><p>Inscribe your thoughts, strategic lore, or arcane spells here...</p>`,
-                font_family: 'pixel',
+                content: '<p>Mulai tulis catatan Anda di sini...</p>',
+                font_family: 'sans',
                 font_size: '16px',
                 theme_color: 'blue',
             };
@@ -4344,21 +4362,21 @@ class NotenuxPanel {
                 this.renderNotesList();
 
                 if (selectImmediately) {
-                    this.selectNote(newNote);
+                    await this.selectNote(newNote);
                 }
                 this.refreshPlayerStats();
 
                 this.toast.show(
-                    `Spawned new scroll "${newNote.title}" (+25 XP awarded)`,
+                    `Catatan baru "${newNote.title}" berhasil dibuat (+25 XP)`,
                     'xp',
-                    'New Scroll Ready',
-                    'fa-solid fa-scroll text-yellow-400'
+                    'Catatan Baru',
+                    'fa-solid fa-note-sticky text-yellow-400'
                 );
             } else {
                 throw new Error(data.message || 'Could not create scroll');
             }
         } catch (e) {
-            this.toast.show('Could not spawn new scroll.', 'danger');
+            this.toast.show('Gagal membuat catatan baru.', 'danger');
         }
     }
 
@@ -4671,7 +4689,7 @@ class NotenuxPanel {
                     if (this.notes.length > 0) {
                         await this.selectNote(this.notes[0]);
                     } else {
-                        await this.createNewNote(true);
+                        this.clearEditorToEmptyState();
                     }
                 }
                 this.refreshPlayerStats();
@@ -4733,6 +4751,49 @@ class NotenuxPanel {
         }
     }
 
+    clearEditorToEmptyState() {
+        this.activeNote = null;
+        this.clearFindHighlights?.();
+        if (this.dom.noteTitleInput) {
+            this.dom.noteTitleInput.value = '';
+            this.dom.noteTitleInput.placeholder = 'Belum ada catatan dipilih...';
+        }
+        if (this.dom.editorArea) {
+            this.dom.editorArea.innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-[300px] text-center text-slate-400 p-8 space-y-3 font-mono select-none">
+                    <i class="fa-solid fa-scroll text-4xl text-blue-500/40"></i>
+                    <p class="font-bold text-sm text-slate-600 dark:text-slate-300">Belum ada catatan.</p>
+                    <p class="text-xs">Klik tombol <strong>+ Scroll</strong> di bilah navigasi atau tekan <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border text-[10px]">Ctrl+N</kbd> untuk mulai membuat catatan baru.</p>
+                </div>
+            `;
+            if (this.dom.editorArea.style) {
+                this.dom.editorArea.style.fontFamily = "'Modern Sans', sans-serif";
+                this.dom.editorArea.style.fontSize = '16px';
+            }
+        }
+        if (this.dom.markdownRawEditor) {
+            this.dom.markdownRawEditor.value = '';
+        }
+        if (this.dom.plainTextEditor) {
+            this.dom.plainTextEditor.value = '';
+        }
+        if (this.dom.scrollCreatedText) {
+            this.dom.scrollCreatedText.textContent = 'Dibuat: -';
+        }
+        if (this.dom.scrollUpdatedText) {
+            this.dom.scrollUpdatedText.textContent = 'Diperbarui: -';
+        }
+        if (this.dom.saveStatusText) {
+            this.dom.saveStatusText.innerHTML = '<span class="text-slate-400 font-bold"><i class="fa-solid fa-circle-info mr-1"></i> Siap</span>';
+        }
+        if (this.dom.chunkCountBadge) {
+            this.dom.chunkCountBadge.innerHTML = '<i class="fa-solid fa-layer-group mr-1 text-purple-500"></i> 0 Chunks';
+        }
+        this.updateWordAndCharMetrics();
+        this.renderNotesList();
+        this.refreshPlayerStats();
+    }
+
     loadNoteIntoEditor(note) {
         if (!note) return;
         this.clearFindHighlights();
@@ -4750,7 +4811,7 @@ class NotenuxPanel {
         }
 
         if (this.dom.noteCategorySelect) {
-            this.dom.noteCategorySelect.value = note.category || 'quest';
+            this.dom.noteCategorySelect.value = note.category || 'catatan';
         }
 
         if (this.dom.editorArea) {
@@ -5117,7 +5178,7 @@ class NotenuxPanel {
                     if (this.notes.length > 0) {
                         await this.selectNote(this.notes[0]);
                     } else {
-                        await this.createNewNote(true);
+                        this.clearEditorToEmptyState();
                     }
                 }
 
@@ -5265,6 +5326,10 @@ class NotenuxPanel {
         }
 
         switch (category) {
+            case 'catatan':
+                return { label: 'CATATAN', icon: 'fa-solid fa-note-sticky', classes: colorMap.blue };
+            case 'tugas':
+                return { label: 'TUGAS', icon: 'fa-solid fa-list-check', classes: colorMap.emerald };
             case 'quest':
                 return { label: 'QUEST', icon: 'fa-solid fa-khanda', classes: colorMap.amber };
             case 'spellbook':
@@ -5364,7 +5429,7 @@ class NotenuxPanel {
 
     openQuickEditCategoryModal(slug = null) {
         this.closeQuickCategoryModals();
-        const targetSlug = slug || this.dom.noteCategorySelect?.value || this.activeNote?.category || 'quest';
+        const targetSlug = slug || this.dom.noteCategorySelect?.value || this.activeNote?.category || 'catatan';
         const category = this.categories.find(c => c.slug === targetSlug) || {
             id: null,
             name: targetSlug.toUpperCase(),
@@ -5462,7 +5527,7 @@ class NotenuxPanel {
 
     openQuickDeleteCategoryModal(slug = null) {
         this.closeQuickCategoryModals();
-        const targetSlug = slug || this.dom.noteCategorySelect?.value || this.activeNote?.category || 'quest';
+        const targetSlug = slug || this.dom.noteCategorySelect?.value || this.activeNote?.category || 'catatan';
         const category = this.categories.find(c => c.slug === targetSlug);
 
         if (!category) {
@@ -5521,7 +5586,7 @@ class NotenuxPanel {
                         if (this.notes.length > 0) {
                             await this.selectNote(this.notes[0]);
                         } else {
-                            await this.createNewNote(true);
+                            this.clearEditorToEmptyState();
                         }
                     }
                 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid')->unique();
             $table->string('title');
-            $table->string('category')->default('quest');
+            $table->string('category')->default('catatan');
             $table->longText('content')->nullable();
             $table->string('font_family')->default('pixel');
             $table->string('font_size')->default('16px');

@@ -485,39 +485,23 @@
                         @endforeach
                     @else
                         <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
-                             data-category="quest">
+                             data-category="catatan">
                             <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
-                               data-category="quest"
-                               title="Quests">
-                                <i class="fa-solid fa-khanda text-amber-500 text-sm w-4 text-center shrink-0"></i>
-                                <span class="nav-text-label font-bold">Quests</span>
+                               data-category="catatan"
+                               title="Catatan">
+                                <i class="fa-solid fa-note-sticky text-blue-500 text-sm w-4 text-center shrink-0"></i>
+                                <span class="nav-text-label font-bold">Catatan</span>
                             </a>
                         </div>
                         <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
-                             data-category="spellbook">
+                             data-category="tugas">
                             <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
-                               data-category="spellbook"
-                               title="Spellbooks">
-                                <i class="fa-solid fa-wand-magic-sparkles text-purple-600 dark:text-purple-400 text-sm w-4 text-center shrink-0"></i>
-                                <span class="nav-text-label font-bold">Spellbooks</span>
+                               data-category="tugas"
+                               title="Tugas">
+                                <i class="fa-solid fa-list-check text-emerald-500 text-sm w-4 text-center shrink-0"></i>
+                                <span class="nav-text-label font-bold">Tugas</span>
                             </a>
                         </div>
-                        <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
-                             data-category="strategy">
-                            <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
-                               data-category="strategy"
-                               title="Boss Raids">
-                                <i class="fa-solid fa-shield-halved text-rose-500 text-sm w-4 text-center shrink-0"></i>
-                                <span class="nav-text-label font-bold">Boss Raids</span>
-                            </a>
-                        </div>
-                        <div class="nav-category-item group flex items-center justify-between rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors pr-1.5"
-                             data-category="lore">
-                            <a href="#" class="nav-category-link flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg truncate"
-                               data-category="lore"
-                               title="Ancient Lore">
-                                <i class="fa-solid fa-scroll text-blue-600 dark:text-cyan-400 text-sm w-4 text-center shrink-0"></i>
-                                <span class="nav-text-label font-bold">Ancient Lore</span>
                             </a>
                         </div>
                     @endif
@@ -675,20 +659,12 @@
                         @endforeach
                     @else
                         <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
-                                data-category="quest">
-                            <i class="fa-solid fa-khanda text-amber-500 mr-1"></i>QUESTS
+                                data-category="catatan">
+                            <i class="fa-solid fa-note-sticky text-blue-500 mr-1"></i>CATATAN
                         </button>
                         <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
-                                data-category="spellbook">
-                            <i class="fa-solid fa-wand-magic-sparkles text-purple-600 dark:text-purple-400 mr-1"></i>SPELLS
-                        </button>
-                        <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
-                                data-category="strategy">
-                            <i class="fa-solid fa-shield-halved text-rose-500 mr-1"></i>RAIDS
-                        </button>
-                        <button class="category-filter-btn px-2 py-0.5 rounded border border-black/40 bg-surface whitespace-nowrap hover:bg-blue-200 dark:hover:bg-blue-900 shadow-[1px_1px_0px_#000]"
-                                data-category="lore">
-                            <i class="fa-solid fa-scroll text-blue-600 dark:text-cyan-400 mr-1"></i>LORE
+                                data-category="tugas">
+                            <i class="fa-solid fa-list-check text-emerald-500 mr-1"></i>TUGAS
                         </button>
                     @endif
                 </div>
@@ -722,12 +698,8 @@
                                             <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
                                         @endforeach
                                     @else
-                                        <option value="quest">[QUEST] Quest Log</option>
-                                        <option value="spellbook">[SPELL] Spellbook</option>
-                                        <option value="strategy">[RAID] Boss Tactics</option>
-                                        <option value="lore">[LORE] Ancient Lore</option>
-                                        <option value="archive">[ARCHIVE] Library Vault</option>
-                                        <option value="general">[GENERAL] General Note</option>
+                                        <option value="catatan">[CATATAN] Catatan</option>
+                                        <option value="tugas">[TUGAS] Tugas</option>
                                     @endif
                                 </select>
                             </div>
@@ -858,8 +830,8 @@
                         </div>
                         <input type="text"
                                id="note-title-input"
-                               placeholder="Enter scroll title..."
-                               value="{{ $activeNote->title ?? 'Main Quest Scroll' }}"
+                               placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
+                               value="{{ $activeNote->title ?? '' }}"
                                class="w-full min-w-0 flex-1 text-base sm:text-2xl font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-1"
                                title="Scroll Title">
                     </div>
@@ -1280,8 +1252,16 @@
                              contenteditable="true"
                              spellcheck="false"
                              class="notenux-editor prose dark:prose-invert max-w-none focus:outline-none min-h-[350px] flex-1 break-words overflow-x-hidden"
-                             style="font-family: 'Press Start 2P', monospace; font-size: 16px;">
-                            {!! $activeNote->content ?? '<h2>Mission Briefing: Act I</h2><p>Begin scribing your thoughts...</p>' !!}
+                             style="font-family: 'Modern Sans', sans-serif; font-size: 16px;">
+                            @if($activeNote)
+                                {!! $activeNote->content !!}
+                            @else
+                                <div class="flex flex-col items-center justify-center min-h-[300px] text-center text-slate-400 p-8 space-y-3 font-mono select-none">
+                                    <i class="fa-solid fa-scroll text-4xl text-blue-500/40"></i>
+                                    <p class="font-bold text-sm text-slate-600 dark:text-slate-300">Belum ada catatan.</p>
+                                    <p class="text-xs">Klik tombol <strong>+ Scroll</strong> di bilah navigasi atau tekan <kbd class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border text-[10px]">Ctrl+N</kbd> untuk mulai membuat catatan baru.</p>
+                                </div>
+                            @endif
                         </div>
 
                         <!-- Raw Markdown Editor Textarea (Hidden by default, toggleable via RAW MD button) -->
@@ -1456,12 +1436,8 @@
                                     <option value="{{ $category->slug }}">{{ $category->name }}</option>
                                 @endforeach
                             @else
-                                <option value="quest">Quest Log</option>
-                                <option value="lore">Ancient Lore</option>
-                                <option value="strategy">Battle Tactics</option>
-                                <option value="spellbook">Spellbook</option>
-                                <option value="archive">Archives</option>
-                                <option value="general">General</option>
+                                <option value="catatan">Catatan</option>
+                                <option value="tugas">Tugas</option>
                             @endif
                         </select>
                     </div>

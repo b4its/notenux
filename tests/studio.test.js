@@ -2735,6 +2735,92 @@ test('white-box: openAiModal and closeAiModal manage ai assistant modal visibili
     assert.equal(mockModal.classList.contains('hidden'), true);
 });
 
+test('white-box: clearEditorToEmptyState resets editor, input values, and badges without network calls', () => {
+    const { panel } = harness(() => {});
+    panel.dom.noteTitleInput = { value: 'Old Title', placeholder: '' };
+    panel.dom.editorArea = { innerHTML: '<p>Old</p>', style: {} };
+    panel.dom.markdownRawEditor = { value: 'Old md' };
+    panel.dom.plainTextEditor = { value: 'Old text' };
+    panel.dom.scrollCreatedText = { textContent: 'Dibuat: 2026' };
+    panel.dom.scrollUpdatedText = { textContent: 'Diperbarui: 2026' };
+    panel.dom.saveStatusText = { innerHTML: 'Sync' };
+    panel.dom.chunkCountBadge = { innerHTML: '3 Chunks' };
+    panel.dom.wordCountBadge = { innerHTML: '' };
+    panel.dom.charCountBadge = { innerHTML: '' };
+    panel.dom.readingTimeBadge = { innerHTML: '' };
+    panel.dom.questGoalText = { textContent: '' };
+
+    panel.clearEditorToEmptyState();
+
+    assert.equal(panel.activeNote, null);
+    assert.equal(panel.dom.noteTitleInput.value, '');
+    assert.equal(panel.dom.noteTitleInput.placeholder, 'Belum ada catatan dipilih...');
+    assert.ok(panel.dom.editorArea.innerHTML.includes('Belum ada catatan'));
+    assert.equal(panel.dom.markdownRawEditor.value, '');
+    assert.equal(panel.dom.plainTextEditor.value, '');
+    assert.equal(panel.dom.scrollCreatedText.textContent, 'Dibuat: -');
+    assert.equal(panel.dom.scrollUpdatedText.textContent, 'Diperbarui: -');
+    assert.ok(panel.dom.saveStatusText.innerHTML.includes('Siap'));
+    assert.ok(panel.dom.chunkCountBadge.innerHTML.includes('0 Chunks'));
+});
+
+test('white-box: deleting the last note calls clearEditorToEmptyState and does not spawn new dummy notes', async () => {
+    const calls = [];
+    const { panel } = harness(async (url, options) => {
+        calls.push({ url, method: options.method });
+        return response({ id: 1 });
+    });
+
+    panel.closeDeleteConfirmModal = () => {};
+    panel.pendingDeleteNoteId = 1;
+    let clearEditorCalled = false;
+    panel.clearEditorToEmptyState = () => { clearEditorCalled = true; panel.activeNote = null; };
+
+    await panel.executeDeleteActiveNote();
+
+    assert.equal(clearEditorCalled, true);
+    assert.equal(panel.activeNote, null);
+    assert.equal(panel.notes.length, 0);
+    // Only DELETE request was made, no POST request to create notes
+    assert.equal(calls.filter(c => c.method === 'POST').length, 0);
+});
+
+test('white-box: createNewNote sends default clean title Catatan Baru and default category catatan', async () => {
+    let capturedPayload = null;
+    const { panel } = harness(async (url, options) => {
+        capturedPayload = JSON.parse(options.body);
+        return response({ id: 10, ...capturedPayload });
+    });
+    panel.dirtyNotes.clear();
+    panel.notes = [];
+    panel.categories = [{ id: 1, name: 'Catatan', slug: 'catatan' }];
+
+    await panel.createNewNote(true);
+
+    assert.ok(capturedPayload);
+    assert.equal(capturedPayload.title, 'Catatan Baru');
+    assert.equal(capturedPayload.category, 'catatan');
+    assert.equal(capturedPayload.font_family, 'sans');
+    assert.equal(capturedPayload.content, '<p>Mulai tulis catatan Anda di sini...</p>');
+    assert.equal(panel.activeNote.title, 'Catatan Baru');
+});
+
+test('white-box: saveActiveNote when activeNote is null does not perform network request and warns user', async () => {
+    let networkCalled = false;
+    const { panel, messages } = harness(async () => {
+        networkCalled = true;
+        return response({});
+    });
+    panel.activeNote = null;
+
+    const result = await panel.saveActiveNote(true);
+
+    assert.equal(result, false);
+    assert.equal(networkCalled, false);
+    assert.ok(messages.some(m => m[0].includes('Pilih atau buat gulungan catatan')));
+});
+
+
 
 
 

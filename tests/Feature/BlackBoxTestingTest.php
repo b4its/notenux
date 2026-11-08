@@ -1821,3 +1821,29 @@ test('black-box: notes search query finds notes matching title or content keywor
     expect($ids)->toContain($noteMatch->id)
         ->and($ids)->not->toContain($noteOther->id);
 });
+
+test('black-box: studio view renders empty state when user has zero notes without creating spam notes', function () {
+    $user = User::factory()->create();
+
+    $res = $this->actingAs($user)->get(route('studio'));
+    $res->assertStatus(200);
+
+    expect(Note::where('user_id', $user->id)->count())->toBe(0);
+    $res->assertSee('Belum ada catatan')
+        ->assertSee('Belum ada catatan dipilih...')
+        ->assertDontSee('Main Quest Scroll')
+        ->assertDontSee('Mission Briefing: Act I');
+});
+
+test('black-box: note store API defaults category to catatan and font to sans', function () {
+    $user = User::factory()->create();
+
+    $res = $this->actingAs($user)->postJson(route('notes.store'), [
+        'title' => 'Catatan Baru',
+    ]);
+
+    $res->assertStatus(201)
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.category', 'catatan')
+        ->assertJsonPath('data.font_family', 'sans');
+});

@@ -176,8 +176,8 @@ class NoteController extends Controller
             $note = Note::create([
                 'user_id' => $user->id,
                 'title' => $validated['title'],
-                'category' => $validated['category'] ?? 'quest',
-                'font_family' => $validated['font_family'] ?? 'pixel',
+                'category' => $validated['category'] ?? 'catatan',
+                'font_family' => $validated['font_family'] ?? 'sans',
                 'font_size' => $validated['font_size'] ?? '16px',
                 'theme_color' => $validated['theme_color'] ?? 'blue',
                 'is_pinned' => $validated['is_pinned'] ?? false,
@@ -863,7 +863,7 @@ class NoteController extends Controller
             $filename = $validated['title'] ?? null;
         }
 
-        $category = $validated['category'] ?? 'quest';
+        $category = $validated['category'] ?? 'catatan';
         $note = $this->chunkService->importMarkdown($rawMarkdown, $filename, $category, $user);
 
         if (! empty($validated['title'])) {
