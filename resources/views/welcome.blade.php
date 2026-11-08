@@ -3,8 +3,9 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern</title>
+        <meta name="description" content="Notenux (notenux.oryphem.com) adalah aplikasi catatan retro modern dengan gamifikasi RPG, editor Markdown instan, dan proteksi naskah otomatis.">
+        <link rel="canonical" href="https://notenux.oryphem.com/">
 
         @fonts
 

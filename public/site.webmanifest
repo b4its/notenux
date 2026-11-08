@@ -1,0 +1,24 @@
+{
+  "name": "Notenux Studio",
+  "short_name": "Notenux",
+  "description": "Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern",
+  "start_url": "https://notenux.oryphem.com/",
+  "scope": "https://notenux.oryphem.com/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#030712",
+  "icons": [
+    {
+      "src": "/assets/logo/light/icon_light.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/dark/icon_dark.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

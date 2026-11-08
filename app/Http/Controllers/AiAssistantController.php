@@ -45,9 +45,10 @@ class AiAssistantController extends Controller
         ];
 
         try {
+            $baseUrl = rtrim((string) (config('services.ai.base_url') ?: 'https://api.openai.com/v1'), '/');
             $response = Http::withToken(config('services.ai.key'))
                 ->acceptJson()->connectTimeout(5)->timeout(45)
-                ->post(rtrim(config('services.ai.base_url'), '/').'/chat/completions', [
+                ->post($baseUrl.'/chat/completions', [
                     'model' => config('services.ai.model'),
                     'max_tokens' => 4096,
                     'messages' => [
@@ -61,6 +62,8 @@ class AiAssistantController extends Controller
                 ]);
         } catch (ConnectionException) {
             return response()->json(['status' => 'error', 'message' => 'Koneksi AI gagal atau melewati batas waktu. Silakan coba lagi.'], 504);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => 'error', 'message' => 'Layanan AI mengalami kendala: '.$e->getMessage()], 502);
         }
 
         $text = $response->json('choices.0.message.content');

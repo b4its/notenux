@@ -216,3 +216,14 @@ test('landing page focuses on user benefits and capabilities without revealing i
         ->assertDontSee('Semantic Sharding')
         ->assertDontSee('NoteChunk');
 });
+
+test('sitemap and robots.txt are accessible and properly configured', function () {
+    $sitemapRes = $this->get('/sitemap.xml');
+    $sitemapRes->assertOk()
+        ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
+        ->assertSee('https://notenux.oryphem.com/', false);
+
+    $robotsContent = file_get_contents(public_path('robots.txt'));
+    expect($robotsContent)->toContain('Sitemap: https://notenux.oryphem.com/sitemap.xml')
+        ->and($robotsContent)->toContain('Allow: /login');
+});

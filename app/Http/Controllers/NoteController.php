@@ -319,6 +319,9 @@ class NoteController extends Controller
             'is_pinned' => ['nullable', 'boolean'],
             'is_favorite' => ['nullable', 'boolean'],
             'category' => ['nullable', 'string', 'max:64'],
+            'font_family' => ['nullable', 'string', 'in:pixel,arcade,mono,sans,serif'],
+            'font_size' => ['nullable', 'string', 'max:16'],
+            'theme_color' => ['nullable', 'string', 'max:32'],
         ]);
 
         $notes = Note::whereIn('id', $validated['ids'])->get();
@@ -337,6 +340,15 @@ class NoteController extends Controller
             }
             if (! empty($validated['category'])) {
                 $updateData['category'] = $validated['category'];
+            }
+            if (! empty($validated['font_family'])) {
+                $updateData['font_family'] = $validated['font_family'];
+            }
+            if (! empty($validated['font_size'])) {
+                $updateData['font_size'] = $validated['font_size'];
+            }
+            if (! empty($validated['theme_color'])) {
+                $updateData['theme_color'] = $validated['theme_color'];
             }
 
             if (empty($updateData)) {

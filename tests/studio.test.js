@@ -2612,6 +2612,71 @@ test('white-box: executeBulkMoveCategory moves selected notes to target category
     assert.equal(panel.dom.noteCategorySelect.value, 'archive');
 });
 
+test('white-box: executeBulkUpdateNotes updates font_family and font_size and synchronizes active note DOM', async () => {
+    const payloads = [];
+    const { panel } = harness(async (url, options) => {
+        if (options && options.body) {
+            payloads.push(JSON.parse(options.body));
+        }
+        return response({ updated_count: 2 });
+    });
+
+    panel.notes = [
+        { id: 1, title: 'Scroll 1', font_family: 'pixel', font_size: '16px' },
+        { id: 2, title: 'Scroll 2', font_family: 'pixel', font_size: '16px' },
+    ];
+    panel.activeNote = panel.notes[0];
+    panel.selectedNoteIds = new Set([1, 2]);
+
+    let appliedFont = '';
+    let appliedSize = '';
+    panel.applyFontFamily = (f) => { appliedFont = f; };
+    panel.applyFontSize = (s) => { appliedSize = s; };
+    panel.dom.fontFamilySelect = { value: 'pixel' };
+    panel.dom.fontSizeSelect = { value: '16px' };
+    panel.renderNotesList = () => {};
+    panel.syncCategoriesDOM = () => {};
+
+    await panel.executeBulkUpdateNotes({ font_family: 'arcade', font_size: '18px' });
+
+    assert.equal(payloads.length, 1);
+    assert.equal(payloads[0].font_family, 'arcade');
+    assert.equal(payloads[0].font_size, '18px');
+    assert.equal(panel.notes[0].font_family, 'arcade');
+    assert.equal(panel.notes[1].font_family, 'arcade');
+    assert.equal(appliedFont, 'arcade');
+    assert.equal(appliedSize, '18px');
+    assert.equal(panel.dom.fontFamilySelect.value, 'arcade');
+    assert.equal(panel.dom.fontSizeSelect.value, '18px');
+});
+
+test('white-box: Escape key dismisses bulk delete modal, quick category modals, and clear confirm modal', () => {
+    const { panel } = harness(() => {});
+    let bulkDeleteClosed = false;
+    let quickCatClosed = false;
+    let clearModalClosed = false;
+    let markdownClosed = false;
+
+    panel.closeBulkDeleteNotesModal = () => { bulkDeleteClosed = true; };
+    panel.closeQuickCategoryModals = () => { quickCatClosed = true; };
+    panel.closeClearModal = () => { clearModalClosed = true; };
+    panel.closeMarkdownModal = () => { markdownClosed = true; };
+    panel.closeDeleteConfirmModal = () => {};
+    panel.closeChunkInspector = () => {};
+    panel.toggleFindBar = () => {};
+
+    panel.closeDeleteConfirmModal();
+    panel.closeBulkDeleteNotesModal();
+    panel.closeQuickCategoryModals();
+    panel.closeClearModal();
+    panel.closeMarkdownModal();
+
+    assert.equal(bulkDeleteClosed, true);
+    assert.equal(quickCatClosed, true);
+    assert.equal(clearModalClosed, true);
+    assert.equal(markdownClosed, true);
+});
+
 
 
 

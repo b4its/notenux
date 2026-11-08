@@ -1122,3 +1122,54 @@ test('white-box: note chunk service importMarkdown assigns user_id when provided
     expect($note->user_id)->toBe($user->id)
         ->and($note->title)->toBe('Arcane Chronicles');
 });
+
+test('white-box: note controller bulkUpdate handles font_family, font_size, and theme_color', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create([
+        'font_family' => 'pixel',
+        'font_size' => '16px',
+        'theme_color' => 'blue',
+    ]);
+
+    $controller = app(NoteController::class);
+    $request = Request::create('/api/notes/bulk-update', 'POST', [
+        'ids' => [$note->id],
+        'font_family' => 'mono',
+        'font_size' => '14px',
+        'theme_color' => 'emerald',
+    ]);
+    $request->setUserResolver(fn () => $user);
+
+    $res = $controller->bulkUpdate($request);
+    $data = $res->getData(true);
+
+    expect($data['status'])->toBe('success')
+        ->and($data['data']['updated_count'])->toBe(1)
+        ->and($note->fresh()->font_family)->toBe('mono')
+        ->and($note->fresh()->font_size)->toBe('14px')
+        ->and($note->fresh()->theme_color)->toBe('emerald');
+});
+
+test('white-box: database restore command recovers database state from json backup', function () {
+    $user = User::factory()->create(['name' => 'Original Scribe']);
+    $note = Note::factory()->forUser($user)->create(['title' => 'Original Scroll Before Restore']);
+
+    // Run backup
+    $this->artisan('db:backup', ['--file' => 'white_box_restore_test'])->assertSuccessful();
+
+    // Mutate state
+    $note->update(['title' => 'Tampered Title']);
+    expect($note->fresh()->title)->toBe('Tampered Title');
+
+    // Run restore
+    $this->artisan('db:restore', ['file' => 'white_box_restore_test.json'])->assertSuccessful();
+
+    // Verify restored
+    $restoredNote = Note::find($note->id);
+    expect($restoredNote)->not->toBeNull()
+        ->and($restoredNote->title)->toBe('Original Scroll Before Restore');
+
+    $backupDir = database_path('backups');
+    @unlink("{$backupDir}/white_box_restore_test.json");
+    @unlink("{$backupDir}/white_box_restore_test.sql");
+});

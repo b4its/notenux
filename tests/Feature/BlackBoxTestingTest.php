@@ -1541,3 +1541,90 @@ test('black-box: database backup command creates valid json and sql dump files i
     @unlink($jsonPath);
     @unlink($sqlPath);
 });
+
+test('black-box: user bulk updates note typography and visual theme alongside category and flags', function () {
+    $user = User::factory()->create();
+    $note1 = Note::factory()->forUser($user)->create([
+        'title' => 'Ancient Scroll 1',
+        'font_family' => 'pixel',
+        'font_size' => '16px',
+        'theme_color' => 'blue',
+        'is_pinned' => false,
+        'is_favorite' => false,
+        'category' => 'quest',
+    ]);
+    $note2 = Note::factory()->forUser($user)->create([
+        'title' => 'Ancient Scroll 2',
+        'font_family' => 'pixel',
+        'font_size' => '16px',
+        'theme_color' => 'blue',
+        'is_pinned' => false,
+        'is_favorite' => false,
+        'category' => 'quest',
+    ]);
+
+    $res = $this->actingAs($user)->postJson('/api/notes/bulk-update', [
+        'ids' => [$note1->id, $note2->id],
+        'is_pinned' => true,
+        'is_favorite' => true,
+        'category' => 'archive',
+        'font_family' => 'arcade',
+        'font_size' => '18px',
+        'theme_color' => 'purple',
+    ]);
+
+    $res->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.updated_count', 2);
+
+    expect($note1->fresh()->is_pinned)->toBeTrue()
+        ->and($note1->fresh()->is_favorite)->toBeTrue()
+        ->and($note1->fresh()->category)->toBe('archive')
+        ->and($note1->fresh()->font_family)->toBe('arcade')
+        ->and($note1->fresh()->font_size)->toBe('18px')
+        ->and($note1->fresh()->theme_color)->toBe('purple')
+        ->and($note2->fresh()->is_pinned)->toBeTrue()
+        ->and($note2->fresh()->font_family)->toBe('arcade');
+});
+
+test('black-box: category bulk delete via web route deletes selected categories, cascades to associated notes, and redirects with flash message', function () {
+    $user = User::factory()->create();
+    $cat1 = Category::factory()->create(['user_id' => $user->id, 'name' => 'Web Cat 1', 'slug' => 'web-cat-1']);
+    $cat2 = Category::factory()->create(['user_id' => $user->id, 'name' => 'Web Cat 2', 'slug' => 'web-cat-2']);
+
+    $note = Note::factory()->forUser($user)->create(['category' => 'web-cat-1']);
+
+    $res = $this->actingAs($user)->post('/categories/bulk-delete', [
+        'ids' => [$cat1->id, $cat2->id],
+    ]);
+
+    $res->assertRedirect(route('categories.index'))
+        ->assertSessionHas('status', 'success');
+
+    $this->assertDatabaseMissing('categories', ['id' => $cat1->id]);
+    $this->assertDatabaseMissing('categories', ['id' => $cat2->id]);
+    $this->assertDatabaseMissing('notes', ['id' => $note->id]);
+});
+
+test('black-box: ai assistant handles unexpected network throwable with 502 error response', function () {
+    config([
+        'services.ai.key' => 'test-key',
+        'services.ai.model' => 'test-model',
+        'services.ai.base_url' => 'https://api.openai.com/v1',
+    ]);
+
+    $user = User::factory()->create();
+    $note = Note::factory()->forUser($user)->create();
+
+    Http::fake(function () {
+        throw new Exception('Network SSL handshake failed');
+    });
+
+    $res = $this->actingAs($user)->postJson(route('notes.assistant', $note), [
+        'action' => 'improve',
+        'content' => 'Some content to improve',
+    ]);
+
+    $res->assertStatus(502)
+        ->assertJsonPath('status', 'error');
+});

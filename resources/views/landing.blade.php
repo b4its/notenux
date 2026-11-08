@@ -2,24 +2,170 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" data-theme="dark">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Notenux') }} - Landing Pages</title>
+    <!-- Primary SEO Metadata -->
+    <title>Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern</title>
+    <meta name="title" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">
+    <meta name="description" content="Notenux (notenux.oryphem.com) adalah aplikasi catatan retro modern dengan gamifikasi RPG, editor Markdown instan, proteksi naskah otomatis, dan tema adaptif. Mulai petualangan menulismu gratis sekarang!">
+    <meta name="keywords" content="Notenux, notenux oryphem, https://notenux.oryphem.com, aplikasi catatan, aplikasi catatan retro, retro note taking, markdown editor indonesia, gamified writing, online markdown studio, rpg note app, oryphem, web notes, typewriter note app, aplikasi produktivitas">
+    <meta name="author" content="Oryphem & Notenux Team">
+    <meta name="publisher" content="https://notenux.oryphem.com">
+    <link rel="canonical" href="https://notenux.oryphem.com/">
+
+    <!-- Search Engine Crawlers Optimization -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="rating" content="general">
+    <meta name="distribution" content="global">
+    <meta name="geo.region" content="ID">
+    <meta name="geo.placename" content="Indonesia">
+    <meta name="revisit-after" content="7 days">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- Open Graph / Facebook / LinkedIn / Discord -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Notenux">
+    <meta property="og:url" content="https://notenux.oryphem.com/">
+    <meta property="og:title" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">
+    <meta property="og:description" content="Tingkatkan produktivitas menulis dengan sensasi RPG retro, level-up XP, markdown realtime, dan sistem keamanan otomatis di Notenux. Akses gratis di https://notenux.oryphem.com!">
+    <meta property="og:image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta property="og:image:secure_url" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="2059">
+    <meta property="og:image:height" content="764">
+    <meta property="og:image:alt" content="Notenux Studio Banner">
+    <meta property="og:locale" content="id_ID">
+    <meta property="og:locale:alternate" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@notenux">
+    <meta name="twitter:creator" content="@oryphem">
+    <meta name="twitter:url" content="https://notenux.oryphem.com/">
+    <meta name="twitter:title" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">
+    <meta name="twitter:description" content="Tingkatkan produktivitas menulis dengan sensasi RPG retro, level-up XP, markdown realtime, dan sistem keamanan otomatis di Notenux. Kunjungi https://notenux.oryphem.com">
+    <meta name="twitter:image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta name="twitter:image:alt" content="Notenux Studio Banner">
+
+    <!-- Mobile & Progressive Web Application -->
+    <meta name="application-name" content="Notenux">
+    <meta name="apple-mobile-web-app-title" content="Notenux">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
     <!-- App Favicon & Touch Icon (Default Light, dynamically adapts to theme) -->
     <link rel="icon" id="app-favicon" type="image/png" href="{{ asset('assets/logo/light/icon_light.png') }}">
     <link rel="apple-touch-icon" id="app-apple-touch-icon" href="{{ asset('assets/logo/light/icon_light.png') }}">
 
+    <!-- DNS-Prefetch and Preconnect -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <!-- Font Awesome 6 Free CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <!-- Google Fonts for Retro Aesthetics -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Instrument+Sans:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Structured Data (JSON-LD Schema.org) for Top 1 Search Ranking -->
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://notenux.oryphem.com/#website",
+          "url": "https://notenux.oryphem.com",
+          "name": "Notenux",
+          "description": "Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern",
+          "publisher": {
+            "@id": "https://notenux.oryphem.com/#organization"
+          },
+          "inLanguage": "id-ID"
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://notenux.oryphem.com/#organization",
+          "name": "Oryphem",
+          "url": "https://notenux.oryphem.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://notenux.oryphem.com/assets/logo/light/icon_light.png",
+            "width": 1254,
+            "height": 1254
+          }
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://notenux.oryphem.com/#app",
+          "name": "Notenux Studio",
+          "url": "https://notenux.oryphem.com",
+          "applicationCategory": "ProductivityApplication",
+          "operatingSystem": "All Modern Web Browsers",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "Aplikasi catatan retro modern dengan gamifikasi RPG, editor Markdown instan, proteksi naskah otomatis, dan tema adaptif.",
+          "image": "https://notenux.oryphem.com/assets/logo/light/icon_horizontal_light.png",
+          "author": {
+            "@id": "https://notenux.oryphem.com/#organization"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://notenux.oryphem.com/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Mengapa saya perlu login untuk membuka Studio Notenux?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Setiap naskah dokumen, kategori, dan progres level XP RPG tersimpan aman di akun pribadimu. Dengan login, semua tulisanmu dijamin terlindungi, tersinkronisasi rapi, dan tidak dapat diintip atau tercampur dengan data pengguna lain. Jika belum punya akun, kamu dapat mendaftar gratis hanya dalam hitungan detik!"
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bagaimana cara kerja Dark/Light theme & Favicon adaptif?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Kamu dapat mengklik tombol tema di navbar kapan saja untuk berganti antara mode Arcade Day (terang) dan Cyberpunk Night (gelap). Favicon Notenux menggunakan favicon light secara default, namun secara otomatis beradaptasi menjadi favicon dark saat kamu menggunakan tema gelap. Preferensi kamu tersimpan otomatis di browser sehingga selalu nyaman di matamu."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Apakah saya bisa mengekspor atau membackup catatan saya keluar?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tentu saja! Notenux memegang teguh prinsip Zero Lock-In. Kamu dapat mengekspor seluruh naskah tulisanmu dalam sekejap ke berkas Markdown standar (.md), HTML web siap tayang, teks polos (.txt), maupun arsip cadangan JSON lengkap. Kamu juga dapat mengimpor kembali berkas Markdown kapan saja."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Bagaimana Notenux menjamin catatan saya tidak rusak atau hilang?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sistem Notenux menerapkan mekanisme perlindungan keutuhan data secara otomatis. Setiap kali kamu menulis, tulisanmu dikunci dan diverifikasi secara cerdas. Jika terjadi ketidaksesuaian data, sistem dapat mendeteksinya secara langsung dan memulihkan naskahmu ke kondisi utuh tanpa kehilangan sepatah kata pun."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
 
     <!-- Inline Head Script for Instant Theme & Favicon Synchronization -->
     <script>
@@ -198,7 +344,7 @@
 
                 <!-- Main Headline -->
                 <h1 class="text-2xl xs:text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight break-words">
-                    Abadikan Pemikiran. <br class="hidden sm:block">
+                    <span class="text-blue-600 dark:text-cyan-400">Notenux</span> — Abadikan Pemikiran. <br class="hidden sm:block">
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 dark:from-cyan-300 dark:via-blue-400 dark:to-purple-400">
                         Tingkatkan Level Scribe.
                     </span>
@@ -1009,7 +1155,7 @@ Coba ketuk tombol Spell Bar di atas atau ubah font sesukamu!</textarea>
             <div class="flex items-center gap-2">
                 <img src="{{ asset('assets/logo/dark/icon_dark.png') }}" alt="Notenux Icon" class="w-5 h-5 object-contain hidden dark:inline-block">
                 <img src="{{ asset('assets/logo/light/icon_light.png') }}" alt="Notenux Icon" class="w-5 h-5 object-contain inline-block dark:hidden">
-                <span class="font-pixel text-[11px] text-blue-600 dark:text-cyan-400">NOTENUX STUDIO</span>
+                <a href="https://notenux.oryphem.com" class="font-pixel text-[11px] text-blue-600 dark:text-cyan-400 hover:underline" title="Notenux - https://notenux.oryphem.com">NOTENUX STUDIO</a>
                 <span class="text-slate-400">&bull;</span>
                 <span class="text-slate-500 dark:text-slate-400">&copy; {{ date('Y') }} All Rights Reserved</span>
             </div>

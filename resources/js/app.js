@@ -2147,11 +2147,17 @@ class NotenuxPanel {
             // Escape: Close all modals & bars
             if (e.key === 'Escape') {
                 this.closeDeleteConfirmModal();
+                this.closeBulkDeleteNotesModal();
+                this.closeQuickCategoryModals();
+                this.closeClearModal();
+                this.closeMarkdownModal();
                 this.closeChunkInspector();
                 this.toggleFindBar(false);
                 if (this.dom.importModal) this.dom.importModal.classList.add('hidden');
                 if (this.dom.shortcutsModal) this.dom.shortcutsModal.classList.add('hidden');
                 if (this.dom.exportMenu) this.dom.exportMenu.classList.add('hidden');
+                if (this.dom.imageToolkitBar) this.dom.imageToolkitBar.classList.add('hidden');
+                if (this.dom.tableToolkitBar) this.dom.tableToolkitBar.classList.add('hidden');
                 if (document.body.classList.contains('zen-mode')) {
                     this.toggleZenMode();
                 }
@@ -4975,6 +4981,14 @@ class NotenuxPanel {
                     }
                     if (this.dom.noteCategorySelect && 'category' in updates) {
                         this.dom.noteCategorySelect.value = this.activeNote.category;
+                    }
+                    if (this.dom.fontFamilySelect && 'font_family' in updates) {
+                        this.dom.fontFamilySelect.value = updates.font_family;
+                        this.applyFontFamily(updates.font_family);
+                    }
+                    if (this.dom.fontSizeSelect && 'font_size' in updates) {
+                        this.dom.fontSizeSelect.value = updates.font_size;
+                        this.applyFontSize(updates.font_size);
                     }
                 }
 

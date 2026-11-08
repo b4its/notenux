@@ -2,14 +2,36 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" data-theme="dark">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Notenux') }} - Personalize Categories</title>
+    <!-- Categories Management Metadata -->
+    <title>Kelola Kategori - Notenux Studio</title>
+    <meta name="title" content="Kelola Kategori - Notenux Studio">
+    <meta name="description" content="Kelola dan personalisasikan kategori catatan di Notenux Studio. Atur arsip tulisan dengan rapi dan terorganisir.">
+    <meta name="author" content="Oryphem & Notenux Team">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="googlebot" content="noindex, nofollow, noarchive">
+    <link rel="canonical" href="https://notenux.oryphem.com/categories">
+
+    <!-- Mobile & PWA Settings -->
+    <meta name="application-name" content="Notenux">
+    <meta name="apple-mobile-web-app-title" content="Notenux">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
     <!-- App Favicon & Touch Icon (Default Light, dynamically adapts to theme) -->
     <link rel="icon" id="app-favicon" type="image/png" href="{{ asset('assets/logo/light/icon_light.png') }}">
     <link rel="apple-touch-icon" id="app-apple-touch-icon" href="{{ asset('assets/logo/light/icon_light.png') }}">
+
+    <!-- DNS-Prefetch and Preconnect -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
 
     <script>
         (function() {
@@ -680,6 +702,15 @@
                 el?.addEventListener('click', (e) => {
                     if (e.target === el) el.classList.add('hidden');
                 });
+            });
+
+            // Close modals on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    ['edit-category-modal', 'delete-category-modal', 'bulk-delete-categories-modal'].forEach(id => {
+                        document.getElementById(id)?.classList.add('hidden');
+                    });
+                }
             });
         });
 

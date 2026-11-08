@@ -2,24 +2,89 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" data-theme="dark">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Masuk ke Studio - {{ config('app.name', 'Notenux') }}</title>
+    <!-- Primary SEO Metadata -->
+    <title>Masuk ke Studio - Notenux | Catatan Retro Modern</title>
+    <meta name="title" content="Masuk ke Studio - Notenux | Catatan Retro Modern">
+    <meta name="description" content="Masuk ke Notenux Studio (notenux.oryphem.com/login). Lanjutkan petualangan menulis catatan retro, kelola naskah gamifikasi, dan kembangkan rank Scribe pribadimu.">
+    <meta name="keywords" content="login notenux, masuk studio notenux, notenux oryphem, https://notenux.oryphem.com/login, catatan retro, markdown login, aplikasi catatan online">
+    <meta name="author" content="Oryphem & Notenux Team">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    <link rel="canonical" href="https://notenux.oryphem.com/login">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Notenux">
+    <meta property="og:url" content="https://notenux.oryphem.com/login">
+    <meta property="og:title" content="Masuk ke Studio - Notenux | Catatan Retro Modern">
+    <meta property="og:description" content="Masuk ke Notenux Studio dan lanjutkan penulisan naskah catatatanmu dengan nuansa retro gamifikasi.">
+    <meta property="og:image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta property="og:image:secure_url" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="2059">
+    <meta property="og:image:height" content="764">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@notenux">
+    <meta name="twitter:url" content="https://notenux.oryphem.com/login">
+    <meta name="twitter:title" content="Masuk ke Studio - Notenux | Catatan Retro Modern">
+    <meta name="twitter:description" content="Masuk ke Notenux Studio dan lanjutkan petualangan menulis catatan retro modern.">
+    <meta name="twitter:image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+
+    <!-- Mobile App Settings -->
+    <meta name="application-name" content="Notenux">
+    <meta name="apple-mobile-web-app-title" content="Notenux">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
     <!-- App Favicon & Touch Icon (Default Light, dynamically adapts to theme) -->
     <link rel="icon" id="app-favicon" type="image/png" href="{{ asset('assets/logo/light/icon_light.png') }}">
     <link rel="apple-touch-icon" id="app-apple-touch-icon" href="{{ asset('assets/logo/light/icon_light.png') }}">
 
+    <!-- DNS-Prefetch and Preconnect -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <!-- Font Awesome 6 Free CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <!-- Google Fonts for Retro Aesthetics -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Instrument+Sans:wght@400;500;600;700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Structured Data (JSON-LD Breadcrumbs) -->
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Beranda Notenux",
+          "item": "https://notenux.oryphem.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Masuk ke Studio",
+          "item": "https://notenux.oryphem.com/login"
+        }
+      ]
+    }
+    </script>
 
     <script>
         (function() {
