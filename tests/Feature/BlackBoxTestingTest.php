@@ -1225,3 +1225,23 @@ test('black-box: studio view features image artifact matrix toolkit and user per
         ->and($note->content)->toContain('Lambang Serikat Petualang')
         ->and($note->chunks)->not->toBeEmpty();
 });
+
+test('black-box: user bulk updates pinned and favorite flags across multiple notes via api', function () {
+    $note1 = Note::factory()->create(['title' => 'Scroll Alpha', 'is_pinned' => false, 'is_favorite' => false]);
+    $note2 = Note::factory()->create(['title' => 'Scroll Beta', 'is_pinned' => false, 'is_favorite' => false]);
+    $note3 = Note::factory()->create(['title' => 'Scroll Gamma', 'is_pinned' => false, 'is_favorite' => false]);
+
+    $res = $this->postJson('/api/notes/bulk-update', [
+        'ids' => [$note1->id, $note2->id],
+        'is_pinned' => true,
+        'is_favorite' => true,
+    ]);
+
+    $res->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.updated_count', 2);
+
+    $this->assertDatabaseHas('notes', ['id' => $note1->id, 'is_pinned' => true, 'is_favorite' => true]);
+    $this->assertDatabaseHas('notes', ['id' => $note2->id, 'is_pinned' => true, 'is_favorite' => true]);
+    $this->assertDatabaseHas('notes', ['id' => $note3->id, 'is_pinned' => false, 'is_favorite' => false]);
+});

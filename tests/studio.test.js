@@ -2544,6 +2544,41 @@ test('white-box: sanitizeHtml in app.js preserves figure, figcaption, data-align
     assert.ok(!removedAttrs.includes('style'));
 });
 
+test('white-box: executeBulkPinNotes and executeBulkFavoriteNotes toggle flags across selected notes and synchronize state', async () => {
+    const payloads = [];
+    const { panel } = harness(async (url, options) => {
+        if (options && options.body) {
+            payloads.push(JSON.parse(options.body));
+        }
+        return response({ updated_count: 2 });
+    });
+
+    panel.notes = [
+        { id: 1, title: 'Note 1', is_pinned: false, is_favorite: false },
+        { id: 2, title: 'Note 2', is_pinned: false, is_favorite: false },
+    ];
+    panel.selectedNoteIds = new Set([1, 2]);
+    panel.renderNotesList = () => {};
+    panel.syncCategoriesDOM = () => {};
+
+    // Bulk Pin (both unpinned -> targetPinned = true)
+    await panel.executeBulkPinNotes();
+    assert.equal(payloads.length, 1);
+    assert.equal(payloads[0].is_pinned, true);
+    assert.equal(payloads[0].ids.length, 2);
+    assert.equal(panel.notes[0].is_pinned, true);
+    assert.equal(panel.notes[1].is_pinned, true);
+
+    // Bulk Favorite (both unfavorite -> targetFav = true)
+    await panel.executeBulkFavoriteNotes();
+    assert.equal(payloads.length, 2);
+    assert.equal(payloads[1].is_favorite, true);
+    assert.equal(payloads[1].ids.length, 2);
+    assert.equal(panel.notes[0].is_favorite, true);
+    assert.equal(panel.notes[1].is_favorite, true);
+});
+
+
 
 
 

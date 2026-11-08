@@ -1024,3 +1024,33 @@ test('white-box: note controller exports figure with caption to markdown and pla
     expect($plain)->toContain('Bilah Cahaya Bintang')
         ->and($plain)->not->toContain('Tambahkan caption gambar...');
 });
+
+test('white-box: note controller bulkUpdate updates pinned, favorite, and category flags atomically', function () {
+    $note1 = Note::factory()->create(['is_pinned' => false, 'is_favorite' => false, 'category' => 'quest']);
+    $note2 = Note::factory()->create(['is_pinned' => false, 'is_favorite' => false, 'category' => 'quest']);
+
+    $controller = app(NoteController::class);
+    $request = Request::create('/api/notes/bulk-update', 'POST', [
+        'ids' => [$note1->id, $note2->id],
+        'is_pinned' => true,
+        'is_favorite' => true,
+        'category' => 'spellbook',
+    ]);
+
+    $response = $controller->bulkUpdate($request);
+    expect($response->getStatusCode())->toBe(200);
+
+    $data = $response->getData(true);
+    expect($data['status'])->toBe('success')
+        ->and($data['data']['updated_count'])->toBe(2);
+
+    $note1->refresh();
+    $note2->refresh();
+
+    expect($note1->is_pinned)->toBeTrue()
+        ->and($note1->is_favorite)->toBeTrue()
+        ->and($note1->category)->toBe('spellbook')
+        ->and($note2->is_pinned)->toBeTrue()
+        ->and($note2->is_favorite)->toBeTrue()
+        ->and($note2->category)->toBe('spellbook');
+});

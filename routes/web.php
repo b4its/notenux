@@ -70,6 +70,8 @@ Route::prefix('api/notes')->group(function () {
     Route::post('/import', [NoteController::class, 'import'])->name('notes.import');
     Route::post('/bulk-delete', [NoteController::class, 'bulkDestroy'])->name('notes.bulk-delete');
     Route::delete('/bulk-delete', [NoteController::class, 'bulkDestroy']);
+    Route::post('/bulk-update', [NoteController::class, 'bulkUpdate'])->name('notes.bulk-update');
+    Route::put('/bulk-update', [NoteController::class, 'bulkUpdate']);
     Route::get('/{note}', [NoteController::class, 'show'])->name('notes.show');
     Route::put('/{note}', [NoteController::class, 'update'])->name('notes.update');
     Route::delete('/{note}', [NoteController::class, 'destroy'])->name('notes.destroy');

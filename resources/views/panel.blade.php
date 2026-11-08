@@ -568,12 +568,26 @@
                             0 dipilih
                         </span>
                     </div>
-                    <div class="flex items-center gap-1.5">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button id="bulk-pin-notes-btn"
+                                type="button"
+                                disabled
+                                class="arcade-btn bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1"
+                                title="Sematkan / Lepas Pin semua terpilih">
+                            <i class="fa-solid fa-thumbtack"></i> PIN
+                        </button>
+                        <button id="bulk-fav-notes-btn"
+                                type="button"
+                                disabled
+                                class="arcade-btn bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed text-black py-1 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1"
+                                title="Favoritkan / Batal Favorit semua terpilih">
+                            <i class="fa-solid fa-star"></i> FAV
+                        </button>
                         <button id="bulk-delete-notes-btn"
                                 type="button"
                                 disabled
                                 class="arcade-btn flex-1 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1 px-2 rounded text-[10px] font-bold tracking-wider flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-trash-can"></i> HAPUS TERPILIH
+                            <i class="fa-solid fa-trash-can"></i> HAPUS
                         </button>
                         <button id="bulk-cancel-notes-btn"
                                 type="button"

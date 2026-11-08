@@ -963,6 +963,8 @@ class NotenuxPanel {
             bulkSelectAllNotesCb: document.getElementById('bulk-select-all-notes-cb'),
             bulkSelectedNotesCount: document.getElementById('bulk-selected-notes-count'),
             bulkDeleteNotesBtn: document.getElementById('bulk-delete-notes-btn'),
+            bulkPinNotesBtn: document.getElementById('bulk-pin-notes-btn'),
+            bulkFavNotesBtn: document.getElementById('bulk-fav-notes-btn'),
             bulkCancelNotesBtn: document.getElementById('bulk-cancel-notes-btn'),
 
             bulkDeleteNotesModal: document.getElementById('bulk-delete-notes-modal'),
@@ -2295,6 +2297,14 @@ class NotenuxPanel {
 
         this.dom.bulkSelectAllNotesCb?.addEventListener('change', (e) => {
             this.selectAllFilteredNotes(e.target.checked);
+        });
+
+        this.dom.bulkPinNotesBtn?.addEventListener('click', () => {
+            this.executeBulkPinNotes();
+        });
+
+        this.dom.bulkFavNotesBtn?.addEventListener('click', () => {
+            this.executeBulkFavoriteNotes();
         });
 
         this.dom.bulkDeleteNotesBtn?.addEventListener('click', () => {
@@ -4823,6 +4833,12 @@ class NotenuxPanel {
         if (this.dom.bulkDeleteNotesBtn) {
             this.dom.bulkDeleteNotesBtn.disabled = count === 0;
         }
+        if (this.dom.bulkPinNotesBtn) {
+            this.dom.bulkPinNotesBtn.disabled = count === 0;
+        }
+        if (this.dom.bulkFavNotesBtn) {
+            this.dom.bulkFavNotesBtn.disabled = count === 0;
+        }
         if (this.dom.bulkSelectAllNotesCb) {
             const filtered = this.getFilteredNotes();
             this.dom.bulkSelectAllNotesCb.checked = filtered.length > 0 && filtered.every(n => this.selectedNoteIds?.has(n.id));
@@ -4899,6 +4915,80 @@ class NotenuxPanel {
         } catch (e) {
             this.toast.show(e.message || 'Network error during bulk delete.', 'danger');
         }
+    }
+
+    async executeBulkUpdateNotes(updates, successMsg = 'Scrolls updated') {
+        const ids = Array.from(this.selectedNoteIds || []);
+        if (ids.length === 0) return;
+
+        this.audio?.playCoin?.();
+
+        try {
+            const response = await fetch('/api/notes/bulk-update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ids, ...updates }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.status === 'success') {
+                const idSet = new Set(ids);
+                this.notes.forEach(note => {
+                    if (idSet.has(note.id)) {
+                        Object.assign(note, updates);
+                    }
+                });
+
+                if (this.activeNote && idSet.has(this.activeNote.id)) {
+                    Object.assign(this.activeNote, updates);
+                    if (this.dom.pinBtn && 'is_pinned' in updates) {
+                        this.dom.pinBtn.classList.toggle('text-amber-500', Boolean(this.activeNote.is_pinned));
+                    }
+                    if (this.dom.favoriteBtn && 'is_favorite' in updates) {
+                        this.dom.favoriteBtn.classList.toggle('text-yellow-400', Boolean(this.activeNote.is_favorite));
+                    }
+                }
+
+                this.renderNotesList();
+                this.syncCategoriesDOM();
+                this.toast?.show?.(data.message || successMsg, 'success', 'Bulk Action', 'fa-solid fa-wand-magic-sparkles text-cyan-400');
+            } else {
+                this.toast?.show?.(data.message || 'Gagal memperbarui gulungan.', 'danger', 'Gagal');
+            }
+        } catch {
+            this.toast?.show?.('Kesalahan jaringan saat memperbarui gulungan.', 'danger', 'Koneksi Gagal');
+        }
+    }
+
+    async executeBulkPinNotes() {
+        const ids = Array.from(this.selectedNoteIds || []);
+        if (ids.length === 0) return;
+
+        const selectedNotes = this.notes.filter(n => this.selectedNoteIds.has(n.id));
+        const anyUnpinned = selectedNotes.some(n => !n.is_pinned);
+        const targetPinned = anyUnpinned;
+
+        await this.executeBulkUpdateNotes(
+            { is_pinned: targetPinned },
+            targetPinned ? `Menyematkan ${ids.length} gulungan!` : `Melepaskan sematan ${ids.length} gulungan.`
+        );
+    }
+
+    async executeBulkFavoriteNotes() {
+        const ids = Array.from(this.selectedNoteIds || []);
+        if (ids.length === 0) return;
+
+        const selectedNotes = this.notes.filter(n => this.selectedNoteIds.has(n.id));
+        const anyUnfav = selectedNotes.some(n => !n.is_favorite);
+        const targetFav = anyUnfav;
+
+        await this.executeBulkUpdateNotes(
+            { is_favorite: targetFav },
+            targetFav ? `Menandai ${ids.length} gulungan sebagai favorit!` : `Menghapus ${ids.length} gulungan dari favorit.`
+        );
     }
 
     updateActiveNoteInList() {

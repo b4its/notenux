@@ -288,6 +288,48 @@ class NoteController extends Controller
     }
 
     /**
+     * Update multiple specified notes atomically (e.g. bulk pin, bulk favorite, bulk category).
+     */
+    public function bulkUpdate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:notes,id'],
+            'is_pinned' => ['nullable', 'boolean'],
+            'is_favorite' => ['nullable', 'boolean'],
+            'category' => ['nullable', 'string', 'max:64'],
+        ]);
+
+        $updatedCount = DB::transaction(function () use ($validated): int {
+            $updateData = [];
+            if (array_key_exists('is_pinned', $validated) && $validated['is_pinned'] !== null) {
+                $updateData['is_pinned'] = $validated['is_pinned'];
+            }
+            if (array_key_exists('is_favorite', $validated) && $validated['is_favorite'] !== null) {
+                $updateData['is_favorite'] = $validated['is_favorite'];
+            }
+            if (! empty($validated['category'])) {
+                $updateData['category'] = $validated['category'];
+            }
+
+            if (empty($updateData)) {
+                return 0;
+            }
+
+            return Note::whereIn('id', $validated['ids'])->update($updateData);
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully updated {$updatedCount} scrolls.",
+            'data' => [
+                'updated_count' => $updatedCount,
+                'updated_ids' => $validated['ids'],
+            ],
+        ]);
+    }
+
+    /**
      * Toggle pinned state for quick access.
      */
     public function togglePin(Note $note): JsonResponse
