@@ -841,7 +841,7 @@ class NoteController extends Controller
         }
 
         $validated = $request->validate([
-            'content' => ['required', 'string'],
+            'content' => ['required', 'string', 'max:5000000'],
             'chunk_type' => ['nullable', 'string', 'in:paragraph,heading,code,quote,table,task,list'],
         ]);
 
@@ -912,7 +912,7 @@ class NoteController extends Controller
         $this->authorizeNote($note, $this->resolveUser($request));
 
         $validated = $request->validate([
-            'order' => ['required', 'array'],
+            'order' => ['required', 'array', 'max:10000'],
             'order.*' => ['required', 'regex:/^(?:[0-9]+|chk_[A-Za-z0-9_]+)$/'],
         ]);
 

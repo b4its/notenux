@@ -302,15 +302,15 @@ class NoteChunkService
 
             $chunksByUid = $chunks->keyBy('chunk_uid');
 
-            $resolved = [];
+            $resolvedIds = [];
             foreach ($orderedIdentities as $identity) {
                 $chunk = $chunks->get((string) $identity) ?? $chunksByUid->get((string) $identity);
-                if (! $chunk || in_array($chunk->id, $resolved, true)) {
+                if (! $chunk || isset($resolvedIds[$chunk->id])) {
                     throw ValidationException::withMessages(['order' => 'Order must contain every shard of this scroll exactly once.']);
                 }
-                $resolved[] = $chunk->id;
+                $resolvedIds[$chunk->id] = true;
             }
-            if (count($resolved) !== $chunks->count()) {
+            if (count($resolvedIds) !== $chunks->count()) {
                 throw ValidationException::withMessages(['order' => 'Order must contain every shard of this scroll exactly once.']);
             }
 

@@ -2,6 +2,8 @@
 
 use App\Models\Note;
 use App\Models\NoteChunk;
+use App\Models\User;
+use App\Services\NoteChunkService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
@@ -108,6 +110,34 @@ test('it inspects database chunks for identity verification', function () {
         ->assertJsonPath('note_id', $note->id)
         ->assertJsonPath('total_chunks', 1)
         ->assertJsonPath('chunks.0.chunk_uid', $uid);
+});
+
+test('it rejects oversized chunk updates without changing the manuscript', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->create(['user_id' => $user->id]);
+    $chunk = app(NoteChunkService::class)->syncChunks($note, 'Original manuscript')[0];
+
+    $response = $this->actingAs($user)->putJson(route('notes.chunks.update', [$note, $chunk]), [
+        'content' => str_repeat('x', 5000001),
+    ]);
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('content');
+    $this->assertDatabaseHas('notes', ['id' => $note->id, 'content' => 'Original manuscript']);
+    $this->assertDatabaseHas('note_chunks', ['id' => $chunk->id, 'content' => 'Original manuscript']);
+});
+
+test('it rejects oversized reorder requests without changing chunk positions', function () {
+    $user = User::factory()->create();
+    $note = Note::factory()->create(['user_id' => $user->id]);
+    $chunk = app(NoteChunkService::class)->syncChunks($note, 'Original manuscript')[0];
+
+    $response = $this->actingAs($user)->postJson(route('notes.chunks.reorder', $note), [
+        'order' => array_fill(0, 10001, $chunk->id),
+    ]);
+
+    $response->assertUnprocessable()->assertJsonValidationErrors('order');
+    $this->assertDatabaseHas('notes', ['id' => $note->id, 'content' => 'Original manuscript']);
+    $this->assertDatabaseHas('note_chunks', ['id' => $chunk->id, 'chunk_index' => 0]);
 });
 
 test('it deletes a note and cascades its chunks', function () {
