@@ -351,6 +351,9 @@ class NoteChunkService
 
                     $title = $jsonTitle ?: ($filename ? ucwords(str_replace(['-', '_'], ' ', pathinfo($filename, PATHINFO_FILENAME))) : 'Imported Scroll '.now()->format('Y-m-d H:i'));
 
+                    $isPinned = ! empty($decoded['is_pinned']);
+                    $isFavorite = ! empty($decoded['is_favorite']);
+
                     $note = Note::create([
                         'title' => Str::limit($title, 120, ''),
                         'category' => $jsonCategory,
@@ -358,6 +361,8 @@ class NoteChunkService
                         'font_family' => $jsonFont,
                         'font_size' => $jsonFontSize,
                         'theme_color' => $jsonTheme,
+                        'is_pinned' => $isPinned,
+                        'is_favorite' => $isFavorite,
                     ]);
 
                     $this->syncChunks($note, $cleanHtml);

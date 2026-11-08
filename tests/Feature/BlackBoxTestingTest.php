@@ -1042,3 +1042,74 @@ test('black-box: studio view renders category filter pills including pinned and 
         ->assertSee('data-category="favorites"', false)
         ->assertSee('data-category="all"', false);
 });
+
+test('black-box: user filters notes via api using category=pinned and category=favorites', function () {
+    $notePinned = Note::factory()->create([
+        'title' => 'Important Pinned Quest',
+        'category' => 'quest',
+        'is_pinned' => true,
+        'is_favorite' => false,
+    ]);
+
+    $noteFav = Note::factory()->create([
+        'title' => 'Favorite Strategy Map',
+        'category' => 'strategy',
+        'is_pinned' => false,
+        'is_favorite' => true,
+    ]);
+
+    $noteNormal = Note::factory()->create([
+        'title' => 'Standard Scroll',
+        'category' => 'quest',
+        'is_pinned' => false,
+        'is_favorite' => false,
+    ]);
+
+    $pinnedRes = $this->getJson('/api/notes?category=pinned');
+    $pinnedRes->assertOk();
+    $pinnedIds = array_column($pinnedRes->json('data'), 'id');
+    expect($pinnedIds)->toContain($notePinned->id)
+        ->and($pinnedIds)->not->toContain($noteFav->id)
+        ->and($pinnedIds)->not->toContain($noteNormal->id);
+
+    $favRes = $this->getJson('/api/notes?category=favorites');
+    $favRes->assertOk();
+    $favIds = array_column($favRes->json('data'), 'id');
+    expect($favIds)->toContain($noteFav->id)
+        ->and($favIds)->not->toContain($notePinned->id)
+        ->and($favIds)->not->toContain($noteNormal->id);
+});
+
+test('black-box: user exports note to json and imports back with full fidelity', function () {
+    $original = Note::factory()->create([
+        'title' => 'Dragon Lore Compendium',
+        'category' => 'lore',
+        'content' => '<h2>Ancient Wyrm</h2><p>Breathes azure flames of eternity.</p>',
+        'is_pinned' => true,
+        'is_favorite' => true,
+    ]);
+
+    $exportRes = $this->get("/api/notes/{$original->id}/export/json");
+    $exportRes->assertOk();
+    $jsonString = $exportRes->getContent();
+
+    $importRes = $this->postJson('/api/notes/import', [
+        'content' => $jsonString,
+    ]);
+
+    $importRes->assertCreated()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('data.title', 'Dragon Lore Compendium')
+        ->assertJsonPath('data.is_pinned', true)
+        ->assertJsonPath('data.is_favorite', true);
+
+    $newId = $importRes->json('data.id');
+    expect($newId)->not->toBe($original->id);
+
+    $this->assertDatabaseHas('notes', [
+        'id' => $newId,
+        'title' => 'Dragon Lore Compendium',
+        'is_pinned' => true,
+        'is_favorite' => true,
+    ]);
+});

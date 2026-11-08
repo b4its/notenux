@@ -61,7 +61,11 @@ class NoteController extends Controller
         }
 
         if ($category = $request->input('category')) {
-            if ($category !== 'all') {
+            if ($category === 'pinned') {
+                $query->where('is_pinned', true);
+            } elseif ($category === 'favorites') {
+                $query->where('is_favorite', true);
+            } elseif ($category !== 'all') {
                 $query->where('category', $category);
             }
         }

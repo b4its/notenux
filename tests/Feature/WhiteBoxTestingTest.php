@@ -815,3 +815,71 @@ test('white-box: ai assistant controller returns 503 when ai credentials are not
     expect($data['status'])->toBe('error')
         ->and($data['message'])->toContain('AI assistant belum dikonfigurasi');
 });
+
+test('white-box: note controller index filters by virtual pinned and favorites category params', function () {
+    $controller = app(NoteController::class);
+
+    $pinnedNote = Note::factory()->create([
+        'title' => 'Pinned Quest',
+        'category' => 'quest',
+        'is_pinned' => true,
+        'is_favorite' => false,
+    ]);
+
+    $favNote = Note::factory()->create([
+        'title' => 'Favorite Lore',
+        'category' => 'lore',
+        'is_pinned' => false,
+        'is_favorite' => true,
+    ]);
+
+    $regularNote = Note::factory()->create([
+        'title' => 'Regular Journal',
+        'category' => 'journal',
+        'is_pinned' => false,
+        'is_favorite' => false,
+    ]);
+
+    // Request with category=pinned
+    $reqPinned = Request::create('/api/notes', 'GET', ['category' => 'pinned']);
+    $reqPinned->headers->set('Accept', 'application/json');
+    $resPinned = $controller->index($reqPinned);
+    $pinnedData = $resPinned->getData(true)['data'];
+    $pinnedIds = array_column($pinnedData, 'id');
+    expect($pinnedIds)->toContain($pinnedNote->id)
+        ->and($pinnedIds)->not->toContain($favNote->id)
+        ->and($pinnedIds)->not->toContain($regularNote->id);
+
+    // Request with category=favorites
+    $reqFav = Request::create('/api/notes', 'GET', ['category' => 'favorites']);
+    $reqFav->headers->set('Accept', 'application/json');
+    $resFav = $controller->index($reqFav);
+    $favData = $resFav->getData(true)['data'];
+    $favIds = array_column($favData, 'id');
+    expect($favIds)->toContain($favNote->id)
+        ->and($favIds)->not->toContain($pinnedNote->id)
+        ->and($favIds)->not->toContain($regularNote->id);
+});
+
+test('white-box: note chunk service importMarkdown preserves is_pinned and is_favorite from json payload', function () {
+    $service = app(NoteChunkService::class);
+
+    $jsonPayload = json_encode([
+        'title' => 'Archmage Grimoire',
+        'category' => 'spellbook',
+        'content' => '<h2>Grand Magic</h2><p>Summon celestial phoenix.</p>',
+        'font_family' => 'pixel',
+        'font_size' => '18px',
+        'theme_color' => 'purple',
+        'is_pinned' => true,
+        'is_favorite' => true,
+    ]);
+
+    $note = $service->importMarkdown($jsonPayload);
+
+    expect($note->title)->toBe('Archmage Grimoire')
+        ->and($note->category)->toBe('spellbook')
+        ->and($note->is_pinned)->toBeTrue()
+        ->and($note->is_favorite)->toBeTrue()
+        ->and($note->chunks()->count())->toBeGreaterThan(0);
+});
