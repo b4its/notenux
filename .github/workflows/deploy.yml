@@ -34,10 +34,7 @@ jobs:
       - name: Build Production Assets
         run: npm run build
 
-      - name: Prepare Production Environment Template
-        run: bash scripts/generate-production-env.sh
-
-      - name: Setup SSH Tools & Format Key
+      - name: Setup SSH Tools
         env:
           SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
         run: |
@@ -45,15 +42,11 @@ jobs:
           chmod 700 ~/.ssh
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
           if [ -n "${SSH_KEY}" ]; then
-            if echo "${SSH_KEY}" | grep -q -- "-----BEGIN"; then
-              printf "%s\n" "${SSH_KEY}" > ~/.ssh/deploy_key
-            else
-              printf -- "-----BEGIN OPENSSH PRIVATE KEY-----\n%s\n-----END OPENSSH PRIVATE KEY-----\n" "${SSH_KEY}" > ~/.ssh/deploy_key
-            fi
+            printf "%s\n" "${SSH_KEY}" > ~/.ssh/deploy_key
             chmod 600 ~/.ssh/deploy_key
           fi
 
-      - name: Deploy Codebase & Run Server Setup
+      - name: Deploy Assets & Run Server Setup
         env:
           HOST_INPUT: ${{ secrets.HOSTINGER_HOST }}
           PORT_INPUT: ${{ secrets.HOSTINGER_PORT }}
@@ -65,43 +58,20 @@ jobs:
           HOSTINGER_USER="${USER_INPUT:-u916682966}"
           SSH_PASS="${PASS_INPUT:-pastiSukses2026@}"
 
-          SSH_OPTS="-p ${HOSTINGER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=15"
-          
-          USE_KEY=false
-          if [ -f ~/.ssh/deploy_key ]; then
-            if ssh -i ~/.ssh/deploy_key ${SSH_OPTS} -o BatchMode=yes "${HOSTINGER_USER}@${HOSTINGER_HOST}" "true" 2>/dev/null; then
-              USE_KEY=true
-              echo "✓ SSH Key authentication successful."
-            else
-              echo "⚠ SSH Key authentication failed or key invalid; using SSH Password fallback."
-            fi
-          fi
+          SSH_OPTS="-p ${HOSTINGER_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+          REMOTE_COMMAND="if [ -f /home/u916682966/domains/notenux.oryphem.com/deploy.sh ]; then bash /home/u916682966/domains/notenux.oryphem.com/deploy.sh; elif [ -f ${TARGET_PATH}/scripts/deploy.sh ]; then bash ${TARGET_PATH}/scripts/deploy.sh; fi"
 
-          if [ "$USE_KEY" = "true" ]; then
-            SSH_CMD="ssh -i ~/.ssh/deploy_key ${SSH_OPTS}"
-            RSYNC_RSH="ssh -i ~/.ssh/deploy_key ${SSH_OPTS}"
+          if [ -f ~/.ssh/deploy_key ] && ssh -i ~/.ssh/deploy_key ${SSH_OPTS} -o BatchMode=yes "${HOSTINGER_USER}@${HOSTINGER_HOST}" "true" 2>/dev/null; then
+            echo "SSH key authentication successful. Syncing assets..."
+            rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key ${SSH_OPTS}" public/build/ "${HOSTINGER_USER}@${HOSTINGER_HOST}:${TARGET_PATH}/public/build/"
+            echo "Executing remote deployment script..."
+            ssh -i ~/.ssh/deploy_key ${SSH_OPTS} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "${REMOTE_COMMAND}"
           else
-            SSH_CMD="sshpass -p '${SSH_PASS}' ssh ${SSH_OPTS}"
-            RSYNC_RSH="sshpass -p '${SSH_PASS}' ssh ${SSH_OPTS}"
+            echo "Falling back to SSH password authentication. Syncing assets..."
+            sshpass -p "${SSH_PASS}" rsync -avz --delete -e "ssh ${SSH_OPTS}" public/build/ "${HOSTINGER_USER}@${HOSTINGER_HOST}:${TARGET_PATH}/public/build/"
+            echo "Executing remote deployment script..."
+            sshpass -p "${SSH_PASS}" ssh ${SSH_OPTS} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "${REMOTE_COMMAND}"
           fi
-
-          echo "Ensuring remote directory structure..."
-          ${SSH_CMD} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "mkdir -p ${TARGET_PATH}"
-
-          echo "Syncing application codebase and compiled assets..."
-          rsync -avz --delete \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='.env' \
-            --exclude='storage/*.key' \
-            --exclude='database/backups' \
-            -e "${RSYNC_RSH}" ./ "${HOSTINGER_USER}@${HOSTINGER_HOST}:${TARGET_PATH}/"
-
-          echo "Ensuring remote scripts are executable..."
-          ${SSH_CMD} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "chmod +x ${TARGET_PATH}/scripts/deploy.sh"
-
-          echo "Executing remote setup & migration script..."
-          ${SSH_CMD} "${HOSTINGER_USER}@${HOSTINGER_HOST}" "bash ${TARGET_PATH}/scripts/deploy.sh"
 
       - name: Health Check
         run: |
@@ -117,5 +87,6 @@ jobs:
               echo "Deployment verified successfully on root! HTTP Status: $ROOT_STATUS"
             else
               echo "Warning: Application responded with status $STATUS / $ROOT_STATUS"
+              exit 1
             fi
           fi
