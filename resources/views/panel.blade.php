@@ -996,25 +996,72 @@
                                         </button>
                                         <button id="insert-media-btn"
                                                 class="arcade-btn bg-surface hover:bg-blue-200 dark:hover:bg-blue-800 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
-                                                title="Insert Image / Pixel Artifact">
+                                                title="Sisipkan Gambar atau Artefak Pixel">
                                             <i class="fa-solid fa-image mr-1 text-blue-600 dark:text-cyan-400"></i> IMG
                                         </button>
+                                        <input type="file" id="media-file-input" accept="image/*" class="hidden">
                                     </div>
                                 </div>
 
                                 <!-- Right: Color Palette, Studio Tools & Canvas Zoom -->
                                 <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 sm:shrink sm:ml-auto">
-                                    <!-- Color Palette Swatches -->
-                                    <div id="editor-deck-2-palette" class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] px-1.5 h-7 shrink-0">
-                                        <button data-color="#38bdf8" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-cyan-400 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Neon Cyan"></button>
-                                        <button data-color="#3b82f6" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-blue-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Arcade Blue"></button>
-                                        <button data-color="#10b981" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Emerald Glow"></button>
-                                        <button data-color="#f59e0b" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-amber-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Pixel Gold"></button>
-                                        <button data-color="#ef4444" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-rose-500 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="Crimson"></button>
-                                        <button data-color="#f8fafc" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-slate-100 border border-black cursor-pointer hover:scale-110 transition-transform shrink-0" title="White"></button>
+                                    <!-- Complete Color Palette (Text Colors, Highlights & Custom Pickers) -->
+                                    <div id="editor-deck-2-palette" class="flex items-center gap-1 bg-surface-alt p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] px-1.5 h-7 shrink-0" title="Palet Pewarnaan Naskah & Teks">
+                                        <span class="text-[10px] font-mono font-bold text-slate-500 mr-0.5 shrink-0" title="Warna Font"><i class="fa-solid fa-palette text-blue-500"></i></span>
+                                        <!-- Black (User explicitly requested!) -->
+                                        <button data-color="#000000" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-black border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0 shadow-xs" title="Hitam Pekat (#000000)"></button>
+                                        <!-- Charcoal -->
+                                        <button data-color="#1f2937" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-gray-800 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Dark Charcoal (#1f2937)"></button>
+                                        <!-- Slate Gray -->
+                                        <button data-color="#64748b" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-slate-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Slate Gray (#64748b)"></button>
+                                        <!-- White / Light -->
+                                        <button data-color="#f8fafc" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-slate-100 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Putih (#f8fafc)"></button>
+                                        <!-- Crimson Red -->
+                                        <button data-color="#ef4444" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-rose-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Merah Crimson (#ef4444)"></button>
+                                        <!-- Flame Orange -->
+                                        <button data-color="#f97316" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-orange-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Jingga / Retro Orange (#f97316)"></button>
+                                        <!-- Pixel Gold / Amber -->
+                                        <button data-color="#f59e0b" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-amber-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Pixel Gold / Amber (#f59e0b)"></button>
+                                        <!-- Lime Green -->
+                                        <button data-color="#84cc16" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-lime-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Hijau Lime (#84cc16)"></button>
+                                        <!-- Emerald Green -->
+                                        <button data-color="#10b981" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Emerald Glow (#10b981)"></button>
+                                        <!-- Neon Cyan -->
+                                        <button data-color="#06b6d4" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-cyan-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Neon Cyan (#06b6d4)"></button>
+                                        <!-- Arcade Blue -->
+                                        <button data-color="#3b82f6" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-blue-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Arcade Blue (#3b82f6)"></button>
+                                        <!-- Mystic Purple -->
+                                        <button data-color="#a855f7" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-purple-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Mystic Purple (#a855f7)"></button>
+                                        <!-- Retro Pink / Magenta -->
+                                        <button data-color="#ec4899" data-color-type="foreColor" class="w-3.5 h-3.5 rounded-full bg-pink-500 border border-black/50 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Retro Pink / Magenta (#ec4899)"></button>
+                                        <!-- Custom Text Color Input -->
+                                        <label class="relative inline-flex items-center cursor-pointer shrink-0" title="Pilih Warna Teks Bebas (RGB Custom Color)">
+                                            <input type="color" id="custom-text-color-picker" value="#000000" class="w-3.5 h-3.5 rounded-full cursor-pointer border border-black/50 p-0 overflow-hidden opacity-0 absolute inset-0">
+                                            <span class="w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-rose-500 via-amber-400 via-emerald-400 to-blue-500 border border-black/50 hover:scale-125 transition-transform block"></span>
+                                        </label>
+
+                                        <span class="text-black/30 dark:text-white/30 text-xs mx-0.5">|</span>
+
+                                        <!-- Highlight (hiliteColor) Swatches -->
+                                        <span class="text-[10px] font-mono font-bold text-slate-500 shrink-0" title="Sorotan / Highlight Teks"><i class="fa-solid fa-highlighter text-yellow-500"></i></span>
+                                        <!-- Highlight Yellow -->
+                                        <button data-color="#fef08a" data-color-type="hiliteColor" class="w-3.5 h-3.5 rounded-sm bg-yellow-200 border border-yellow-500/80 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Sorotan Kuning (#fef08a)"></button>
+                                        <!-- Highlight Green -->
+                                        <button data-color="#bbf7d0" data-color-type="hiliteColor" class="w-3.5 h-3.5 rounded-sm bg-emerald-200 border border-emerald-500/80 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Sorotan Hijau (#bbf7d0)"></button>
+                                        <!-- Highlight Cyan -->
+                                        <button data-color="#bae6fd" data-color-type="hiliteColor" class="w-3.5 h-3.5 rounded-sm bg-cyan-200 border border-cyan-500/80 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Sorotan Biru Muda (#bae6fd)"></button>
+                                        <!-- Highlight Pink -->
+                                        <button data-color="#fbcfe8" data-color-type="hiliteColor" class="w-3.5 h-3.5 rounded-sm bg-pink-200 border border-pink-500/80 cursor-pointer hover:scale-125 transition-transform shrink-0" title="Sorotan Merah Muda (#fbcfe8)"></button>
+                                        <!-- Clear Highlight -->
+                                        <button data-color="transparent" data-color-type="hiliteColor" class="w-3.5 h-3.5 rounded-sm bg-transparent border border-dashed border-red-500 flex items-center justify-center cursor-pointer hover:scale-125 transition-transform shrink-0 text-[8px] text-red-500 font-bold" title="Hapus Sorotan / Clear Highlight">✕</button>
+                                        <!-- Custom Highlight Picker -->
+                                        <label class="relative inline-flex items-center cursor-pointer shrink-0" title="Pilih Warna Highlight Bebas (RGB Custom Highlight)">
+                                            <input type="color" id="custom-hilite-color-picker" value="#fef08a" class="w-3.5 h-3.5 rounded-sm cursor-pointer border border-black/50 p-0 overflow-hidden opacity-0 absolute inset-0">
+                                            <span class="w-3.5 h-3.5 rounded-sm bg-gradient-to-tr from-yellow-200 via-pink-200 to-cyan-200 border border-black/50 hover:scale-125 transition-transform block"></span>
+                                        </label>
                                     </div>
 
-                                    <!-- Studio Markdown & Plain Text Tools -->
+                                    <!-- Studio Markdown & Plain Text Tools (AI removed completely) -->
                                     <div class="flex items-center gap-0.5 sm:gap-1 bg-surface-alt p-0.5 sm:p-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
                                         <button id="markdown-paste-btn"
                                                 class="arcade-btn bg-cyan-600 hover:bg-cyan-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
@@ -1035,11 +1082,6 @@
                                                 class="arcade-btn bg-surface hover:bg-amber-200 dark:hover:bg-amber-900/40 px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shrink-0"
                                                 title="Find & Replace in Scroll (Ctrl+F)">
                                             <i class="fa-solid fa-magnifying-glass mr-1 text-amber-600 dark:text-yellow-400"></i> FIND
-                                        </button>
-                                        <button id="open-ai-modal-btn"
-                                                class="arcade-btn bg-purple-600 hover:bg-purple-500 text-white px-2 sm:px-2.5 h-7 rounded text-xs font-mono flex items-center justify-center shadow-[1px_1px_0px_#000] shrink-0"
-                                                title="Arcane Scribe AI Assistant (Poles, Ringkas, Lanjutkan)">
-                                            <i class="fa-solid fa-wand-magic-sparkles mr-1 text-yellow-300"></i> AI
                                         </button>
                                     </div>
 
@@ -2099,7 +2141,7 @@
                                    name="current_password"
                                    placeholder="Masukkan password saat ini..."
                                    class="retro-input w-full p-2.5 pr-9 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs">
-                            <button type="button" class="password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" data-target="profile-current-password-input">
+                            <button type="button" class="toggle-password-btn password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer" data-target="profile-current-password-input" title="Tampilkan kata sandi">
                                 <i class="fa-solid fa-eye text-xs"></i>
                             </button>
                         </div>
@@ -2117,7 +2159,7 @@
                                        name="password"
                                        placeholder="Minimal 8 karakter..."
                                        class="retro-input w-full p-2.5 pr-9 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs">
-                                <button type="button" class="password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" data-target="profile-new-password-input">
+                                <button type="button" class="toggle-password-btn password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer" data-target="profile-new-password-input" title="Tampilkan kata sandi">
                                     <i class="fa-solid fa-eye text-xs"></i>
                                 </button>
                             </div>
@@ -2133,7 +2175,7 @@
                                        name="password_confirmation"
                                        placeholder="Ulangi password..."
                                        class="retro-input w-full p-2.5 pr-9 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs">
-                                <button type="button" class="password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" data-target="profile-confirm-password-input">
+                                <button type="button" class="toggle-password-btn password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer" data-target="profile-confirm-password-input" title="Tampilkan konfirmasi kata sandi">
                                     <i class="fa-solid fa-eye text-xs"></i>
                                 </button>
                             </div>
@@ -2153,107 +2195,6 @@
                 <button type="button" id="save-profile-btn" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded text-xs font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#000]">
                     <i class="fa-solid fa-floppy-disk"></i> SIMPAN PERUBAHAN
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================================== -->
-    <!-- ARCANE SCRIBE AI ASSISTANT MODAL -->
-    <!-- ============================================================================== -->
-    <div id="ai-assistant-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 hidden">
-        <div class="arcade-card bg-[var(--bg-surface)] border-2 border-black dark:border-purple-700 w-full max-w-2xl rounded-xl overflow-hidden shadow-[6px_6px_0px_#000] flex flex-col max-h-[90vh]">
-            <!-- Header -->
-            <div class="p-3.5 bg-gradient-to-r from-purple-700 to-indigo-700 border-b-2 border-black text-white flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-wand-magic-sparkles text-base text-yellow-300"></i>
-                    <h2 class="font-pixel text-xs sm:text-sm tracking-wider uppercase">ARCANE SCRIBE AI ASSISTANT</h2>
-                </div>
-                <button type="button" id="close-ai-modal-x" class="arcade-btn bg-black text-white hover:bg-gray-800 px-2 py-0.5 rounded text-xs font-mono" title="Tutup (ESC)">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <!-- Body -->
-            <div class="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs font-mono flex-1">
-                <!-- Action & Instruction Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div class="sm:col-span-1">
-                        <label for="ai-action" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
-                            <i class="fa-solid fa-bolt mr-1 text-purple-600 dark:text-purple-400"></i> Sihir / Perintah:
-                        </label>
-                        <select id="ai-action" class="retro-input w-full p-2 rounded bg-[var(--bg-main)] border-2 border-black dark:border-purple-700 font-mono text-xs">
-                            <option value="improve">✨ Poles & Perbaiki Naskah</option>
-                            <option value="summarize">📜 Ringkas Inti Naskah</option>
-                            <option value="continue">⚡ Lanjutkan Tulisan</option>
-                            <option value="translate">🌐 Terjemahkan Bahasa</option>
-                            <option value="custom">🔮 Kustom Perintah</option>
-                            <option value="generate_title">🏷️ Buat Judul Menarik</option>
-                        </select>
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <label for="ai-instruction" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
-                            <i class="fa-solid fa-pen-nib mr-1 text-purple-600 dark:text-purple-400"></i> Instruksi / Bahasa Tujuan (Opsional):
-                        </label>
-                        <input type="text"
-                               id="ai-instruction"
-                               placeholder="Contoh: Terjemahkan ke Bahasa Jepang, buat lebih puitis..."
-                               class="retro-input w-full p-2 rounded bg-[var(--bg-main)] border-2 border-black dark:border-purple-700 font-mono text-xs">
-                    </div>
-                </div>
-
-                <!-- Generate & Cancel Controls -->
-                <div class="flex items-center gap-2">
-                    <button type="button"
-                            id="ai-generate-btn"
-                            class="arcade-btn bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded text-xs font-mono font-bold tracking-wider flex items-center gap-1.5 shadow-[2px_2px_0px_#000]">
-                        <i class="fa-solid fa-wand-magic-sparkles text-yellow-300"></i> GENERATE HASIL AI
-                    </button>
-                    <button type="button"
-                            id="ai-cancel-btn"
-                            disabled
-                            class="arcade-btn bg-slate-200 dark:bg-slate-800 text-main px-3 py-2 rounded text-xs font-mono font-bold disabled:opacity-40 disabled:cursor-not-allowed shadow-[1px_1px_0px_#000]">
-                        <i class="fa-solid fa-ban mr-1"></i> Batal
-                    </button>
-                </div>
-
-                <!-- Status Feedback -->
-                <div id="ai-status" class="p-2 rounded bg-purple-50 dark:bg-purple-950/40 border border-purple-500/40 text-[11px] text-purple-900 dark:text-purple-200 min-h-[32px] flex items-center">
-                    Pilih perintah dan klik Generate untuk memulai sihir AI.
-                </div>
-
-                <!-- Result Textarea -->
-                <div>
-                    <label for="ai-result" class="block font-bold mb-1 text-slate-800 dark:text-gray-200">
-                        <i class="fa-solid fa-scroll mr-1 text-purple-600 dark:text-purple-400"></i> Hasil Sihir AI:
-                    </label>
-                    <textarea id="ai-result"
-                              readonly
-                              rows="6"
-                              placeholder="Hasil naskah dari AI akan muncul di sini untuk ditinjau terlebih dahulu..."
-                              class="retro-input w-full p-2.5 rounded bg-[var(--bg-main)] border-2 border-black dark:border-purple-700 font-mono text-xs resize-y"></textarea>
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="p-3 border-t-2 border-black/10 dark:border-white/10 bg-[var(--bg-surface-alt)] flex items-center justify-between gap-2 flex-wrap">
-                <button type="button" id="close-ai-modal-btn" class="arcade-btn bg-[var(--bg-surface)] hover:bg-gray-200 dark:hover:bg-slate-800 px-4 py-2 rounded text-xs font-mono font-bold shadow-[2px_2px_0px_#000]">
-                    Tutup
-                </button>
-                <div class="flex items-center gap-2">
-                    <button type="button"
-                            id="ai-append-btn"
-                            disabled
-                            class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded text-xs font-mono font-bold tracking-wider disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0px_#000]">
-                        <i class="fa-solid fa-plus mr-1"></i> Tambahkan ke Akhir
-                    </button>
-                    <button type="button"
-                            id="ai-replace-btn"
-                            disabled
-                            class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded text-xs font-mono font-bold tracking-wider disabled:opacity-40 disabled:cursor-not-allowed shadow-[2px_2px_0px_#000]">
-                        <i class="fa-solid fa-arrows-rotate mr-1"></i> Ganti Naskah Aktif
-                    </button>
-                </div>
             </div>
         </div>
     </div>

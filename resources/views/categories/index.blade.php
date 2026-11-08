@@ -733,7 +733,7 @@
                                    name="current_password"
                                    placeholder="Masukkan password saat ini..."
                                    class="retro-input w-full p-2.5 pr-9 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs">
-                            <button type="button" class="password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" data-target="profile-current-password-input">
+                            <button type="button" class="toggle-password-btn password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer" data-target="profile-current-password-input" title="Tampilkan kata sandi">
                                 <i class="fa-solid fa-eye text-xs"></i>
                             </button>
                         </div>
@@ -751,7 +751,7 @@
                                        name="password"
                                        placeholder="Minimal 8 karakter..."
                                        class="retro-input w-full p-2.5 pr-9 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs">
-                                <button type="button" class="password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" data-target="profile-new-password-input">
+                                <button type="button" class="toggle-password-btn password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer" data-target="profile-new-password-input" title="Tampilkan kata sandi">
                                     <i class="fa-solid fa-eye text-xs"></i>
                                 </button>
                             </div>
@@ -767,7 +767,7 @@
                                        name="password_confirmation"
                                        placeholder="Ulangi password..."
                                        class="retro-input w-full p-2.5 pr-9 rounded bg-[var(--bg-main)] border-2 border-black dark:border-blue-700 font-mono text-xs">
-                                <button type="button" class="password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300" data-target="profile-confirm-password-input">
+                                <button type="button" class="toggle-password-btn password-toggle-btn absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer" data-target="profile-confirm-password-input" title="Tampilkan konfirmasi kata sandi">
                                     <i class="fa-solid fa-eye text-xs"></i>
                                 </button>
                             </div>

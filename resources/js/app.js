@@ -903,7 +903,7 @@ class RetroPasswordToggle {
 
     static initAll(root = document) {
         if (!root || !root.querySelectorAll) return;
-        root.querySelectorAll('.toggle-password-btn').forEach(btn => {
+        root.querySelectorAll('.toggle-password-btn, .password-toggle-btn').forEach(btn => {
             new RetroPasswordToggle(btn);
         });
     }
@@ -1032,6 +1032,9 @@ class NotenuxPanel {
             insertTableBtn: document.getElementById('insert-table-btn'),
             insertTaskBtn: document.getElementById('insert-task-btn'),
             insertMediaBtn: document.getElementById('insert-media-btn'),
+            mediaFileInput: document.getElementById('media-file-input'),
+            customTextColorPicker: document.getElementById('custom-text-color-picker'),
+            customHiliteColorPicker: document.getElementById('custom-hilite-color-picker'),
             markdownPasteBtn: document.getElementById('markdown-paste-btn'),
             markdownViewToggleBtn: document.getElementById('markdown-view-toggle-btn'),
             editorToolbarDecks: document.getElementById('editor-toolbar-decks'),
@@ -1193,7 +1196,6 @@ class NotenuxPanel {
         this.initMarkdownModal();
         this.initClearControls();
         this.bindEvents();
-        this.initAiAssistant();
         this.initPasswordToggles();
         this.bindKeyboardShortcuts();
         window.addEventListener('beforeunload', event => {
@@ -1325,138 +1327,6 @@ class NotenuxPanel {
         } else {
             this.closeDynamicIsland();
         }
-    }
-
-    initAiAssistant() {
-        const get = id => document.getElementById(id);
-        const modal = get('ai-assistant-modal');
-        const openBtn = get('open-ai-modal-btn');
-        const closeX = get('close-ai-modal-x');
-        const closeBtn = get('close-ai-modal-btn');
-        const generate = get('ai-generate-btn');
-
-        this.openAiModal = () => {
-            if (!this.activeNote) {
-                this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
-                return;
-            }
-            modal?.classList.remove('hidden');
-            this.audio?.playBlip?.();
-            const status = get('ai-status');
-            if (status) status.textContent = 'Pilih perintah dan klik Generate untuk memulai sihir AI.';
-        };
-
-        this.closeAiModal = () => {
-            modal?.classList.add('hidden');
-        };
-
-        openBtn?.addEventListener('click', this.openAiModal);
-        closeX?.addEventListener('click', this.closeAiModal);
-        closeBtn?.addEventListener('click', this.closeAiModal);
-        modal?.addEventListener('click', (e) => {
-            if (e.target === modal) this.closeAiModal();
-        });
-
-        if (!generate) return;
-        const result = get('ai-result');
-        const status = get('ai-status');
-        const cancel = get('ai-cancel-btn');
-        const append = get('ai-append-btn');
-        const replace = get('ai-replace-btn');
-        let controller;
-        let context;
-        let requestVersion = 0;
-        cancel.addEventListener('click', () => controller?.abort());
-        generate.addEventListener('click', async () => {
-            if (!this.activeNote || controller) return;
-            const action = get('ai-action').value;
-            const instruction = get('ai-instruction').value.trim();
-
-            if (this.dom.editorArea && !this.isRawMarkdownMode && !this.isPlainTextMode) {
-                const contentNode = this.dom.editorArea.cloneNode(true);
-                contentNode.querySelectorAll('mark.search-match').forEach(mark => mark.replaceWith(...mark.childNodes));
-                this.activeNote.content = contentNode.innerHTML;
-            } else if (this.dom.markdownRawEditor && this.isRawMarkdownMode) {
-                this.activeNote.content = MarkdownEngine.parse(this.dom.markdownRawEditor.value);
-            } else if (this.dom.plainTextEditor && this.isPlainTextMode) {
-                this.activeNote.content = this.dom.plainTextEditor.value === this.plainTextOriginalText
-                    ? this.plainTextOriginalHtml
-                    : this.plainTextToHtml(this.dom.plainTextEditor.value);
-            }
-
-            const content = MarkdownEngine.toMarkdown(this.activeNote.content || '');
-            if (!content.trim() || content.length > 30000 || (['custom', 'translate'].includes(action) && !instruction)) {
-                status.textContent = 'Isi naskah 1–30.000 karakter dan instruksi / bahasa tujuan bila diperlukan.';
-                return;
-            }
-            context = { id: this.activeNote.id, content: this.activeNote.content, action };
-            const version = ++requestVersion;
-            controller = new AbortController();
-            generate.disabled = true;
-            cancel.disabled = false;
-            append.disabled = replace.disabled = true;
-            result.value = '';
-            result.readOnly = true;
-            status.textContent = 'AI sedang menyiapkan hasil…';
-            try {
-                const response = await fetch(`/api/notes/${context.id}/assistant`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                    },
-                    body: JSON.stringify({ action, instruction, content }),
-                    signal: controller.signal,
-                });
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.message || 'Permintaan AI gagal.');
-                if (version !== requestVersion) return;
-                result.value = data.data.content;
-                result.readOnly = false;
-                append.disabled = replace.disabled = false;
-                status.textContent = 'Tinjau hasil sebelum menerapkannya. Naskah belum diubah.';
-            } catch (error) {
-                status.textContent = error.name === 'AbortError' ? 'Permintaan dibatalkan. Naskah tidak diubah.' : error.message;
-            } finally {
-                controller = null;
-                generate.disabled = false;
-                cancel.disabled = true;
-            }
-        });
-        const apply = mode => {
-            if (!context || this.activeNote?.id !== context.id || this.activeNote.content !== context.content) {
-                status.textContent = 'Naskah telah berubah. Generate ulang untuk menghindari penimpaan perubahan.';
-                return;
-            }
-            if (!result.value.trim()) return;
-
-            if (context.action === 'generate_title') {
-                const cleanTitle = result.value.replace(/^["'`#]+|["'`#]+$/g, '').trim();
-                if (this.dom.noteTitleInput) this.dom.noteTitleInput.value = cleanTitle;
-                this.activeNote.title = cleanTitle;
-                this.updateActiveNoteInList();
-                this.scheduleAutoSave();
-                this.toast.show(`Judul diperbarui: "${cleanTitle}"`, 'success', 'AI Title');
-                append.disabled = replace.disabled = true;
-                status.textContent = 'Judul naskah telah berhasil diterapkan!';
-                return;
-            }
-
-            const html = MarkdownEngine.parse(result.value);
-            this.dom.editorArea.innerHTML = mode === 'append' ? this.dom.editorArea.innerHTML + html : html;
-            if (this.isRawMarkdownMode && this.dom.markdownRawEditor) {
-                this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(this.dom.editorArea.innerHTML);
-            }
-            if (this.isPlainTextMode && this.dom.plainTextEditor) {
-                this.dom.plainTextEditor.value = PlainTextEngine.toPlainText(this.dom.editorArea.innerHTML);
-                this.updatePlainTextStats();
-            }
-            this.handleEditorInput();
-            append.disabled = replace.disabled = true;
-            status.textContent = 'Hasil diterapkan. Autosave dijadwalkan.';
-        };
-        append.addEventListener('click', () => apply('append'));
-        replace.addEventListener('click', () => apply('replace'));
     }
 
     /* ---------------- THEME & DISPLAY ---------------- */
@@ -2369,7 +2239,6 @@ class NotenuxPanel {
                 this.closeMarkdownModal();
                 this.closeChunkInspector();
                 this.closeProfileModal();
-                this.closeAiModal?.();
                 this.toggleFindBar(false);
                 document.querySelectorAll('.retro-searchable-dropdown').forEach(d => d.classList.add('hidden'));
                 if (this.dom.importModal) this.dom.importModal.classList.add('hidden');
@@ -3054,82 +2923,129 @@ class NotenuxPanel {
                 this.pushUndoSnapshot();
             });
         });
+
+        if (this.dom.customTextColorPicker) {
+            const applyCustomText = (e) => {
+                if (!this.activeNote) {
+                    this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                    return;
+                }
+                this.pushUndoSnapshot();
+                document.execCommand('foreColor', false, e.target.value);
+                this.dom.editorArea.focus();
+                this.handleEditorInput();
+                this.pushUndoSnapshot();
+            };
+            this.dom.customTextColorPicker.addEventListener('input', applyCustomText);
+            this.dom.customTextColorPicker.addEventListener('change', applyCustomText);
+        }
+
+        if (this.dom.customHiliteColorPicker) {
+            const applyCustomHilite = (e) => {
+                if (!this.activeNote) {
+                    this.toast.show('Pilih atau buat gulungan catatan terlebih dahulu.', 'warning');
+                    return;
+                }
+                this.pushUndoSnapshot();
+                document.execCommand('hiliteColor', false, e.target.value);
+                this.dom.editorArea.focus();
+                this.handleEditorInput();
+                this.pushUndoSnapshot();
+            };
+            this.dom.customHiliteColorPicker.addEventListener('input', applyCustomHilite);
+            this.dom.customHiliteColorPicker.addEventListener('change', applyCustomHilite);
+        }
+
+        if (this.dom.mediaFileInput) {
+            this.dom.mediaFileInput.addEventListener('change', (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    this.toast.show('Hanya file gambar yang didukung.', 'warning');
+                    return;
+                }
+                this.insertImageFile(file);
+                e.target.value = '';
+            });
+        }
+    }
+
+    getActiveTableCell() {
+        if (this.activeTableCell && (typeof this.dom.editorArea?.contains !== 'function' || this.dom.editorArea.contains(this.activeTableCell))) {
+            return this.activeTableCell;
+        }
+        const sel = window.getSelection ? window.getSelection() : null;
+        if (sel && sel.rangeCount > 0) {
+            let node = sel.getRangeAt(0).startContainer;
+            if (node && node.nodeType === 3) node = node.parentNode;
+            const cell = node?.closest ? node.closest('td, th') : null;
+            if (cell && (typeof this.dom.editorArea?.contains !== 'function' || this.dom.editorArea.contains(cell))) {
+                return cell;
+            }
+        }
+        return null;
+    }
+
+    insertImageFile(imageFile) {
+        if (!imageFile) return false;
+        const targetCell = this.getActiveTableCell();
+        const reader = new FileReader();
+        reader.onload = (loadEvent) => {
+            const dataUrl = loadEvent.target?.result;
+            if (dataUrl) {
+                const img = document.createElement('img');
+                img.src = dataUrl;
+                img.alt = imageFile.name || 'Pasted Image';
+
+                if (targetCell) {
+                    img.className = 'max-w-full max-h-48 object-contain rounded border border-blue-400 my-1 inline-block cursor-pointer';
+                    targetCell.appendChild(img);
+                    this.handleEditorInput();
+                    this.setActiveImage(img);
+                    this.toast.show('Image inserted into table cell!', 'success', 'Cell Image Inscribed', 'fa-solid fa-table-cells text-cyan-400');
+                } else {
+                    img.className = 'retro-image rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2 object-contain inline-block cursor-pointer';
+                    const figure = document.createElement('figure');
+                    figure.className = 'retro-image-figure retro-align-center text-center my-3 mx-auto max-w-full block';
+                    if (figure.setAttribute) figure.setAttribute('data-align', 'center');
+                    if (figure.dataset) figure.dataset.align = 'center';
+                    if (figure.style) {
+                        figure.style.textAlign = 'center';
+                        figure.style.marginLeft = 'auto';
+                        figure.style.marginRight = 'auto';
+                    }
+                    figure.appendChild(img);
+
+                    const figcaption = document.createElement('figcaption');
+                    figcaption.className = 'retro-image-caption text-xs font-mono text-slate-500 dark:text-slate-400 mt-1.5 italic outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 py-0.5 inline-block text-center cursor-text';
+                    if (figcaption.setAttribute) {
+                        figcaption.setAttribute('contenteditable', 'true');
+                        figcaption.setAttribute('data-placeholder', 'Tambahkan caption gambar...');
+                    }
+                    figcaption.textContent = 'Tambahkan caption gambar...';
+                    figure.appendChild(figcaption);
+
+                    const breakP = document.createElement('p');
+                    breakP.innerHTML = '<br>';
+                    const htmlToInsert = figure.outerHTML + breakP.outerHTML;
+
+                    document.execCommand('insertHTML', false, htmlToInsert);
+                    this.handleEditorInput();
+                    const insertedImg = this.dom.editorArea?.querySelector ? (this.dom.editorArea.querySelector(`img[src="${dataUrl}"]`) || img) : img;
+                    this.setActiveImage(insertedImg);
+                    this.toast.show('Image pasted into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
+                }
+            }
+        };
+        reader.readAsDataURL(imageFile);
+        return true;
     }
 
     /* ---------------- CLIPBOARD PASTE INTERCEPTOR (.MD, IMAGES & TABLES) ---------------- */
     initPasteInterceptor() {
         if (!this.dom.editorArea) return;
 
-        const getActiveCell = () => {
-            if (this.activeTableCell && (typeof this.dom.editorArea.contains !== 'function' || this.dom.editorArea.contains(this.activeTableCell))) {
-                return this.activeTableCell;
-            }
-            const sel = window.getSelection ? window.getSelection() : null;
-            if (sel && sel.rangeCount > 0) {
-                let node = sel.getRangeAt(0).startContainer;
-                if (node && node.nodeType === 3) node = node.parentNode;
-                const cell = node?.closest ? node.closest('td, th') : null;
-                if (cell && (typeof this.dom.editorArea.contains !== 'function' || this.dom.editorArea.contains(cell))) {
-                    return cell;
-                }
-            }
-            return null;
-        };
-
-        const handleImageFile = (imageFile) => {
-            if (!imageFile) return false;
-            const targetCell = getActiveCell();
-            const reader = new FileReader();
-            reader.onload = (loadEvent) => {
-                const dataUrl = loadEvent.target?.result;
-                if (dataUrl) {
-                    const img = document.createElement('img');
-                    img.src = dataUrl;
-                    img.alt = 'Pasted Image';
-
-                    if (targetCell) {
-                        img.className = 'max-w-full max-h-48 object-contain rounded border border-blue-400 my-1 inline-block cursor-pointer';
-                        targetCell.appendChild(img);
-                        this.handleEditorInput();
-                        this.setActiveImage(img);
-                        this.toast.show('Image pasted into table cell!', 'success', 'Cell Image Inscribed', 'fa-solid fa-table-cells text-cyan-400');
-                    } else {
-                        img.className = 'retro-image rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2 object-contain inline-block cursor-pointer';
-                        const figure = document.createElement('figure');
-                        figure.className = 'retro-image-figure retro-align-center text-center my-3 mx-auto max-w-full block';
-                        if (figure.setAttribute) figure.setAttribute('data-align', 'center');
-                        if (figure.dataset) figure.dataset.align = 'center';
-                        if (figure.style) {
-                            figure.style.textAlign = 'center';
-                            figure.style.marginLeft = 'auto';
-                            figure.style.marginRight = 'auto';
-                        }
-                        figure.appendChild(img);
-
-                        const figcaption = document.createElement('figcaption');
-                        figcaption.className = 'retro-image-caption text-xs font-mono text-slate-500 dark:text-slate-400 mt-1.5 italic outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 py-0.5 inline-block text-center cursor-text';
-                        if (figcaption.setAttribute) {
-                            figcaption.setAttribute('contenteditable', 'true');
-                            figcaption.setAttribute('data-placeholder', 'Tambahkan caption gambar...');
-                        }
-                        figcaption.textContent = 'Tambahkan caption gambar...';
-                        figure.appendChild(figcaption);
-
-                        const breakP = document.createElement('p');
-                        breakP.innerHTML = '<br>';
-                        const htmlToInsert = figure.outerHTML + breakP.outerHTML;
-
-                        document.execCommand('insertHTML', false, htmlToInsert);
-                        this.handleEditorInput();
-                        const insertedImg = this.dom.editorArea?.querySelector ? (this.dom.editorArea.querySelector(`img[src="${dataUrl}"]`) || img) : img;
-                        this.setActiveImage(insertedImg);
-                        this.toast.show('Image pasted into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
-                    }
-                }
-            };
-            reader.readAsDataURL(imageFile);
-            return true;
-        };
+        const handleImageFile = (imageFile) => this.insertImageFile(imageFile);
 
         this.dom.editorArea.addEventListener('paste', (e) => {
             const clipboardData = e.clipboardData || window.clipboardData;
@@ -4760,8 +4676,11 @@ class NotenuxPanel {
             return;
         }
         if (this.categories && !this.categories.some(category => category.slug === 'archive')) {
-            this.toast.show('Kategori arsip tidak tersedia. Buat kategori archive terlebih dahulu.', 'warning');
-            return;
+            const archiveCat = { id: 'archive', name: 'Library Vault', slug: 'archive', icon: 'fa-solid fa-box-archive', color: 'amber', is_system: true };
+            this.categories.push(archiveCat);
+            if (typeof this.syncCategoriesDOM === 'function') {
+                this.syncCategoriesDOM();
+            }
         }
         const note = this.activeNote;
         this.activeNote.category = 'archive';

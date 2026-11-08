@@ -1225,3 +1225,16 @@ test('white-box: auth controller updateProfile validates unique email and preser
         ->and($user1->fresh()->name)->toBe('Grand Scribe')
         ->and($user1->fresh()->email)->toBe('grandscribe@notenux.dev');
 });
+
+test('white-box: category model default categories contains archive library vault and system categories', function () {
+    $defaults = Category::defaultCategories();
+
+    $slugs = array_column($defaults, 'slug');
+    expect($slugs)->toContain('catatan')
+        ->toContain('tugas')
+        ->toContain('archive');
+
+    $archive = collect($defaults)->firstWhere('slug', 'archive');
+    expect($archive['name'])->toBe('Library Vault')
+        ->and($archive['is_system'])->toBeTrue();
+});

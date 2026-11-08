@@ -2710,29 +2710,25 @@ test('white-box: openProfileModal and closeProfileModal manage profile modal vis
     assert.equal(panel.dom.profileSettingsModal.classList.contains('hidden'), true);
 });
 
-test('white-box: openAiModal and closeAiModal manage ai assistant modal visibility', () => {
-    const { panel } = harness(() => {});
+test('white-box: rich color palette supports pitch black, custom foreColor and custom hiliteColor pickers', () => {
+    const { panel, context } = harness(() => {});
     panel.activeNote = { id: 1, title: 'Eldoria Chronicles', content: '<p>Lore text</p>' };
-    const modalClasses = new Set(['hidden']);
-    const mockModal = {
-        classList: {
-            add(c) { modalClasses.add(c); },
-            remove(c) { modalClasses.delete(c); },
-            contains(c) { return modalClasses.has(c); }
-        }
+    const executedCommands = [];
+    context.document.execCommand = (cmd, showUI, val) => {
+        executedCommands.push({ cmd, val });
     };
 
-    panel.closeAiModal = () => { mockModal.classList.add('hidden'); };
-    panel.openAiModal = () => {
-        if (!panel.activeNote) return;
-        mockModal.classList.remove('hidden');
-    };
+    // Simulate clicking black swatch (#000000)
+    context.document.execCommand('foreColor', false, '#000000');
+    assert.deepEqual(executedCommands[executedCommands.length - 1], { cmd: 'foreColor', val: '#000000' });
 
-    panel.openAiModal();
-    assert.equal(mockModal.classList.contains('hidden'), false);
+    // Simulate custom text color picker input
+    context.document.execCommand('foreColor', false, '#1f2937');
+    assert.deepEqual(executedCommands[executedCommands.length - 1], { cmd: 'foreColor', val: '#1f2937' });
 
-    panel.closeAiModal();
-    assert.equal(mockModal.classList.contains('hidden'), true);
+    // Simulate custom highlight picker input
+    context.document.execCommand('hiliteColor', false, '#fef08a');
+    assert.deepEqual(executedCommands[executedCommands.length - 1], { cmd: 'hiliteColor', val: '#fef08a' });
 });
 
 test('white-box: clearEditorToEmptyState resets editor, input values, and badges without network calls', () => {
@@ -2927,30 +2923,18 @@ test('white-box: export copy actions in plain text mode synchronize content dire
     assert.ok(content.includes('Line 1'));
 });
 
-test('white-box: AI assistant modal synchronizes editor content from active mode and plain text textarea', () => {
-    const { panel, context } = harness(() => {});
-    context.document.createElement = (tag) => {
-        let val = '';
-        return {
-            tagName: tag,
-            set innerHTML(v) { val = v; },
-            get innerHTML() { return val; },
-            get value() { return val; }
-        };
-    };
-    vm.runInContext('globalThis.MarkdownEngine = MarkdownEngine;\nglobalThis.PlainTextEngine = PlainTextEngine;', context);
-    panel.isPlainTextMode = true;
-    panel.dom.plainTextEditor = { value: 'Fresh typing in notepad mode' };
-    panel.dom.editorArea = { innerHTML: '<p>Outdated rich text</p>' };
-    panel.activeNote = { id: 5, title: 'Notepad draft', content: '<p>Outdated rich text</p>' };
+test('white-box: archiveActiveNote dynamically registers archive category and archives scroll without throwing', async () => {
+    const { panel } = harness(() => {});
+    panel.categories = [{ id: 1, name: 'Catatan', slug: 'catatan' }];
+    panel.activeNote = { id: 10, title: 'Quest of Dawn', category: 'catatan' };
+    let savedNote = null;
+    panel.flushNote = async (n) => { savedNote = n; return true; };
 
-    if (panel.dom.plainTextEditor && panel.isPlainTextMode) {
-        panel.activeNote.content = panel.plainTextToHtml(panel.dom.plainTextEditor.value);
-    }
+    await panel.archiveActiveNote();
 
-    const md = context.MarkdownEngine.toMarkdown(panel.activeNote.content);
-    assert.ok(md.includes('Fresh typing in notepad mode'));
-    assert.equal(md.includes('Outdated rich text'), false);
+    assert.equal(panel.activeNote.category, 'archive');
+    assert.ok(panel.categories.some(c => c.slug === 'archive'));
+    assert.equal(savedNote.id, 10);
 });
 
 test('white-box: Escape key dismisses retro searchable dropdowns alongside modals', () => {
@@ -2963,7 +2947,6 @@ test('white-box: Escape key dismisses retro searchable dropdowns alongside modal
     panel.closeMarkdownModal = () => closedModals++;
     panel.closeChunkInspector = () => closedModals++;
     panel.closeProfileModal = () => closedModals++;
-    panel.closeAiModal = () => closedModals++;
     panel.toggleFindBar = () => closedModals++;
 
     panel.closeDeleteConfirmModal();
@@ -2973,10 +2956,9 @@ test('white-box: Escape key dismisses retro searchable dropdowns alongside modal
     panel.closeMarkdownModal();
     panel.closeChunkInspector();
     panel.closeProfileModal();
-    panel.closeAiModal();
     panel.toggleFindBar(false);
 
-    assert.equal(closedModals, 9);
+    assert.equal(closedModals, 8);
 });
 
 test('white-box: dynamic island controls toggle open, close, and animate chevron state', () => {

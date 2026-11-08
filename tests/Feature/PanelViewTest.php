@@ -62,7 +62,7 @@ test('it renders interactive visual delete confirmation modal instead of default
         ->assertSee('YES, BANISH SCROLL');
 });
 
-test('it renders markdown converter modal and interactive clear confirmation modal while omitting ai assistant', function () {
+test('it renders markdown converter modal, rich color palette with black, and interactive clear confirmation modal while omitting ai assistant', function () {
     $response = $this->get(route('studio'));
 
     $response->assertOk()
@@ -74,6 +74,13 @@ test('it renders markdown converter modal and interactive clear confirmation mod
         ->assertSee('clear-confirm-modal')
         ->assertSee('clear-formatting-only-btn')
         ->assertSee('clear-all-content-btn')
+        ->assertSee('data-color="#000000"', false)
+        ->assertSee('custom-text-color-picker')
+        ->assertSee('custom-hilite-color-picker')
+        ->assertSee('inspect-chunks-btn')
+        ->assertSee('chunk-count-badge')
+        ->assertDontSee('ai-assistant-modal')
+        ->assertDontSee('open-ai-modal-btn')
         ->assertDontSee('AI ASSISTANT — Bantuan Naskah');
 });
 

@@ -2038,3 +2038,44 @@ test('black-box: studio layout features dynamic island floating capsule, sliding
         ->assertSee('editor-canvas-card', false)
         ->assertSee('editor-deck-operations', false);
 });
+
+test('black-box: studio provides full text color palette with black, highlights, link tools, and clickable shard inspector without ai assistant', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('studio'));
+
+    $response->assertOk()
+        // Text Color Palette (including black #000000 explicitly requested)
+        ->assertSee('data-color="#000000"', false)
+        ->assertSee('data-color="#1f2937"', false)
+        ->assertSee('data-color="#64748b"', false)
+        ->assertSee('data-color="#f8fafc"', false)
+        ->assertSee('data-color="#ef4444"', false)
+        ->assertSee('data-color="#f97316"', false)
+        ->assertSee('data-color="#f59e0b"', false)
+        ->assertSee('data-color="#84cc16"', false)
+        ->assertSee('data-color="#10b981"', false)
+        ->assertSee('data-color="#06b6d4"', false)
+        ->assertSee('data-color="#3b82f6"', false)
+        ->assertSee('data-color="#a855f7"', false)
+        ->assertSee('data-color="#ec4899"', false)
+        ->assertSee('custom-text-color-picker', false)
+        // Highlight Colors
+        ->assertSee('data-color="#fef08a"', false)
+        ->assertSee('data-color="#bbf7d0"', false)
+        ->assertSee('data-color="#bae6fd"', false)
+        ->assertSee('data-color="#fbcfe8"', false)
+        ->assertSee('data-color="transparent"', false)
+        ->assertSee('custom-hilite-color-picker', false)
+        // Hyperlink Tools
+        ->assertSee('data-command="createLink"', false)
+        ->assertSee('data-command="unlink"', false)
+        // Shard Telemetry & Clickable Chunks
+        ->assertSee('inspect-chunks-btn', false)
+        ->assertSee('chunk-count-badge', false)
+        // Password toggles
+        ->assertSee('toggle-password-btn password-toggle-btn', false)
+        // Confirm AI assistant is omitted
+        ->assertDontSee('open-ai-modal-btn', false)
+        ->assertDontSee('ai-assistant-modal', false);
+});
