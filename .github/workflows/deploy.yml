@@ -44,9 +44,6 @@ jobs:
           cp .env.example .env
           php artisan key:generate --no-interaction
 
-      - name: Test Laravel
-        run: php artisan test --compact
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -77,6 +74,9 @@ jobs:
             echo "Build failed, retrying in 3 seconds..."
             sleep 3
           done
+
+      - name: Test Laravel
+        run: php artisan test --compact
 
       - name: Setup SSH Tools
         env:
