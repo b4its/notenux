@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Notenux') }} - Retro Gamified Notes Studio</title>
+    <title>{{ config('app.name', 'Notenux') }} - Studio</title>
 
     <!-- App Favicon & Touch Icon (Default Light, dynamically adapts to theme) -->
     <link rel="icon" id="app-favicon" type="image/png" href="{{ asset('assets/logo/light/icon_light.png') }}">
@@ -800,7 +800,7 @@
                             <button id="save-now-btn"
                                     class="arcade-btn bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 sm:px-3.5 h-7 sm:h-8 rounded-lg text-xs font-mono font-bold tracking-wider"
                                     title="Simpan naskah catatan sekarang">
-                                <i class="fa-solid fa-floppy-disk mr-1.5"></i> INSCRIBE
+                                <i class="fa-solid fa-floppy-disk mr-1.5"></i> SAVE
                             </button>
                         </div>
                     </div>

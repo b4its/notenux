@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Notenux') }} - Retro Gamified Notes Studio | Menulis Lebih Cepat, Terlindungi, & Seru</title>
+    <title>{{ config('app.name', 'Notenux') }}</title>
 
     <!-- App Favicon & Touch Icon (Default Light, dynamically adapts to theme) -->
     <link rel="icon" id="app-favicon" type="image/png" href="{{ asset('assets/logo/light/icon_light.png') }}">
