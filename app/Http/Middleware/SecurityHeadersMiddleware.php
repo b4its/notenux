@@ -21,8 +21,10 @@ class SecurityHeadersMiddleware
         // Prevent information disclosure regarding server tech
         if (function_exists('header_remove')) {
             header_remove('X-Powered-By');
+            header_remove('Server');
         }
         $response->headers->remove('X-Powered-By');
+        $response->headers->remove('Server');
 
         // Prevent clickjacking
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
@@ -32,6 +34,9 @@ class SecurityHeadersMiddleware
 
         // Cross-site scripting filter block
         $response->headers->set('X-XSS-Protection', '1; mode=block');
+
+        // Prevent Adobe Flash / PDF cross-domain policy file abuse
+        $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
 
         // Prevent referrer leakage across domains
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');

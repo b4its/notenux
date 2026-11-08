@@ -212,6 +212,10 @@ class AuthController extends Controller
         $user->email = trim($validated['email']);
         $user->save();
 
+        if (! empty($validated['password'])) {
+            $request->session()->regenerate();
+        }
+
         if ($request->wantsJson() || $request->ajax() || $request->is('api/*') || $request->is('profile')) {
             return response()->json([
                 'status' => 'success',
