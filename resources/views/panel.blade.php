@@ -691,9 +691,9 @@
                 <!-- ============================================================================== -->
                 <div id="studio-dynamic-island" class="dynamic-island-container sticky top-0 z-30 w-full transition-all duration-300">
                     <!-- Island Capsule Pill (Compact Header / Always Visible & Interactive) -->
-                    <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex items-center justify-between gap-2 sm:gap-3 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
-                        <!-- Left: Scroll Icon & Prominent Scroll Title (Generous Breathing Room!) -->
-                        <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <div class="dynamic-island-capsule arcade-card p-2 sm:p-2.5 rounded-2xl flex items-center justify-between gap-3 shadow-[4px_4px_0px_#000] backdrop-blur-md bg-[var(--bg-surface)]/95 border-2 border-black dark:border-cyan-500/60 min-w-0 max-w-full">
+                        <!-- Left: Scroll Icon & Full-Width Scroll Title (Maximum Breathing Room) -->
+                        <div class="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
                             <!-- Retro Scroll Pill Icon -->
                             <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 border-2 border-black dark:border-cyan-500 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000]">
                                 <i class="fa-solid fa-scroll text-sm text-blue-600 dark:text-cyan-400"></i>
@@ -705,13 +705,16 @@
                                    placeholder="{{ $activeNote ? 'Judul catatan...' : 'Belum ada catatan dipilih...' }}"
                                    value="{{ $activeNote->title ?? '' }}"
                                    {{ $activeNote ? '' : 'readonly' }}
-                                   class="min-w-[140px] sm:min-w-[220px] flex-1 text-sm sm:text-lg font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-0.5 truncate"
+                                   class="w-full min-w-0 flex-1 text-sm sm:text-base font-bold bg-transparent border-b-2 border-dashed border-black/15 dark:border-blue-800 hover:border-blue-400 focus:border-cyan-400 focus:outline-none transition-colors px-1 py-0.5 truncate"
                                    title="Scroll Title">
+                        </div>
 
+                        <!-- Right: Category, Live Telemetry, Actions & Dynamic Island Toggle -->
+                        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
                             <!-- Compact Category Pill Dropdown -->
-                            <div class="hidden md:flex items-center gap-1 bg-surface-alt px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
+                            <div class="flex items-center gap-1 bg-surface-alt px-2 py-1 rounded-lg border border-black/20 dark:border-blue-900 shadow-[1px_1px_0px_#000] shrink-0">
                                 <i class="fa-solid fa-tag text-blue-500 dark:text-cyan-400 text-xs shrink-0"></i>
-                                <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer max-w-[130px] truncate">
+                                <select id="note-category-select" class="bg-transparent border-0 text-xs font-mono font-bold focus:outline-none cursor-pointer max-w-[120px] sm:max-w-[140px] truncate">
                                     @if(isset($categories) && $categories->isNotEmpty())
                                         @foreach($categories as $category)
                                             <option value="{{ $category->slug }}" data-id="{{ $category->id }}">[{{ strtoupper($category->slug) }}] {{ $category->name }}</option>
@@ -722,22 +725,17 @@
                                     @endif
                                 </select>
                             </div>
-                        </div>
 
-                        <!-- Center: Live Synchronized Status & Word Count Quick Pill -->
-                        <div class="hidden lg:flex items-center gap-1.5 font-mono text-xs shrink-0">
                             <!-- Live Synchronized Status -->
-                            <span id="save-status-text" class="px-2 py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-surface-alt text-emerald-700 dark:text-emerald-400 text-[11px] font-bold flex items-center gap-1.5 shadow-[1px_1px_0px_#000] shrink-0">
+                            <span id="save-status-text" class="hidden xl:inline-flex px-2 py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-surface-alt text-emerald-700 dark:text-emerald-400 text-[11px] font-bold items-center gap-1.5 shadow-[1px_1px_0px_#000] shrink-0">
                                 <i class="fa-solid fa-circle-check"></i> Synchronized
                             </span>
+
                             <!-- Word Count Quick Badge -->
-                            <span id="word-count-badge" class="px-2 py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold flex items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0">
+                            <span id="word-count-badge" class="hidden 2xl:inline-flex px-2 py-1 rounded-lg border border-black/15 dark:border-blue-900 bg-blue-100 dark:bg-blue-900/40 text-blue-950 dark:text-blue-100 text-[11px] font-bold items-center gap-1 shadow-[1px_1px_0px_#000] shrink-0">
                                 <i class="fa-solid fa-pen-nib text-blue-600 dark:text-blue-400"></i> 0 Words
                             </span>
-                        </div>
 
-                        <!-- Right: Quick Essential Actions + Dynamic Island Toggle Button -->
-                        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
                             <!-- Favorite Bookmark -->
                             <button id="favorite-note-btn"
                                     class="arcade-btn bg-surface hover:bg-amber-100 dark:hover:bg-amber-900/40 w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-xs flex items-center justify-center shrink-0"
@@ -829,37 +827,6 @@
                                     <i class="fa-solid fa-border-all text-[11px]"></i>
                                     <span>Semua Tools</span>
                                 </button>
-                                <button type="button" data-island-section="formatting" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-font text-blue-600 dark:text-cyan-400 text-[11px]"></i>
-                                    <span>✍️ Teks & Format</span>
-                                </button>
-                                <button type="button" data-island-section="inserts" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-table-cells text-emerald-600 dark:text-emerald-400 text-[11px]"></i>
-                                    <span>🧱 Tabel & Sisipan</span>
-                                </button>
-                                <button type="button" data-island-section="studio" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-wand-magic-sparkles text-purple-600 dark:text-purple-400 text-[11px]"></i>
-                                    <span>⚡ Mode & Studio</span>
-                                </button>
-                                <button type="button" data-island-section="operations" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-box-archive text-amber-600 dark:text-amber-400 text-[11px]"></i>
-                                    <span>📊 Arsip & Operasi</span>
-                                </button>
-                            </div>
-
-                            <!-- Scroll Arrows & Close Island Button -->
-                            <div class="flex items-center gap-1 shrink-0">
-                                <button type="button" id="island-scroll-left-btn" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded flex items-center justify-center text-[10px]" title="Scroll Tools Left">
-                                    <i class="fa-solid fa-chevron-left"></i>
-                                </button>
-                                <button type="button" id="island-scroll-right-btn" class="arcade-btn bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/60 w-6 h-6 rounded flex items-center justify-center text-[10px]" title="Scroll Tools Right">
-                                    <i class="fa-solid fa-chevron-right"></i>
-                                </button>
-                                <button type="button" id="island-close-btn" class="arcade-btn bg-surface hover:bg-rose-100 dark:hover:bg-rose-950/60 text-rose-500 w-6 h-6 rounded flex items-center justify-center text-[10px] ml-1" title="Tutup Dynamic Island (Esc / Alt+T)">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
-                            </div>
-                        </div>
                                 <button type="button" data-island-section="formatting" class="island-chip-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold border border-black/20 dark:border-blue-900 bg-surface hover:bg-blue-100 dark:hover:bg-blue-900/40 text-slate-700 dark:text-slate-300 shadow-[1px_1px_0px_#000] shrink-0 transition-all flex items-center gap-1.5">
                                     <i class="fa-solid fa-font text-blue-600 dark:text-cyan-400 text-[11px]"></i>
                                     <span>✍️ Teks & Format</span>
