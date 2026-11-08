@@ -294,3 +294,59 @@ test('performance: markdown import and json import default typography to sans', 
     ]), null, 'catatan', $user);
     expect($jsonNote->font_family)->toBe('sans');
 });
+
+test('security: security headers include x-permitted-cross-domain-policies none and remove server header', function () {
+    $response = $this->get('/');
+
+    $response->assertOk()
+        ->assertHeader('X-Permitted-Cross-Domain-Policies', 'none');
+
+    expect($response->headers->has('Server'))->toBeFalse();
+});
+
+test('performance: new composite indexes exist for folders, categories, and note words', function () {
+    expect(Schema::hasIndex('folders', 'folders_user_id_name_index'))->toBeTrue()
+        ->and(Schema::hasIndex('categories', 'categories_is_system_user_name_index'))->toBeTrue()
+        ->and(Schema::hasIndex('notes', 'notes_user_pinned_words_index'))->toBeTrue();
+});
+
+test('security: profile password change re-authenticates and regenerates session id', function () {
+    $user = User::factory()->create([
+        'password' => bcrypt('old-password'),
+    ]);
+
+    $this->actingAs($user);
+    $sessionIdBefore = session()->getId();
+
+    $response = $this->putJson('/profile', [
+        'name' => $user->name,
+        'email' => $user->email,
+        'current_password' => 'old-password',
+        'password' => 'new-secure-password-123',
+        'password_confirmation' => 'new-secure-password-123',
+    ]);
+
+    $response->assertOk();
+    $sessionIdAfter = session()->getId();
+
+    expect($sessionIdAfter)->not->toBe($sessionIdBefore);
+});
+
+test('performance: database backup command includes folders table in backup payload', function () {
+    $user = User::factory()->create();
+    Folder::factory()->create(['user_id' => $user->id, 'name' => 'Chronicles']);
+
+    $testBackupFile = 'test_folders_backup_'.time();
+    $this->artisan("db:backup --file={$testBackupFile}")->assertSuccessful();
+
+    $backupPath = database_path("backups/{$testBackupFile}.json");
+    expect(file_exists($backupPath))->toBeTrue();
+
+    $content = json_decode(file_get_contents($backupPath), true);
+    expect(isset($content['tables']['folders']))->toBeTrue()
+        ->and($content['tables']['folders']['count'])->toBeGreaterThanOrEqual(1);
+
+    // Clean up temporary test backup files
+    @unlink($backupPath);
+    @unlink(database_path("backups/{$testBackupFile}.sql"));
+});
