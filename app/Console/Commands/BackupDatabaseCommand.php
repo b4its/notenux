@@ -21,6 +21,7 @@ class BackupDatabaseCommand extends Command
     protected array $tables = [
         'users',
         'categories',
+        'folders',
         'notes',
         'note_chunks',
         'cache',
