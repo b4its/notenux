@@ -196,11 +196,11 @@ class NoteController extends Controller
         ]);
 
         if (array_key_exists('title', $validated)) {
-            $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
+            $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', trim((string) $validated['title']));
         }
 
         if (array_key_exists('category', $validated) && $validated['category'] !== null) {
-            $validated['category'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['category']));
+            $validated['category'] = (string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', trim((string) $validated['category']));
         }
 
         $noteCategory = $validated['category'] ?? 'catatan';
@@ -280,11 +280,11 @@ class NoteController extends Controller
         ]);
 
         if (array_key_exists('title', $validated)) {
-            $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
+            $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', trim((string) $validated['title']));
         }
 
         if (array_key_exists('category', $validated) && $validated['category'] !== null) {
-            $validated['category'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['category']));
+            $validated['category'] = (string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', trim((string) $validated['category']));
         }
 
         $targetFolderId = array_key_exists('folder_id', $validated)
@@ -405,7 +405,7 @@ class NoteController extends Controller
         ]);
 
         if (array_key_exists('category', $validated) && $validated['category'] !== null) {
-            $validated['category'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['category']));
+            $validated['category'] = (string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', trim((string) $validated['category']));
         }
 
         $notes = Note::whereIn('id', $validated['ids'])->get();
@@ -972,7 +972,7 @@ class NoteController extends Controller
         $note = $this->chunkService->importMarkdown($rawMarkdown, $filename, $category, $user);
 
         if (! empty($validated['title'])) {
-            $cleanTitle = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
+            $cleanTitle = (string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', trim((string) $validated['title']));
             $note->update(['title' => Str::limit($cleanTitle, 120, '')]);
         }
 

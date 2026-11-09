@@ -200,7 +200,7 @@ test('security: note title sanitizes null bytes and control characters', functio
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->postJson('/api/notes', [
-        'title' => "Dangerous\0Null\x07Byte\tTitle",
+        'title' => "Dangerous\0Null\x07Byte\t\u{202E}Trojan\u{200B}Title",
         'content' => '<p>Normal text</p>',
     ]);
 
@@ -208,7 +208,10 @@ test('security: note title sanitizes null bytes and control characters', functio
     $createdNote = Note::find($response->json('data.id'));
 
     expect($createdNote->title)->not->toContain("\0")
-        ->and($createdNote->title)->not->toContain("\x07");
+        ->and($createdNote->title)->not->toContain("\x07")
+        ->and($createdNote->title)->not->toContain("\u{202E}")
+        ->and($createdNote->title)->not->toContain("\u{200B}")
+        ->and($createdNote->title)->toBe('DangerousNullByteTrojanTitle');
 });
 
 test('security: chunk verification uses constant-time hash comparison and flags tampered chunks', function () {

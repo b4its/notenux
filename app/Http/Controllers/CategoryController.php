@@ -76,7 +76,7 @@ class CategoryController extends Controller
 
         $category = $this->mutateCategories(fn (): Category => Category::create([
             'user_id' => $user->id,
-            'name' => trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $validated['name'])),
+            'name' => trim((string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', $validated['name'])),
             'slug' => $this->allocateSlug($validated['slug'] ?? $validated['name']),
             'icon' => $validated['icon'] ?? 'fa-solid fa-folder',
             'color' => $validated['color'] ?? 'cyan',
@@ -128,7 +128,7 @@ class CategoryController extends Controller
             }
 
             $category->update([
-                'name' => trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $validated['name'])),
+                'name' => trim((string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', $validated['name'])),
                 'slug' => $newSlug,
                 'icon' => $validated['icon'] ?? $category->icon,
                 'color' => $validated['color'] ?? $category->color,

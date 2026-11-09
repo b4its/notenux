@@ -66,7 +66,7 @@ class FolderController extends Controller
             'is_expanded' => ['nullable', 'boolean'],
         ]);
 
-        $folderCategory = ! empty($validated['category']) ? trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $validated['category'])) : null;
+        $folderCategory = ! empty($validated['category']) ? trim((string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', $validated['category'])) : null;
 
         if (! empty($validated['parent_id'])) {
             $parent = Folder::forUser($user)->find($validated['parent_id']);
@@ -80,7 +80,7 @@ class FolderController extends Controller
         $folder = Folder::create([
             'user_id' => $user->id,
             'parent_id' => $validated['parent_id'] ?? null,
-            'name' => trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $validated['name'])),
+            'name' => trim((string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', $validated['name'])),
             'category' => $folderCategory,
             'color' => $validated['color'] ?? 'amber',
             'icon' => $validated['icon'] ?? 'fa-solid fa-folder',
@@ -118,7 +118,7 @@ class FolderController extends Controller
         ]);
 
         if (array_key_exists('category', $validated)) {
-            $validated['category'] = ! empty($validated['category']) ? trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $validated['category'])) : null;
+            $validated['category'] = ! empty($validated['category']) ? trim((string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', $validated['category'])) : null;
         }
 
         $targetCategory = array_key_exists('category', $validated)
@@ -161,7 +161,7 @@ class FolderController extends Controller
         }
 
         if (array_key_exists('name', $validated)) {
-            $validated['name'] = trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $validated['name']));
+            $validated['name'] = trim((string) preg_replace('/[\x00-\x1F\x7F\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u', '', $validated['name']));
         }
 
         $folder->update($validated);
