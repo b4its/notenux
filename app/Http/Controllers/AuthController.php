@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -69,61 +70,65 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
+        $user = DB::transaction(function () use ($validated, $chunkService): User {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        // Default personalized categories for newly registered user (is_system is false to prevent leaking across tenants)
-        $defaultCategories = [
-            [
+            // Default personalized categories for newly registered user (is_system is false to prevent leaking across tenants)
+            $defaultCategories = [
+                [
+                    'user_id' => $user->id,
+                    'name' => 'Catatan',
+                    'slug' => 'catatan',
+                    'icon' => 'fa-solid fa-note-sticky',
+                    'color' => 'blue',
+                    'description' => 'Kategori utama untuk catatan harian dan pemikiran.',
+                    'is_system' => false,
+                ],
+                [
+                    'user_id' => $user->id,
+                    'name' => 'Tugas',
+                    'slug' => 'tugas',
+                    'icon' => 'fa-solid fa-list-check',
+                    'color' => 'emerald',
+                    'description' => 'Daftar tugas, agenda, dan to-do list penting.',
+                    'is_system' => false,
+                ],
+            ];
+
+            foreach ($defaultCategories as $categoryData) {
+                Category::firstOrCreate(
+                    ['user_id' => $user->id, 'slug' => $categoryData['slug']],
+                    $categoryData
+                );
+            }
+
+            // Berikan salam pembuka saja tanpa data dummy banyak
+            $greetingHtml = '<h2>Selamat Datang di Notenux! 👋</h2><p>Halo <strong>'.e($user->name).'</strong>, selamat datang di studio catatan retro Notenux.</p><p>Catatan ini adalah tempat awalmu. Mulai tulis ide hebatmu, kelompokkan dengan kategori <strong>Catatan</strong> atau <strong>Tugas</strong>, dan nikmati sensasi menulis gamifikasi retro.</p>';
+
+            $greetingNote = Note::create([
                 'user_id' => $user->id,
-                'name' => 'Catatan',
-                'slug' => 'catatan',
-                'icon' => 'fa-solid fa-note-sticky',
-                'color' => 'blue',
-                'description' => 'Kategori utama untuk catatan harian dan pemikiran.',
-                'is_system' => false,
-            ],
-            [
-                'user_id' => $user->id,
-                'name' => 'Tugas',
-                'slug' => 'tugas',
-                'icon' => 'fa-solid fa-list-check',
-                'color' => 'emerald',
-                'description' => 'Daftar tugas, agenda, dan to-do list penting.',
-                'is_system' => false,
-            ],
-        ];
+                'title' => 'Halo! Selamat Datang di Notenux',
+                'category' => 'catatan',
+                'content' => $greetingHtml,
+                'font_family' => 'sans',
+                'font_size' => '16px',
+                'theme_color' => 'blue',
+                'word_count' => str_word_count(strip_tags($greetingHtml)),
+                'char_count' => mb_strlen(strip_tags($greetingHtml)),
+                'is_pinned' => true,
+                'is_favorite' => false,
+                'level' => 1,
+                'xp' => 10,
+            ]);
 
-        foreach ($defaultCategories as $categoryData) {
-            Category::firstOrCreate(
-                ['user_id' => $user->id, 'slug' => $categoryData['slug']],
-                $categoryData
-            );
-        }
+            $chunkService->syncChunks($greetingNote, $greetingHtml);
 
-        // Berikan salam pembuka saja tanpa data dummy banyak
-        $greetingHtml = '<h2>Selamat Datang di Notenux! 👋</h2><p>Halo <strong>'.e($user->name).'</strong>, selamat datang di studio catatan retro Notenux.</p><p>Catatan ini adalah tempat awalmu. Mulai tulis ide hebatmu, kelompokkan dengan kategori <strong>Catatan</strong> atau <strong>Tugas</strong>, dan nikmati sensasi menulis gamifikasi retro.</p>';
-
-        $greetingNote = Note::create([
-            'user_id' => $user->id,
-            'title' => 'Halo! Selamat Datang di Notenux',
-            'category' => 'catatan',
-            'content' => $greetingHtml,
-            'font_family' => 'sans',
-            'font_size' => '16px',
-            'theme_color' => 'blue',
-            'word_count' => str_word_count(strip_tags($greetingHtml)),
-            'char_count' => mb_strlen(strip_tags($greetingHtml)),
-            'is_pinned' => true,
-            'is_favorite' => false,
-            'level' => 1,
-            'xp' => 10,
-        ]);
-
-        $chunkService->syncChunks($greetingNote, $greetingHtml);
+            return $user;
+        });
 
         Auth::login($user);
 
@@ -205,12 +210,17 @@ class AuthController extends Controller
                     'current_password' => 'Password saat ini yang dimasukkan tidak cocok.',
                 ]);
             }
-            $user->password = Hash::make($validated['password']);
         }
 
-        $user->name = trim($validated['name']);
-        $user->email = trim($validated['email']);
-        $user->save();
+        DB::transaction(function () use ($user, $validated): void {
+            if (! empty($validated['password'])) {
+                $user->password = Hash::make($validated['password']);
+            }
+
+            $user->name = trim($validated['name']);
+            $user->email = trim($validated['email']);
+            $user->save();
+        });
 
         if (! empty($validated['password'])) {
             $request->session()->regenerate();

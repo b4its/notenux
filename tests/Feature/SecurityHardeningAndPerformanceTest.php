@@ -856,3 +856,28 @@ test('architecture: note, folder, note chunk, and user models enforce atomic dat
     expect($user->delete())->toBeTrue()
         ->and(User::find($user->id))->toBeNull();
 });
+
+test('architecture: user registration and profile updates execute inside atomic database transactions', function () {
+    $response = $this->post('/register', [
+        'name' => 'Atomic User',
+        'email' => 'atomic@notenux.dev',
+        'password' => 'Password123!',
+        'password_confirmation' => 'Password123!',
+    ]);
+
+    $response->assertRedirect('/studio');
+    $user = User::where('email', 'atomic@notenux.dev')->first();
+    expect($user)->not->toBeNull()
+        ->and($user->categories()->count())->toBe(2)
+        ->and($user->notes()->count())->toBe(1);
+
+    $updateRes = $this->actingAs($user)->put('/profile', [
+        'name' => 'Updated Atomic User',
+        'email' => 'atomic_updated@notenux.dev',
+    ]);
+
+    $updateRes->assertOk();
+    $user->refresh();
+    expect($user->name)->toBe('Updated Atomic User')
+        ->and($user->email)->toBe('atomic_updated@notenux.dev');
+});
