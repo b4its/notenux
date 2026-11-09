@@ -13,6 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $trustedHosts = env('TRUSTED_HOSTS');
+        if ($trustedHosts !== null && $trustedHosts !== '') {
+            $middleware->trustHosts(at: array_map('trim', explode(',', $trustedHosts)));
+        }
+
         $trustedProxies = env('TRUSTED_PROXIES');
         $middleware->trustProxies(at: ($trustedProxies !== null && $trustedProxies !== '') ? array_map('trim', explode(',', $trustedProxies)) : '*');
         $middleware->append(SecurityHeadersMiddleware::class);
