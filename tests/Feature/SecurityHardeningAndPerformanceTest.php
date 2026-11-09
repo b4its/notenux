@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Category;
 use App\Models\Folder;
 use App\Models\Note;
 use App\Models\User;
@@ -477,4 +478,80 @@ test('security: note import sanitizes control characters from manuscript titles'
         ->and($createdNote->title)->not->toContain("\x00")
         ->and($createdNote->title)->not->toContain("\x1F")
         ->and($createdNote->title)->not->toContain("\x08");
+});
+
+test('security: category creation and update strips null bytes and control characters from category name', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->postJson(route('api.categories.store'), [
+        'name' => "Special\x00Category\x1FName\x08",
+        'color' => 'blue',
+    ]);
+
+    $response->assertCreated();
+    $catId = $response->json('data.id');
+    $category = Category::find($catId);
+    expect($category->name)->toBe('SpecialCategoryName')
+        ->and($category->name)->not->toContain("\x00")
+        ->and($category->name)->not->toContain("\x1F");
+
+    $updateRes = $this->actingAs($user)->putJson(route('api.categories.update', $category), [
+        'name' => "Renamed\x00Category\x07",
+    ]);
+
+    $updateRes->assertOk();
+    $category->refresh();
+    expect($category->name)->toBe('RenamedCategory');
+});
+
+test('security: backup command sanitizes custom file names against directory traversal', function () {
+    $traversalName = '../../evil_backup';
+    $this->artisan("db:backup --file={$traversalName}")->assertSuccessful();
+
+    $sanitizedPath = database_path('backups/evil_backup.json');
+    expect(file_exists($sanitizedPath))->toBeTrue();
+    expect(file_exists(base_path('evil_backup.json')))->toBeFalse();
+
+    @unlink($sanitizedPath);
+    @unlink(database_path('backups/evil_backup.sql'));
+});
+
+test('security: content sanitizer removes comments and blocks backslash css escape sequences', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+
+    $withComment = '<p>Visible text <!-- secret comment --></p>';
+    $cleanComment = $sanitizer->sanitize($withComment);
+    expect($cleanComment)->not->toContain('secret comment')
+        ->and($cleanComment)->toContain('Visible text');
+
+    $escapedCss = '<div style="color: blue; background: \\75\\72\\6c(http://evil.com/xss);">Attack</div>';
+    $cleanCss = $sanitizer->sanitize($escapedCss);
+    expect($cleanCss)->not->toContain('style=');
+});
+
+test('security: content sanitizer prevents dom clobbering of window and document properties', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+
+    $clobbering = '<p id="self"><span id="top"><a id="parent">Text</a></span></p>';
+    $clean = $sanitizer->sanitize($clobbering);
+
+    expect($clean)->not->toContain('id="self"')
+        ->and($clean)->not->toContain('id="top"')
+        ->and($clean)->not->toContain('id="parent"');
+});
+
+test('performance: landing page counts are cached in cache store', function () {
+    Cache::flush();
+    $response = $this->get('/');
+    $response->assertOk();
+
+    expect(Cache::has('notenux:landing_counts'))->toBeTrue();
+});
+
+test('performance: sqlite configuration specifies WAL journal mode and busy timeout', function () {
+    $sqliteConfig = config('database.connections.sqlite');
+
+    expect($sqliteConfig['journal_mode'])->toBe('WAL')
+        ->and($sqliteConfig['busy_timeout'])->toBe(5000)
+        ->and($sqliteConfig['synchronous'])->toBe('NORMAL');
 });
