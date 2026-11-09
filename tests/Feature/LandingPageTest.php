@@ -250,6 +250,11 @@ test('sitemap and robots.txt are accessible and properly configured', function (
         ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
         ->assertSee('https://notenux.oryphem.com/', false);
 
+    $robotsRes = $this->get('/robots.txt');
+    $robotsRes->assertOk()
+        ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
+        ->assertSee('Sitemap: https://notenux.oryphem.com/sitemap.xml', false);
+
     $robotsContent = file_get_contents(public_path('robots.txt'));
     expect($robotsContent)->toContain('Sitemap: https://notenux.oryphem.com/sitemap.xml')
         ->and($robotsContent)->toContain('Allow: /login');
