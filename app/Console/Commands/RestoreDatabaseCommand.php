@@ -52,24 +52,32 @@ class RestoreDatabaseCommand extends Command
 
         Schema::disableForeignKeyConstraints();
 
-        foreach ($data['tables'] as $table => $tableData) {
-            if (! Schema::hasTable($table)) {
-                continue;
-            }
+        try {
+            DB::transaction(function () use ($data): void {
+                foreach ($data['tables'] as $table => $tableData) {
+                    if (! Schema::hasTable($table)) {
+                        continue;
+                    }
 
-            DB::table($table)->delete();
-            $rows = $tableData['rows'] ?? [];
+                    DB::table($table)->delete();
+                    $rows = $tableData['rows'] ?? [];
 
-            if (! empty($rows)) {
-                foreach (array_chunk($rows, 100) as $chunk) {
-                    DB::table($table)->insert($chunk);
+                    if (! empty($rows)) {
+                        foreach (array_chunk($rows, 100) as $chunk) {
+                            DB::table($table)->insert($chunk);
+                        }
+                    }
+
+                    $this->line("  ✓ Table [{$table}]: ".count($rows).' rows restored.');
                 }
-            }
+            });
+        } catch (\Throwable $e) {
+            $this->error('Database restoration failed: '.$e->getMessage());
 
-            $this->line("  ✓ Table [{$table}]: ".count($rows).' rows restored.');
+            return self::FAILURE;
+        } finally {
+            Schema::enableForeignKeyConstraints();
         }
-
-        Schema::enableForeignKeyConstraints();
 
         $this->info('Database restoration completed successfully!');
 

@@ -44,7 +44,10 @@ class BackupDatabaseCommand extends Command
 
         $timestamp = now()->format('Y-m-d_H-i-s');
         $customName = $this->option('file');
-        $baseName = $customName ?: "notenux_backup_{$timestamp}";
+        $baseName = $customName ? preg_replace('/[^a-zA-Z0-9_-]/', '', basename((string) $customName)) : "notenux_backup_{$timestamp}";
+        if (empty($baseName)) {
+            $baseName = "notenux_backup_{$timestamp}";
+        }
 
         $jsonFile = "{$backupDir}/{$baseName}.json";
         $sqlFile = "{$backupDir}/{$baseName}.sql";
@@ -77,18 +80,19 @@ class BackupDatabaseCommand extends Command
 
             if (! empty($rows)) {
                 $sqlContent .= "-- Table: {$table} (".count($rows)." rows)\n";
+                $pdo = DB::connection()->getPdo();
                 foreach ($rows as $row) {
                     $keys = array_keys($row);
                     $escapedKeys = array_map(fn ($k) => "`{$k}`", $keys);
-                    $escapedValues = array_map(function ($val) {
+                    $escapedValues = array_map(function ($val) use ($pdo) {
                         if ($val === null) {
                             return 'NULL';
                         }
-                        if (is_numeric($val) && ! is_string($val)) {
+                        if (is_int($val) || is_float($val)) {
                             return (string) $val;
                         }
 
-                        return "'".addslashes((string) $val)."'";
+                        return $pdo ? $pdo->quote((string) $val) : "'".addslashes((string) $val)."'";
                     }, array_values($row));
 
                     $sqlContent .= 'INSERT INTO `'.$table.'` ('.implode(', ', $escapedKeys).') VALUES ('.implode(', ', $escapedValues).");\n";
