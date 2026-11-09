@@ -3,6 +3,7 @@
 use App\Models\Category;
 use App\Models\Folder;
 use App\Models\Note;
+use App\Models\NoteChunk;
 use App\Models\User;
 use App\Services\NoteChunkService;
 use App\Services\NoteContentSanitizer;
@@ -837,10 +838,14 @@ test('security: local private filesystem disk disables automatic file serving to
     expect(config('filesystems.disks.local.serve'))->toBeFalse();
 });
 
-test('architecture: note, folder, and user models enforce atomic database transactions on deletion', function () {
+test('architecture: note, folder, note chunk, and user models enforce atomic database transactions on deletion', function () {
     $user = User::factory()->create();
     $folder = Folder::create(['user_id' => $user->id, 'name' => 'Atomic Folder']);
     $note = Note::factory()->create(['user_id' => $user->id, 'folder_id' => $folder->id]);
+    $chunk = NoteChunk::factory()->create(['note_id' => $note->id]);
+
+    expect($chunk->delete())->toBeTrue()
+        ->and(NoteChunk::find($chunk->id))->toBeNull();
 
     expect($note->delete())->toBeTrue()
         ->and(Note::find($note->id))->toBeNull();

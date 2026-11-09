@@ -6,6 +6,7 @@ use Database\Factories\NoteChunkFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class NoteChunk extends Model
 {
@@ -50,5 +51,13 @@ class NoteChunk extends Model
     public function note(): BelongsTo
     {
         return $this->belongsTo(Note::class);
+    }
+
+    /**
+     * Delete the model from the database atomically.
+     */
+    public function delete(): ?bool
+    {
+        return DB::transaction(fn (): ?bool => parent::delete());
     }
 }
