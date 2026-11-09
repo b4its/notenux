@@ -2234,6 +2234,42 @@ test('white-box: sanitizeHtml allows target and rel on anchor tags and disabled 
     assert.equal(isRemoved, false);
 });
 
+test('white-box: sanitizeHtml allows loading and decoding attributes on images while removing unsafe handlers', () => {
+    const removedAttributes = [];
+    const mockImage = {
+        localName: 'img',
+        attributes: [
+            { name: 'src', value: 'https://notenux.dev/assets/logo/light/icon_light.webp' },
+            { name: 'loading', value: 'lazy' },
+            { name: 'decoding', value: 'async' },
+            { name: 'onerror', value: 'alert(1)' },
+        ],
+        removeAttribute(name) { removedAttributes.push(name); },
+        remove() {}
+    };
+
+    const context = vm.createContext({
+        window: {},
+        document: {
+            createElement: () => ({
+                content: {
+                    querySelectorAll: () => [mockImage]
+                },
+                innerHTML: '<div><img src="test.webp"></div>'
+            }),
+            addEventListener() {},
+            querySelector() { return null; }
+        }
+    });
+
+    vm.runInContext(source + '\nglobalThis.sanitizeHtml = sanitizeHtml;', context);
+    const result = context.sanitizeHtml('<div><img src="test.webp"></div>');
+    assert.equal(result, '<div><img src="test.webp"></div>');
+    assert.ok(removedAttributes.includes('onerror'));
+    assert.ok(!removedAttributes.includes('loading'));
+    assert.ok(!removedAttributes.includes('decoding'));
+});
+
 test('white-box: initPasteInterceptor wraps pasted image in retro figure with center align and editable caption', () => {
     const listeners = new Map();
     const mockEditorArea = {

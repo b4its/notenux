@@ -669,3 +669,14 @@ test('performance: queue database and redis connections dispatch jobs after data
     expect(config('queue.connections.database.after_commit'))->toBeTrue()
         ->and(config('queue.connections.redis.after_commit'))->toBeTrue();
 });
+
+test('performance and security: content sanitizer permits loading lazy and decoding async on images while blocking onload', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+
+    $html = '<img src="https://notenux.dev/assets/logo/light/icon_light.webp" loading="lazy" decoding="async" onload="alert(1)">';
+    $clean = $sanitizer->sanitize($html);
+
+    expect($clean)->toContain('loading="lazy"')
+        ->and($clean)->toContain('decoding="async"')
+        ->and($clean)->not->toContain('onload');
+});

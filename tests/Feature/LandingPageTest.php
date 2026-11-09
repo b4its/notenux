@@ -64,7 +64,9 @@ test('landing page and studio render horizontal, vertical, and icon logos with d
         ->assertSee('assets/logo/light/icon_horizontal_light.webp')
         ->assertSee('assets/logo/dark/icon_vertical_dark.webp')
         ->assertSee('assets/logo/light/icon_vertical_light.webp')
-        ->assertSee('assets/logo/dark/icon_dark.webp');
+        ->assertSee('assets/logo/dark/icon_dark.webp')
+        ->assertSee('decoding="async"', false)
+        ->assertSee('loading="lazy"', false);
 });
 
 test('landing page uses light favicon by default and includes dynamic theme adaptation logic', function () {
