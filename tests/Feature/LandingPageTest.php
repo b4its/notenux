@@ -257,7 +257,9 @@ test('sitemap and robots.txt are accessible and properly configured', function (
 
     $robotsContent = file_get_contents(public_path('robots.txt'));
     expect($robotsContent)->toContain('Sitemap: https://notenux.oryphem.com/sitemap.xml')
-        ->and($robotsContent)->toContain('Allow: /login');
+        ->and($robotsContent)->toContain('Allow: /login')
+        ->and($robotsContent)->toContain('Disallow: /folders')
+        ->and($robotsContent)->toContain('Disallow: /profile');
 });
 
 test('landing page header renders responsive mobile menu drawer and mascot sprite starts collapsed', function () {

@@ -4,7 +4,9 @@ Allow: /login
 Allow: /register
 Disallow: /api/
 Disallow: /studio
-Disallow: /categories
 Disallow: /panel
+Disallow: /profile
+Disallow: /folders
+Disallow: /categories
 
 Sitemap: https://notenux.oryphem.com/sitemap.xml
