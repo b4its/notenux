@@ -60,22 +60,22 @@ test('landing page and studio render horizontal, vertical, and icon logos with d
     $response = $this->get(route('landing'));
 
     $response->assertOk()
-        ->assertSee('assets/logo/dark/icon_horizontal_dark.png')
-        ->assertSee('assets/logo/light/icon_horizontal_light.png')
-        ->assertSee('assets/logo/dark/icon_vertical_dark.png')
-        ->assertSee('assets/logo/light/icon_vertical_light.png')
-        ->assertSee('assets/logo/dark/icon_dark.png');
+        ->assertSee('assets/logo/dark/icon_horizontal_dark.webp')
+        ->assertSee('assets/logo/light/icon_horizontal_light.webp')
+        ->assertSee('assets/logo/dark/icon_vertical_dark.webp')
+        ->assertSee('assets/logo/light/icon_vertical_light.webp')
+        ->assertSee('assets/logo/dark/icon_dark.webp');
 });
 
 test('landing page uses light favicon by default and includes dynamic theme adaptation logic', function () {
     $response = $this->get(route('landing'));
 
-    $lightFavicon = asset('assets/logo/light/icon_light.png');
-    $darkFavicon = asset('assets/logo/dark/icon_dark.png');
+    $lightFavicon = asset('assets/logo/light/icon_light.webp');
+    $darkFavicon = asset('assets/logo/dark/icon_dark.webp');
 
     $response->assertOk()
         // Default HTML favicon must be light
-        ->assertSee('<link rel="icon" id="app-favicon" type="image/png" href="'.$lightFavicon.'">', false)
+        ->assertSee('<link rel="icon" id="app-favicon" type="image/webp" href="'.$lightFavicon.'">', false)
         ->assertSee('<link rel="apple-touch-icon" id="app-apple-touch-icon" href="'.$lightFavicon.'">', false)
         // Dynamic theme-switching script variables
         ->assertSee('const lightFavicon = "'.$lightFavicon.'";', false)
@@ -94,8 +94,8 @@ test('all major views use light favicon by default and contain dynamic favicon t
         $response->assertOk()
             ->assertSee('id="app-favicon"', false)
             ->assertSee('id="app-apple-touch-icon"', false)
-            ->assertSee('assets/logo/light/icon_light.png', false)
-            ->assertSee('assets/logo/dark/icon_dark.png', false)
+            ->assertSee('assets/logo/light/icon_light.webp', false)
+            ->assertSee('assets/logo/dark/icon_dark.webp', false)
             ->assertSee('applyFavicon', false);
     }
 
@@ -105,8 +105,8 @@ test('all major views use light favicon by default and contain dynamic favicon t
         $response->assertOk()
             ->assertSee('id="app-favicon"', false)
             ->assertSee('id="app-apple-touch-icon"', false)
-            ->assertSee('assets/logo/light/icon_light.png', false)
-            ->assertSee('assets/logo/dark/icon_dark.png', false)
+            ->assertSee('assets/logo/light/icon_light.webp', false)
+            ->assertSee('assets/logo/dark/icon_dark.webp', false)
             ->assertSee('applyFavicon', false);
     }
 });
@@ -186,6 +186,31 @@ test('all brand logo assets have transparent alpha channel and no solid backgrou
         // GD alpha of 127 signifies 100% transparency
         expect($corner['alpha'])->toBeGreaterThan(100);
         imagedestroy($im);
+    }
+});
+
+test('all webp logo assets are generated, valid RIFF/WEBP format, and optimized under 50KB', function () {
+    $webpFiles = [
+        public_path('assets/logo/dark/icon_dark.webp'),
+        public_path('assets/logo/dark/icon_horizontal_dark.webp'),
+        public_path('assets/logo/dark/icon_vertical_dark.webp'),
+        public_path('assets/logo/light/icon_horizontal_light.webp'),
+        public_path('assets/logo/light/icon_light.webp'),
+        public_path('assets/logo/light/icon_vertical_light.webp'),
+        public_path('assets/logo/icon_dark.webp'),
+        public_path('assets/logo/icon_light.webp'),
+    ];
+
+    foreach ($webpFiles as $filePath) {
+        expect(file_exists($filePath))->toBeTrue();
+        expect(filesize($filePath))->toBeLessThan(50000); // Drastically smaller than 1MB PNGs
+
+        $handle = fopen($filePath, 'rb');
+        $header = fread($handle, 12);
+        fclose($handle);
+
+        expect(substr($header, 0, 4))->toBe('RIFF');
+        expect(substr($header, 8, 4))->toBe('WEBP');
     }
 });
 

@@ -523,7 +523,7 @@ test('white-box: note controller convertToMarkdown correctly formats embedded ba
 
 test('white-box: note controller convertToMarkdown preserves images embedded inside table cells', function () {
     $controller = app(NoteController::class);
-    $imgUrl = 'https://notenux.dev/assets/logo/icon_dark.png';
+    $imgUrl = 'https://notenux.dev/assets/logo/icon_dark.webp';
     $html = '<table class="retro-table"><thead><tr><th>Item</th><th>Preview</th></tr></thead><tbody><tr><td>Shield</td><td><img src="'.$imgUrl.'" alt="Dark Emblem"></td></tr></tbody></table>';
 
     $markdown = $controller->convertToMarkdown($html);

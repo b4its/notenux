@@ -1496,16 +1496,16 @@ test('white-box: updateFavicon dynamically adapts link elements to active dark a
         if (id === 'app-apple-touch-icon') return appleIconElement;
         return null;
     };
-    context.window.notenuxFaviconLight = '/assets/logo/light/icon_light.png';
-    context.window.notenuxFaviconDark = '/assets/logo/dark/icon_dark.png';
+    context.window.notenuxFaviconLight = '/assets/logo/light/icon_light.webp';
+    context.window.notenuxFaviconDark = '/assets/logo/dark/icon_dark.webp';
 
     panel.updateFavicon('dark');
-    assert.equal(faviconElement.href, '/assets/logo/dark/icon_dark.png');
-    assert.equal(appleIconElement.href, '/assets/logo/dark/icon_dark.png');
+    assert.equal(faviconElement.href, '/assets/logo/dark/icon_dark.webp');
+    assert.equal(appleIconElement.href, '/assets/logo/dark/icon_dark.webp');
 
     panel.updateFavicon('light');
-    assert.equal(faviconElement.href, '/assets/logo/light/icon_light.png');
-    assert.equal(appleIconElement.href, '/assets/logo/light/icon_light.png');
+    assert.equal(faviconElement.href, '/assets/logo/light/icon_light.webp');
+    assert.equal(appleIconElement.href, '/assets/logo/light/icon_light.webp');
 });
 
 test('white-box: setTheme invokes updateFavicon and sets theme classes and attributes', () => {

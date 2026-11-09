@@ -145,13 +145,13 @@ test('authenticated user can logout and session is cleared', function () {
 test('auth pages render horizontal and portrait logos with adaptive themes', function () {
     $responseLogin = $this->get(route('login'));
     $responseLogin->assertOk()
-        ->assertSee('assets/logo/dark/icon_horizontal_dark.png')
-        ->assertSee('assets/logo/dark/icon_vertical_dark.png');
+        ->assertSee('assets/logo/dark/icon_horizontal_dark.webp')
+        ->assertSee('assets/logo/dark/icon_vertical_dark.webp');
 
     $responseRegister = $this->get(route('register'));
     $responseRegister->assertOk()
-        ->assertSee('assets/logo/dark/icon_horizontal_dark.png')
-        ->assertSee('assets/logo/dark/icon_vertical_dark.png');
+        ->assertSee('assets/logo/dark/icon_horizontal_dark.webp')
+        ->assertSee('assets/logo/dark/icon_vertical_dark.webp');
 });
 
 test('login and register forms include show and close eye toggles for password fields', function () {
