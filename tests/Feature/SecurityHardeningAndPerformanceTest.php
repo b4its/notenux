@@ -555,3 +555,82 @@ test('performance: sqlite configuration specifies WAL journal mode and busy time
         ->and($sqliteConfig['busy_timeout'])->toBe(5000)
         ->and($sqliteConfig['synchronous'])->toBe('NORMAL');
 });
+
+test('performance: notes table contains optimized composite indexes for level sorting and favorite filtering', function () {
+    expect(Schema::hasIndex('notes', 'notes_user_pinned_level_index'))->toBeTrue()
+        ->and(Schema::hasIndex('notes', 'notes_user_fav_pinned_updated_index'))->toBeTrue();
+});
+
+test('security: note store update and bulk update strip control characters from category', function () {
+    $user = User::factory()->create();
+
+    // Store note with control chars in category
+    $resStore = $this->actingAs($user)->postJson(route('notes.store'), [
+        'title' => 'Sample Scroll',
+        'category' => "Guild\x00Quest\x1FNotes\x07",
+        'content' => '<p>Content</p>',
+    ]);
+    $resStore->assertStatus(201);
+    $noteId = $resStore->json('data.id');
+    $note = Note::find($noteId);
+    expect($note->category)->toBe('GuildQuestNotes')
+        ->and($note->category)->not->toContain("\x00")
+        ->and($note->category)->not->toContain("\x1F");
+
+    // Update note with control chars in category
+    $resUpdate = $this->actingAs($user)->putJson(route('notes.update', $note), [
+        'category' => "Secret\x00Category\x08",
+    ]);
+    $resUpdate->assertOk();
+    $note->refresh();
+    expect($note->category)->toBe('SecretCategory');
+
+    // Bulk update notes with control chars in category
+    $resBulk = $this->actingAs($user)->postJson(route('notes.bulk-update'), [
+        'ids' => [$note->id],
+        'category' => "Bulk\x00Sanitized\x1E",
+    ]);
+    $resBulk->assertOk();
+    $note->refresh();
+    expect($note->category)->toBe('BulkSanitized');
+});
+
+test('security: folder store and update strip control characters from category', function () {
+    $user = User::factory()->create();
+
+    // Store folder with control chars in category
+    $resStore = $this->actingAs($user)->postJson(route('api.folders.store'), [
+        'name' => 'Adventures Folder',
+        'category' => "Raid\x00Tome\x1F",
+    ]);
+    $resStore->assertStatus(201);
+    $folderId = $resStore->json('data.id');
+    $folder = Folder::find($folderId);
+    expect($folder->category)->toBe('RaidTome')
+        ->and($folder->category)->not->toContain("\x00");
+
+    // Update folder with control chars in category
+    $resUpdate = $this->actingAs($user)->putJson(route('api.folders.update', $folder), [
+        'category' => "Updated\x00Raid\x07",
+    ]);
+    $resUpdate->assertOk();
+    $folder->refresh();
+    expect($folder->category)->toBe('UpdatedRaid');
+});
+
+test('performance: note queries with level_desc and favorites_only sort efficiently', function () {
+    $user = User::factory()->create();
+    Note::factory()->count(10)->create([
+        'user_id' => $user->id,
+        'level' => fn () => fake()->numberBetween(1, 10),
+        'is_favorite' => fn () => fake()->boolean(),
+        'is_pinned' => fn () => fake()->boolean(),
+    ]);
+
+    $resLevel = $this->actingAs($user)->getJson(route('notes.index', ['sort' => 'level_desc']));
+    $resLevel->assertOk()
+        ->assertJsonCount(10, 'data');
+
+    $resFav = $this->actingAs($user)->getJson(route('notes.index', ['favorites_only' => true]));
+    $resFav->assertOk();
+});
