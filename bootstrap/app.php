@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        $trustedProxies = env('TRUSTED_PROXIES');
+        $middleware->trustProxies(at: ($trustedProxies !== null && $trustedProxies !== '') ? array_map('trim', explode(',', $trustedProxies)) : '*');
         $middleware->append(SecurityHeadersMiddleware::class);
         $middleware->redirectTo(
             guests: '/login',
