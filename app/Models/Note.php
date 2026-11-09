@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Note extends Model
@@ -115,8 +116,16 @@ class Note extends Model
             }
         });
 
+        static::created(function (): void {
+            Cache::forget('notenux:landing_counts');
+        });
+
         static::deleting(function (Note $note): void {
             $note->chunks()->delete();
+        });
+
+        static::deleted(function (): void {
+            Cache::forget('notenux:landing_counts');
         });
     }
 

@@ -659,7 +659,9 @@ test('security: mysql configuration disables persistent connections to prevent c
 
     expect($mysqlOptions)->toBeArray()
         ->and(array_key_exists(PDO::ATTR_PERSISTENT, $mysqlOptions))->toBeTrue()
-        ->and($mysqlOptions[PDO::ATTR_PERSISTENT])->toBeFalse();
+        ->and($mysqlOptions[PDO::ATTR_PERSISTENT])->toBeFalse()
+        ->and(array_key_exists(PDO::ATTR_TIMEOUT, $mysqlOptions))->toBeTrue()
+        ->and($mysqlOptions[PDO::ATTR_TIMEOUT])->toBe(5);
 });
 
 test('security: model prevents accessing missing attributes outside production', function () {
@@ -702,4 +704,23 @@ test('architecture: user model provides folders relationship', function () {
 
     expect($user->folders)->toHaveCount(1)
         ->and($user->folders->first()->id)->toBe($folder->id);
+});
+
+test('performance: note lifecycle invalidates landing counts cache', function () {
+    Cache::put('notenux:landing_counts', [10, 20], 300);
+    expect(Cache::has('notenux:landing_counts'))->toBeTrue();
+
+    $note = Note::factory()->create();
+    expect(Cache::has('notenux:landing_counts'))->toBeFalse();
+
+    Cache::put('notenux:landing_counts', [11, 21], 300);
+    $note->delete();
+    expect(Cache::has('notenux:landing_counts'))->toBeFalse();
+});
+
+test('performance: docker compose specifies mysql skip-name-resolve', function () {
+    $compose = file_get_contents(base_path('docker-compose.yml'));
+
+    expect($compose)->toContain('--skip-name-resolve')
+        ->and($compose)->toContain('--local-infile=0');
 });
