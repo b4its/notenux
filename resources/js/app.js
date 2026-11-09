@@ -23,14 +23,14 @@ function sanitizeHtml(html) {
         for (const attribute of [...element.attributes]) {
             const { name, value } = attribute;
             const isReservedId = name === 'id' && ['editorarea', 'plain-text-editor', 'markdownraweditor', 'note-title-input', 'note-category-select', 'save-now-btn', 'mobile-save-now-btn', 'delete-note-btn', 'save-status-text', 'app-favicon', 'csrf-token', 'studio-dynamic-island', 'dynamic-island-tray', 'dynamic-island-toggle-btn', 'mobile-dynamic-island-toggle-btn', 'favorite-note-btn', 'pin-note-btn', 'location', 'window', 'document', 'form', 'body', 'cookie'].includes((value || '').toLowerCase());
-            const safe = (!isReservedId && ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable'].includes(name))
+            const safe = (!isReservedId && ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable', 'data-color-token'].includes(name))
                 || (name === 'id' && !isReservedId && /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(value))
                 || (name === 'type' && element.localName === 'input' && value === 'checkbox')
                 || (['checked', 'disabled'].includes(name) && element.localName === 'input')
                 || (['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'].includes(name) && /^\d+$/.test(value))
                 || (['color', 'bgcolor', 'bordercolor'].includes(name) && /^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i.test(value))
                 || (['align', 'valign'].includes(name) && ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'].includes((value || '').toLowerCase()))
-                || (name === 'style' && /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value) && !/(expression|behavior|javascript|vbscript|data:|url\s*\()/i.test(value))
+                || (name === 'style' && /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value) && !/(expression|behavior|binding|javascript|vbscript|data:|import|url\s*[\(\/])/i.test(value))
                 || (name === 'href' && element.localName === 'a' && /^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(value))
                 || (name === 'target' && element.localName === 'a' && ['_blank', '_self'].includes((value || '').toLowerCase()))
                 || (name === 'rel' && element.localName === 'a' && /^[a-z\s_-]+$/i.test(value))
