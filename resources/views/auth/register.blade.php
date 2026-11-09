@@ -31,7 +31,7 @@
     <!-- Schema.org Microdata -->
     <meta itemprop="name" content="Daftar Scribe Baru - Notenux | Mulai Petualangan Menulis">
     <meta itemprop="description" content="Daftar akun Notenux gratis (notenux.oryphem.com/register). Nikmati sensasi menulis catatan retro modern.">
-    <meta itemprop="image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta itemprop="image" content="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}">
     <meta itemprop="url" content="https://notenux.oryphem.com/register">
 
     <!-- Search Engine Crawlers Optimization -->
@@ -47,9 +47,9 @@
     <meta property="og:url" content="https://notenux.oryphem.com/register">
     <meta property="og:title" content="Daftar Scribe Baru - Notenux | Mulai Petualangan Menulis">
     <meta property="og:description" content="Daftar akun Notenux gratis. Tingkatkan level Scribe Anda dengan aplikasi catatan retro gamifikasi terbaik.">
-    <meta property="og:image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
-    <meta property="og:image:secure_url" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
-    <meta property="og:image:type" content="image/png">
+    <meta property="og:image" content="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}">
+    <meta property="og:image:secure_url" content="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}">
+    <meta property="og:image:type" content="image/webp">
     <meta property="og:image:width" content="2059">
     <meta property="og:image:height" content="764">
     <meta property="og:locale" content="id_ID">
@@ -63,7 +63,7 @@
     <meta name="twitter:url" content="https://notenux.oryphem.com/register">
     <meta name="twitter:title" content="Daftar Scribe Baru - Notenux | Mulai Petualangan Menulis">
     <meta name="twitter:description" content="Daftar akun Notenux gratis. Mulai petualangan menulis retro gamifikasi sekarang.">
-    <meta name="twitter:image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta name="twitter:image" content="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}">
 
     <!-- Mobile & PWA Settings -->
     <meta name="application-name" content="Notenux">
@@ -72,14 +72,14 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="msapplication-TileColor" content="#030712">
-    <meta name="msapplication-TileImage" content="{{ asset('assets/logo/light/icon_light.png') }}">
+    <meta name="msapplication-TileImage" content="{{ asset('assets/logo/light/icon_light.webp') }}">
     <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
     <!-- App Favicon & Touch Icon (Default Light, dynamically adapts to theme) -->
-    <link rel="icon" id="app-favicon" type="image/png" href="{{ asset('assets/logo/light/icon_light.png') }}">
-    <link rel="apple-touch-icon" id="app-apple-touch-icon" href="{{ asset('assets/logo/light/icon_light.png') }}">
+    <link rel="icon" id="app-favicon" type="image/webp" href="{{ asset('assets/logo/light/icon_light.webp') }}">
+    <link rel="apple-touch-icon" id="app-apple-touch-icon" href="{{ asset('assets/logo/light/icon_light.webp') }}">
 
     <!-- DNS-Prefetch and Preconnect -->
     <link rel="dns-prefetch" href="//fonts.googleapis.com">
@@ -121,8 +121,8 @@
     <script>
         (function() {
             const savedTheme = localStorage.getItem('notenux_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            const lightFavicon = "{{ asset('assets/logo/light/icon_light.png') }}";
-            const darkFavicon = "{{ asset('assets/logo/dark/icon_dark.png') }}";
+            const lightFavicon = "{{ asset('assets/logo/light/icon_light.webp') }}";
+            const darkFavicon = "{{ asset('assets/logo/dark/icon_dark.webp') }}";
             window.notenuxFaviconLight = lightFavicon;
             window.notenuxFaviconDark = darkFavicon;
 
@@ -167,10 +167,10 @@
         <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
             <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2 group transition-transform active:translate-y-0.5 shrink-0 min-w-0">
                 <!-- Adaptive Horizontal Logo -->
-                <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.png') }}"
+                <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.webp') }}"
                      alt="Notenux Studio"
                      class="h-7 sm:h-8 w-auto object-contain hidden dark:block transition-transform group-hover:scale-105">
-                <img src="{{ asset('assets/logo/light/icon_horizontal_light.png') }}"
+                <img src="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}"
                      alt="Notenux Studio"
                      class="h-7 sm:h-8 w-auto object-contain block dark:hidden transition-transform group-hover:scale-105">
                 <span class="sr-only">NOTENUX</span>
@@ -215,10 +215,10 @@
                 <!-- Header Title -->
                 <div class="text-center space-y-2">
                     <div class="flex justify-center mb-1">
-                        <img src="{{ asset('assets/logo/dark/icon_vertical_dark.png') }}"
+                        <img src="{{ asset('assets/logo/dark/icon_vertical_dark.webp') }}"
                              alt="Notenux Scribe"
                              class="w-16 sm:w-20 h-auto object-contain hidden dark:block mx-auto drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                        <img src="{{ asset('assets/logo/light/icon_vertical_light.png') }}"
+                        <img src="{{ asset('assets/logo/light/icon_vertical_light.webp') }}"
                              alt="Notenux Scribe"
                              class="w-16 sm:w-20 h-auto object-contain block dark:hidden mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
                     </div>

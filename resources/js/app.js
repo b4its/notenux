@@ -1507,8 +1507,8 @@ class NotenuxPanel {
     updateFavicon(theme) {
         const favicon = document.getElementById('app-favicon') || document.querySelector('link[rel="icon"]');
         const appleIcon = document.getElementById('app-apple-touch-icon') || document.querySelector('link[rel="apple-touch-icon"]');
-        const lightFaviconUrl = window.notenuxFaviconLight || '/assets/logo/light/icon_light.png';
-        const darkFaviconUrl = window.notenuxFaviconDark || '/assets/logo/dark/icon_dark.png';
+        const lightFaviconUrl = window.notenuxFaviconLight || '/assets/logo/light/icon_light.webp';
+        const darkFaviconUrl = window.notenuxFaviconDark || '/assets/logo/dark/icon_dark.webp';
         const targetFavicon = theme === 'dark' ? darkFaviconUrl : lightFaviconUrl;
         if (favicon) {
             favicon.setAttribute('href', targetFavicon);

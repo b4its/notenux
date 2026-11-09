@@ -32,7 +32,7 @@
     <!-- Schema.org Microdata Properties for Search Engine Rich Cards -->
     <meta itemprop="name" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">
     <meta itemprop="description" content="Notenux (notenux.oryphem.com) adalah aplikasi catatan retro modern dengan gamifikasi RPG, editor Markdown instan, proteksi naskah otomatis, dan tema adaptif.">
-    <meta itemprop="image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta itemprop="image" content="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}">
     <meta itemprop="url" content="https://notenux.oryphem.com/">
 
     <!-- Comprehensive Search Engine Crawlers Optimization -->
@@ -63,9 +63,9 @@
     <meta property="og:url" content="https://notenux.oryphem.com/">
     <meta property="og:title" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">
     <meta property="og:description" content="Tingkatkan produktivitas menulis dengan sensasi RPG retro, level-up XP, markdown realtime, dan sistem keamanan otomatis di Notenux. Akses gratis di https://notenux.oryphem.com!">
-    <meta property="og:image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
-    <meta property="og:image:secure_url" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
-    <meta property="og:image:type" content="image/png">
+    <meta property="og:image" content="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}">
+    <meta property="og:image:secure_url" content="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}">
+    <meta property="og:image:type" content="image/webp">
     <meta property="og:image:width" content="2059">
     <meta property="og:image:height" content="764">
     <meta property="og:image:alt" content="Notenux Studio Banner">
@@ -81,7 +81,7 @@
     <meta name="twitter:url" content="https://notenux.oryphem.com/">
     <meta name="twitter:title" content="Notenux - Aplikasi Catatan & Studio Tulis Gamifikasi Retro Modern">
     <meta name="twitter:description" content="Tingkatkan produktivitas menulis dengan sensasi RPG retro, level-up XP, markdown realtime, dan sistem keamanan otomatis di Notenux. Kunjungi https://notenux.oryphem.com">
-    <meta name="twitter:image" content="{{ asset('assets/logo/light/icon_horizontal_light.png') }}">
+    <meta name="twitter:image" content="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}">
     <meta name="twitter:image:alt" content="Notenux Studio Banner">
 
     <!-- Mobile & Progressive Web Application -->
@@ -91,14 +91,14 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="msapplication-TileColor" content="#030712">
-    <meta name="msapplication-TileImage" content="{{ asset('assets/logo/light/icon_light.png') }}">
+    <meta name="msapplication-TileImage" content="{{ asset('assets/logo/light/icon_light.webp') }}">
     <meta name="theme-color" content="#030712" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
 
     <!-- App Favicon & Touch Icon (Default Light, dynamically adapts to theme) -->
-    <link rel="icon" id="app-favicon" type="image/png" href="{{ asset('assets/logo/light/icon_light.png') }}">
-    <link rel="apple-touch-icon" id="app-apple-touch-icon" href="{{ asset('assets/logo/light/icon_light.png') }}">
+    <link rel="icon" id="app-favicon" type="image/webp" href="{{ asset('assets/logo/light/icon_light.webp') }}">
+    <link rel="apple-touch-icon" id="app-apple-touch-icon" href="{{ asset('assets/logo/light/icon_light.webp') }}">
 
     <!-- DNS-Prefetch and Preconnect -->
     <link rel="dns-prefetch" href="//fonts.googleapis.com">
@@ -144,7 +144,7 @@
           "url": "https://notenux.oryphem.com",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://notenux.oryphem.com/assets/logo/light/icon_light.png",
+            "url": "https://notenux.oryphem.com/assets/logo/light/icon_light.webp",
             "width": 1254,
             "height": 1254
           },
@@ -184,7 +184,7 @@
             "Adaptive CRT Dark and Light Themes"
           ],
           "description": "Aplikasi catatan retro modern dengan gamifikasi RPG, editor Markdown instan, proteksi naskah otomatis, dan tema adaptif.",
-          "image": "https://notenux.oryphem.com/assets/logo/light/icon_horizontal_light.png",
+          "image": "https://notenux.oryphem.com/assets/logo/light/icon_horizontal_light.webp",
           "author": {
             "@id": "https://notenux.oryphem.com/#organization"
           }
@@ -235,8 +235,8 @@
     <script>
         (function() {
             const savedTheme = localStorage.getItem('notenux_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            const lightFavicon = "{{ asset('assets/logo/light/icon_light.png') }}";
-            const darkFavicon = "{{ asset('assets/logo/dark/icon_dark.png') }}";
+            const lightFavicon = "{{ asset('assets/logo/light/icon_light.webp') }}";
+            const darkFavicon = "{{ asset('assets/logo/dark/icon_dark.webp') }}";
             window.notenuxFaviconLight = lightFavicon;
             window.notenuxFaviconDark = darkFavicon;
 
@@ -288,10 +288,10 @@
             <!-- Brand Logo (Transparent Logo) -->
             <a href="{{ route('landing') }}" class="flex items-center gap-1.5 sm:gap-2.5 group transition-transform active:translate-y-0.5 shrink-0 min-w-0" title="Notenux Studio">
                 <!-- Adaptive Horizontal Logo without background container -->
-                <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.png') }}"
+                <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.webp') }}"
                      alt="Notenux Studio"
                      class="h-7 sm:h-9 w-auto object-contain hidden dark:block transition-transform duration-200 group-hover:scale-105">
-                <img src="{{ asset('assets/logo/light/icon_horizontal_light.png') }}"
+                <img src="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}"
                      alt="Notenux Studio"
                      class="h-7 sm:h-9 w-auto object-contain block dark:hidden transition-transform duration-200 group-hover:scale-105">
                 <span class="sr-only">NOTENUX</span>
@@ -435,10 +435,10 @@
                 <!-- Hero Portrait Logo Emblem (Transparent Background without container) -->
                 <div class="flex justify-center mb-2 sm:mb-4">
                     <div class="relative group transition-transform duration-300 hover:scale-105">
-                        <img src="{{ asset('assets/logo/dark/icon_vertical_dark.png') }}"
+                        <img src="{{ asset('assets/logo/dark/icon_vertical_dark.webp') }}"
                              alt="Notenux Studio Portrait Emblem"
                              class="w-24 xs:w-28 sm:w-36 md:w-40 lg:w-44 h-auto object-contain hidden dark:block filter drop-shadow-[0_10px_25px_rgba(37,99,235,0.25)]">
-                        <img src="{{ asset('assets/logo/light/icon_vertical_light.png') }}"
+                        <img src="{{ asset('assets/logo/light/icon_vertical_light.webp') }}"
                              alt="Notenux Studio Portrait Emblem"
                              class="w-24 xs:w-28 sm:w-36 md:w-40 lg:w-44 h-auto object-contain block dark:hidden filter drop-shadow-[0_10px_25px_rgba(26,85,224,0.2)]">
                     </div>
@@ -1261,8 +1261,8 @@ Coba ketuk tombol Spell Bar di atas atau ubah font sesukamu!</textarea>
     <footer class="w-full bg-[var(--bg-surface)] border-t-2 border-black dark:border-blue-900 py-6 px-4 sm:px-6 font-mono text-xs">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-2">
-                <img src="{{ asset('assets/logo/dark/icon_dark.png') }}" alt="Notenux Icon" class="w-5 h-5 object-contain hidden dark:inline-block">
-                <img src="{{ asset('assets/logo/light/icon_light.png') }}" alt="Notenux Icon" class="w-5 h-5 object-contain inline-block dark:hidden">
+                <img src="{{ asset('assets/logo/dark/icon_dark.webp') }}" alt="Notenux Icon" class="w-5 h-5 object-contain hidden dark:inline-block">
+                <img src="{{ asset('assets/logo/light/icon_light.webp') }}" alt="Notenux Icon" class="w-5 h-5 object-contain inline-block dark:hidden">
                 <a href="https://notenux.oryphem.com" class="font-pixel text-[11px] text-blue-600 dark:text-cyan-400 hover:underline" title="Notenux - https://notenux.oryphem.com">NOTENUX STUDIO</a>
                 <span class="text-slate-400">&bull;</span>
                 <span class="text-slate-500 dark:text-slate-400">&copy; {{ date('Y') }} All Rights Reserved</span>

@@ -67,9 +67,11 @@ class SecurityHeadersMiddleware
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
-        // Cache control: High-performance caching for immutable Vite assets, prevent caching of sensitive state
+        // Cache control: High-performance caching for immutable Vite assets and static images, prevent caching of sensitive state
         if ($request->is('build/*')) {
             $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
+        } elseif ($request->is('assets/*')) {
+            $response->headers->set('Cache-Control', 'public, max-age=2592000, no-transform');
         } elseif ($request->is('studio*', 'profile*', 'api/*', 'categories*', 'folders*')) {
             $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
             $response->headers->set('Pragma', 'no-cache');
