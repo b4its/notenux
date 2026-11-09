@@ -260,6 +260,11 @@ test('sitemap and robots.txt are accessible and properly configured', function (
         ->and($robotsContent)->toContain('Allow: /login')
         ->and($robotsContent)->toContain('Disallow: /folders')
         ->and($robotsContent)->toContain('Disallow: /profile');
+
+    $manifestRes = $this->get('/site.webmanifest');
+    $manifestRes->assertOk()
+        ->assertHeader('Content-Type', 'application/manifest+json; charset=UTF-8')
+        ->assertSee('/assets/logo/icon-192.webp', false);
 });
 
 test('landing page header renders responsive mobile menu drawer and mascot sprite starts collapsed', function () {

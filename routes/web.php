@@ -36,6 +36,17 @@ Route::get('/sitemap.xml', function () {
         'Cache-Control' => 'public, max-age=86400',
     ]);
 })->name('sitemap');
+Route::get('/site.webmanifest', function () {
+    $path = public_path('site.webmanifest');
+    if (! file_exists($path)) {
+        abort(404);
+    }
+
+    return response((string) file_get_contents($path), 200, [
+        'Content-Type' => 'application/manifest+json; charset=UTF-8',
+        'Cache-Control' => 'public, max-age=604800',
+    ]);
+})->name('manifest');
 
 /*
 |--------------------------------------------------------------------------
