@@ -743,3 +743,27 @@ test('performance: docker compose specifies mysql skip-name-resolve', function (
     expect($compose)->toContain('--skip-name-resolve')
         ->and($compose)->toContain('--local-infile=0');
 });
+
+test('security and performance: htaccess specifies CGI protection, method blocking, nosniff, and font caching', function () {
+    $htaccess = file_get_contents(public_path('.htaccess'));
+
+    expect($htaccess)->toContain('RewriteCond %{QUERY_STRING} ^- [NC]')
+        ->and($htaccess)->toContain('RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|CONNECT) [NC]')
+        ->and($htaccess)->toContain('Header always set X-Content-Type-Options "nosniff"')
+        ->and($htaccess)->toContain('sqlite|sqlite3|db')
+        ->and($htaccess)->toContain('ExpiresByType image/webp "access plus 1 month"');
+});
+
+test('assets: favicon ico is valid binary file with non-zero size', function () {
+    $faviconPath = public_path('favicon.ico');
+
+    expect(file_exists($faviconPath))->toBeTrue()
+        ->and(filesize($faviconPath))->toBeGreaterThan(1000);
+
+    $fp = fopen($faviconPath, 'rb');
+    $header = fread($fp, 4);
+    fclose($fp);
+
+    // Standard Windows ICO magic number: 0x00 0x00 0x01 0x00
+    expect($header)->toBe("\x00\x00\x01\x00");
+});

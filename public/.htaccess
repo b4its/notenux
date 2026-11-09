@@ -1,9 +1,10 @@
 # Server signature protection
 ServerSignature Off
 
-# Prevent HTTPoxy vulnerability (CVE-2016-5385 / CVE-2016-5387)
+# Prevent HTTPoxy vulnerability (CVE-2016-5385 / CVE-2016-5387) and enforce nosniff
 <IfModule mod_headers.c>
     RequestHeader unset Proxy
+    Header always set X-Content-Type-Options "nosniff"
 </IfModule>
 
 # Block access to hidden files and directories
@@ -17,8 +18,8 @@ ServerSignature Off
     </IfModule>
 </FilesMatch>
 
-# Block sensitive backup and source code files
-<FilesMatch "\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist)$">
+# Block sensitive backup, database, and source code files
+<FilesMatch "\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist|sqlite|sqlite3|db|yml|yaml|tar|gz|zip)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -47,6 +48,7 @@ ServerSignature Off
     ExpiresByType application/javascript "access plus 1 month"
     ExpiresByType font/woff2 "access plus 1 year"
     ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/ttf "access plus 1 year"
     ExpiresByType application/font-woff2 "access plus 1 year"
 </IfModule>
 
@@ -56,6 +58,14 @@ ServerSignature Off
     </IfModule>
 
     RewriteEngine On
+
+    # Block non-standard or dangerous HTTP methods (CWE-693 / XST defense)
+    RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|CONNECT) [NC]
+    RewriteRule .* - [F,L]
+
+    # Block CGI argument injection (CVE-2024-4577 defense-in-depth)
+    RewriteCond %{QUERY_STRING} ^- [NC]
+    RewriteRule .* - [F,L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
