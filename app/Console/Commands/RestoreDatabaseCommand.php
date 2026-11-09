@@ -22,7 +22,10 @@ class RestoreDatabaseCommand extends Command
         $fileName = $this->argument('file');
 
         if ($fileName) {
-            $safeName = basename($fileName);
+            $safeName = preg_replace('/[^a-zA-Z0-9_.-]/', '', basename((string) $fileName));
+            if (! str_ends_with($safeName, '.json')) {
+                $safeName .= '.json';
+            }
             $filePath = "{$backupDir}/{$safeName}";
         } else {
             $files = File::glob("{$backupDir}/*.json");

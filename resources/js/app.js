@@ -33,7 +33,8 @@ function sanitizeHtml(html) {
                 'body', 'cookie', 'self', 'top', 'parent', 'opener', 'frames', 'history',
                 'navigator', 'scripts', 'anchors', 'images', 'links'
             ].includes((value || '').toLowerCase());
-            const safe = (!isReservedId && ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable', 'data-color-token'].includes(name))
+            const safe = (!isReservedId && ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable'].includes(name))
+                || (name === 'data-color-token' && /^[a-z0-9_-]+$/i.test(value))
                 || (name === 'id' && !isReservedId && /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(value))
                 || (name === 'type' && element.localName === 'input' && value === 'checkbox')
                 || (['checked', 'disabled'].includes(name) && element.localName === 'input')

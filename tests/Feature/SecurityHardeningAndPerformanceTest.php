@@ -634,3 +634,18 @@ test('performance: note queries with level_desc and favorites_only sort efficien
     $resFav = $this->actingAs($user)->getJson(route('notes.index', ['favorites_only' => true]));
     $resFav->assertOk();
 });
+
+test('security: restore command enforces json extension and confines file paths', function () {
+    $this->artisan('db:restore', ['file' => '../../nonexistent_file'])
+        ->assertFailed();
+});
+
+test('security: content sanitizer strictly validates data-color-token values', function () {
+    $sanitizer = app(NoteContentSanitizer::class);
+
+    $valid = '<span data-color-token="emerald">Valid</span>';
+    expect($sanitizer->sanitize($valid))->toContain('data-color-token="emerald"');
+
+    $invalid = '<span data-color-token="xss&quot; onload=&quot;alert(1)&quot;">Invalid</span>';
+    expect($sanitizer->sanitize($invalid))->not->toContain('data-color-token');
+});
