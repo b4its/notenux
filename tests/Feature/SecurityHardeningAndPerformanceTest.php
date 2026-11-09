@@ -22,6 +22,7 @@ test('security: responses include hardened security headers and omit x-powered-b
         ->assertHeader('X-Frame-Options', 'SAMEORIGIN')
         ->assertHeader('X-Content-Type-Options', 'nosniff')
         ->assertHeader('X-XSS-Protection', '1; mode=block')
+        ->assertHeader('X-DNS-Prefetch-Control', 'off')
         ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
         ->assertHeader('Cross-Origin-Opener-Policy', 'same-origin')
         ->assertHeader('Cross-Origin-Resource-Policy', 'same-origin')
@@ -36,7 +37,7 @@ test('security: https requests attach strict transport security header', functio
     $response = $this->get('https://localhost/');
 
     $response->assertOk()
-        ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
 });
 
 test('security: csv export neutralizes formula and dde injection triggers', function () {
@@ -689,4 +690,16 @@ test('performance: nginx configuration specifies sendfile, tcp_nopush, tcp_nodel
         ->and($conf)->toContain('tcp_nodelay on;')
         ->and($conf)->toContain('keepalive_timeout 65;')
         ->and($conf)->toContain('add_header X-Content-Type-Options "nosniff" always;');
+});
+
+test('architecture: user model provides folders relationship', function () {
+    $user = User::factory()->create();
+    $folder = Folder::create([
+        'user_id' => $user->id,
+        'name' => 'Grimoire',
+        'category' => 'catatan',
+    ]);
+
+    expect($user->folders)->toHaveCount(1)
+        ->and($user->folders->first()->id)->toBe($folder->id);
 });

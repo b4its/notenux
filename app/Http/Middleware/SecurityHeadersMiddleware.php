@@ -26,6 +26,9 @@ class SecurityHeadersMiddleware
         $response->headers->remove('X-Powered-By');
         $response->headers->remove('Server');
 
+        // Control DNS prefetching to avoid privacy leakage
+        $response->headers->set('X-DNS-Prefetch-Control', 'off');
+
         // Prevent clickjacking
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
 
@@ -64,7 +67,7 @@ class SecurityHeadersMiddleware
 
         // Strict-Transport-Security when HTTPS is used
         if ($request->isSecure()) {
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
         }
 
         // Cache control: High-performance caching for immutable Vite assets and static images, prevent caching of sensitive state

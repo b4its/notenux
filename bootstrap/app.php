@@ -19,7 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         }
 
         $trustedProxies = env('TRUSTED_PROXIES');
-        $middleware->trustProxies(at: ($trustedProxies !== null && $trustedProxies !== '') ? array_map('trim', explode(',', $trustedProxies)) : '*');
+        $middleware->trustProxies(
+            at: ($trustedProxies !== null && $trustedProxies !== '') ? array_map('trim', explode(',', $trustedProxies)) : '*',
+            headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO
+        );
         $middleware->append(SecurityHeadersMiddleware::class);
         $middleware->redirectTo(
             guests: '/login',
