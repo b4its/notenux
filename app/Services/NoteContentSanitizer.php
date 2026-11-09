@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Dom\HTMLDocument;
+use Dom\XPath;
 
 class NoteContentSanitizer
 {
@@ -14,7 +15,8 @@ class NoteContentSanitizer
         'note-category-select', 'save-now-btn', 'delete-note-btn', 'save-status-text',
         'app-favicon', 'csrf-token', 'studio-dynamic-island', 'dynamic-island-tray',
         'dynamic-island-toggle-btn', 'favorite-note-btn', 'pin-note-btn', 'location',
-        'window', 'document', 'form', 'body', 'cookie',
+        'window', 'document', 'form', 'body', 'cookie', 'self', 'top', 'parent',
+        'opener', 'frames', 'history', 'navigator', 'scripts', 'anchors', 'images', 'links',
     ];
 
     public function sanitize(?string $content): string
@@ -30,6 +32,10 @@ class NoteContentSanitizer
         }
 
         $document = HTMLDocument::createFromString($content, LIBXML_NOERROR, 'UTF-8');
+        $xpath = new XPath($document);
+        foreach ($xpath->query('//comment()') as $comment) {
+            $comment->remove();
+        }
         $allowed = ['p', 'div', 'span', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'b', 'em', 'i', 'u', 's', 'del', 'sub', 'sup', 'blockquote', 'pre', 'code', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'hr', 'a', 'img', 'input', 'font', 'figure', 'figcaption'];
 
         foreach (iterator_to_array($document->body->querySelectorAll('*')) as $element) {
@@ -50,7 +56,7 @@ class NoteContentSanitizer
                     || (in_array($name, ['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'], true) && ctype_digit($value))
                     || (in_array($name, ['color', 'bgcolor', 'bordercolor'], true) && preg_match('/^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i', $value))
                     || (in_array($name, ['align', 'valign'], true) && in_array(strtolower($value), ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'], true))
-                    || ($name === 'style' && preg_match('/^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s\'"-]+;?\s*)+$/i', $value) && ! preg_match('/(expression|behavior|binding|javascript|vbscript|data:|import|url\s*[\(\/])/i', $value))
+                    || ($name === 'style' && preg_match('/^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s\'"-]+;?\s*)+$/i', $value) && ! preg_match('/(\\\\|expression|behavior|binding|javascript|vbscript|data:|import|url\s*[\(\/])/i', $value))
                     || ($name === 'href' && $tag === 'a' && preg_match('~^(https?://|mailto:|\#|/(?!/))~i', $value))
                     || ($name === 'target' && $tag === 'a' && in_array(strtolower($value), ['_blank', '_self'], true))
                     || ($name === 'rel' && $tag === 'a' && preg_match('/^[a-z\s_-]+$/i', $value))
