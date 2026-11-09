@@ -682,6 +682,13 @@ test('performance: queue database and redis connections dispatch jobs after data
         ->and(config('queue.connections.redis.after_commit'))->toBeTrue();
 });
 
+test('performance and security: redis connections configure explicit timeout and read timeout limits', function () {
+    expect(config('database.redis.default.timeout'))->toBe(2.0)
+        ->and(config('database.redis.default.read_timeout'))->toBe(2.0)
+        ->and(config('database.redis.cache.timeout'))->toBe(2.0)
+        ->and(config('database.redis.cache.read_timeout'))->toBe(2.0);
+});
+
 test('performance and security: content sanitizer permits loading lazy and decoding async on images while blocking onload', function () {
     $sanitizer = app(NoteContentSanitizer::class);
 
