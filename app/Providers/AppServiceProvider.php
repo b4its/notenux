@@ -28,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::preventLazyLoading(! $this->app->isProduction());
         Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
+        Model::preventAccessingMissingAttributes(! $this->app->isProduction());
 
         if ($this->app->isProduction() || request()->isSecure()) {
             URL::forceScheme('https');

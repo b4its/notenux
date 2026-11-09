@@ -64,8 +64,9 @@ return [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::MYSQL_ATTR_LOCAL_INFILE => false,
                 PDO::ATTR_STRINGIFY_FETCHES => false,
+                PDO::ATTR_PERSISTENT => false,
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ], fn ($val, $key) => in_array($key, [PDO::ATTR_EMULATE_PREPARES, PDO::MYSQL_ATTR_LOCAL_INFILE, PDO::ATTR_STRINGIFY_FETCHES], true) || ! empty($val), ARRAY_FILTER_USE_BOTH) : [],
+            ], fn ($val, $key) => in_array($key, [PDO::ATTR_EMULATE_PREPARES, PDO::MYSQL_ATTR_LOCAL_INFILE, PDO::ATTR_STRINGIFY_FETCHES, PDO::ATTR_PERSISTENT], true) || ! empty($val), ARRAY_FILTER_USE_BOTH) : [],
         ],
 
         'mariadb' => [
@@ -88,8 +89,9 @@ return [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::MYSQL_ATTR_LOCAL_INFILE => false,
                 PDO::ATTR_STRINGIFY_FETCHES => false,
+                PDO::ATTR_PERSISTENT => false,
                 Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ], fn ($val, $key) => in_array($key, [PDO::ATTR_EMULATE_PREPARES, PDO::MYSQL_ATTR_LOCAL_INFILE, PDO::ATTR_STRINGIFY_FETCHES], true) || ! empty($val), ARRAY_FILTER_USE_BOTH) : [],
+            ], fn ($val, $key) => in_array($key, [PDO::ATTR_EMULATE_PREPARES, PDO::MYSQL_ATTR_LOCAL_INFILE, PDO::ATTR_STRINGIFY_FETCHES, PDO::ATTR_PERSISTENT], true) || ! empty($val), ARRAY_FILTER_USE_BOTH) : [],
         ],
 
         'pgsql' => [

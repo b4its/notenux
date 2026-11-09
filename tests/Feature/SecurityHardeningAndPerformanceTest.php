@@ -6,6 +6,7 @@ use App\Models\Note;
 use App\Models\User;
 use App\Services\NoteChunkService;
 use App\Services\NoteContentSanitizer;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -648,4 +649,16 @@ test('security: content sanitizer strictly validates data-color-token values', f
 
     $invalid = '<span data-color-token="xss&quot; onload=&quot;alert(1)&quot;">Invalid</span>';
     expect($sanitizer->sanitize($invalid))->not->toContain('data-color-token');
+});
+
+test('security: mysql configuration disables persistent connections to prevent connection state leakage', function () {
+    $mysqlOptions = config('database.connections.mysql.options');
+
+    expect($mysqlOptions)->toBeArray()
+        ->and(array_key_exists(PDO::ATTR_PERSISTENT, $mysqlOptions))->toBeTrue()
+        ->and($mysqlOptions[PDO::ATTR_PERSISTENT])->toBeFalse();
+});
+
+test('security: model prevents accessing missing attributes outside production', function () {
+    expect(Model::preventsAccessingMissingAttributes())->toBeTrue();
 });
