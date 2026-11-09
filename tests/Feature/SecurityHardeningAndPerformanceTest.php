@@ -662,3 +662,8 @@ test('security: mysql configuration disables persistent connections to prevent c
 test('security: model prevents accessing missing attributes outside production', function () {
     expect(Model::preventsAccessingMissingAttributes())->toBeTrue();
 });
+
+test('performance: queue database and redis connections dispatch jobs after database commit', function () {
+    expect(config('queue.connections.database.after_commit'))->toBeTrue()
+        ->and(config('queue.connections.redis.after_commit'))->toBeTrue();
+});
