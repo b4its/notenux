@@ -9,6 +9,30 @@
   "theme_color": "#030712",
   "icons": [
     {
+      "src": "/assets/logo/icon-192.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/icon-512.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/icon-192-light.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/icon-512-light.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/assets/logo/light/icon_light.webp",
       "sizes": "1254x1254",
       "type": "image/webp",

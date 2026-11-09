@@ -767,3 +767,34 @@ test('assets: favicon ico is valid binary file with non-zero size', function () 
     // Standard Windows ICO magic number: 0x00 0x00 0x01 0x00
     expect($header)->toBe("\x00\x00\x01\x00");
 });
+
+test('pwa: webmanifest specifies standard 192x192 and 512x512 webp icons', function () {
+    $manifest = json_decode(file_get_contents(public_path('site.webmanifest')), true);
+
+    expect($manifest['icons'])->toBeArray();
+
+    $sizes = array_column($manifest['icons'], 'sizes');
+    expect($sizes)->toContain('192x192')
+        ->and($sizes)->toContain('512x512');
+
+    $icons = [
+        public_path('assets/logo/icon-192.webp'),
+        public_path('assets/logo/icon-512.webp'),
+        public_path('assets/logo/icon-192-light.webp'),
+        public_path('assets/logo/icon-512-light.webp'),
+    ];
+
+    foreach ($icons as $path) {
+        expect(file_exists($path))->toBeTrue()
+            ->and(filesize($path))->toBeLessThan(20000);
+
+        $fp = fopen($path, 'rb');
+        $riff = fread($fp, 4);
+        fseek($fp, 8);
+        $webp = fread($fp, 4);
+        fclose($fp);
+
+        expect($riff)->toBe('RIFF')
+            ->and($webp)->toBe('WEBP');
+    }
+});
