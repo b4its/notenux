@@ -691,7 +691,23 @@ test('performance: nginx configuration specifies sendfile, tcp_nopush, tcp_nodel
         ->and($conf)->toContain('tcp_nopush on;')
         ->and($conf)->toContain('tcp_nodelay on;')
         ->and($conf)->toContain('keepalive_timeout 65;')
+        ->and($conf)->toContain('fastcgi_hide_header Server;')
         ->and($conf)->toContain('add_header X-Content-Type-Options "nosniff" always;');
+});
+
+test('security and performance: php ini disables short open tag and enables unicode bypass optimization', function () {
+    $ini = file_get_contents(base_path('docker/php/php.ini'));
+
+    expect($ini)->toContain('short_open_tag = Off')
+        ->and($ini)->toContain('zend.detect_unicode = 0')
+        ->and($ini)->toContain('phar.readonly = On')
+        ->and($ini)->toContain('phar.require_hash = On');
+});
+
+test('performance: vite configuration specifies font optimization fallbacks disabled for clean bundling', function () {
+    $viteConfig = file_get_contents(base_path('vite.config.js'));
+
+    expect($viteConfig)->toContain('optimizedFallbacks: false');
 });
 
 test('architecture: user model provides folders relationship', function () {
