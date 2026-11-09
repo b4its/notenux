@@ -1,10 +1,13 @@
 # Server signature protection
 ServerSignature Off
 
-# Prevent HTTPoxy vulnerability (CVE-2016-5385 / CVE-2016-5387) and enforce nosniff
+# Prevent HTTPoxy vulnerability (CVE-2016-5385 / CVE-2016-5387) and enforce security headers
 <IfModule mod_headers.c>
     RequestHeader unset Proxy
     Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Permitted-Cross-Domain-Policies "none"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
 # Block access to hidden files and directories

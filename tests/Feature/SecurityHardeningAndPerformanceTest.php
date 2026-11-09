@@ -698,7 +698,9 @@ test('performance: nginx configuration specifies sendfile, tcp_nopush, tcp_nodel
         ->and($conf)->toContain('fastcgi_hide_header Server;')
         ->and($conf)->toContain('application/manifest+json')
         ->and($conf)->toContain('webmanifest')
-        ->and($conf)->toContain('add_header X-Content-Type-Options "nosniff" always;');
+        ->and($conf)->toContain('add_header X-Content-Type-Options "nosniff" always;')
+        ->and($conf)->toContain('add_header X-Frame-Options "SAMEORIGIN" always;')
+        ->and($conf)->toContain('add_header Referrer-Policy "strict-origin-when-cross-origin" always;');
 });
 
 test('security and performance: php ini disables short open tag and enables unicode bypass optimization', function () {
@@ -753,6 +755,8 @@ test('security and performance: htaccess specifies CGI protection, method blocki
     expect($htaccess)->toContain('RewriteCond %{QUERY_STRING} ^- [NC]')
         ->and($htaccess)->toContain('RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|CONNECT) [NC]')
         ->and($htaccess)->toContain('Header always set X-Content-Type-Options "nosniff"')
+        ->and($htaccess)->toContain('Header always set X-Frame-Options "SAMEORIGIN"')
+        ->and($htaccess)->toContain('Header always set Referrer-Policy "strict-origin-when-cross-origin"')
         ->and($htaccess)->toContain('sqlite|sqlite3|db')
         ->and($htaccess)->toContain('AddType application/manifest+json .webmanifest')
         ->and($htaccess)->toContain('ExpiresByType application/manifest+json "access plus 1 week"')
