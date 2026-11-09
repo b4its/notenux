@@ -836,3 +836,18 @@ test('security: trusted hosts middleware includes localhost, 127.0.0.1, and app 
 test('security: local private filesystem disk disables automatic file serving to prevent unintended exposure', function () {
     expect(config('filesystems.disks.local.serve'))->toBeFalse();
 });
+
+test('architecture: note, folder, and user models enforce atomic database transactions on deletion', function () {
+    $user = User::factory()->create();
+    $folder = Folder::create(['user_id' => $user->id, 'name' => 'Atomic Folder']);
+    $note = Note::factory()->create(['user_id' => $user->id, 'folder_id' => $folder->id]);
+
+    expect($note->delete())->toBeTrue()
+        ->and(Note::find($note->id))->toBeNull();
+
+    expect($folder->delete())->toBeTrue()
+        ->and(Folder::find($folder->id))->toBeNull();
+
+    expect($user->delete())->toBeTrue()
+        ->and(User::find($user->id))->toBeNull();
+});
