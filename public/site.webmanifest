@@ -9,6 +9,18 @@
   "theme_color": "#030712",
   "icons": [
     {
+      "src": "/assets/logo/light/icon_light.webp",
+      "sizes": "1254x1254",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo/dark/icon_dark.webp",
+      "sizes": "1254x1254",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/assets/logo/light/icon_light.png",
       "sizes": "1254x1254",
       "type": "image/png",
