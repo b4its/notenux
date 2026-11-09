@@ -3421,55 +3421,104 @@ class NotenuxPanel {
         return null;
     }
 
+    convertDataUrlToWebp(dataUrl, callback) {
+        if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/') || dataUrl.startsWith('data:image/webp')) {
+            callback(dataUrl);
+            return;
+        }
+        if (typeof Image === 'undefined' || typeof document === 'undefined') {
+            callback(dataUrl);
+            return;
+        }
+        try {
+            const canvas = document.createElement('canvas');
+            if (typeof canvas.toDataURL !== 'function') {
+                callback(dataUrl);
+                return;
+            }
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    canvas.width = img.width || img.naturalWidth || 800;
+                    canvas.height = img.height || img.naturalHeight || 600;
+                    const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+                    if (!ctx) {
+                        callback(dataUrl);
+                        return;
+                    }
+                    ctx.drawImage(img, 0, 0);
+                    const webpDataUrl = canvas.toDataURL('image/webp', 0.85);
+                    if (webpDataUrl && webpDataUrl.startsWith('data:image/webp')) {
+                        callback(webpDataUrl);
+                    } else {
+                        callback(dataUrl);
+                    }
+                } catch (_) {
+                    callback(dataUrl);
+                }
+            };
+            img.onerror = () => callback(dataUrl);
+            img.src = dataUrl;
+        } catch (_) {
+            callback(dataUrl);
+        }
+    }
+
     insertImageFile(imageFile) {
         if (!imageFile) return false;
         const targetCell = this.getActiveTableCell();
         const reader = new FileReader();
         reader.onload = (loadEvent) => {
-            const dataUrl = loadEvent.target?.result;
-            if (dataUrl) {
-                const img = document.createElement('img');
-                img.src = dataUrl;
-                img.alt = imageFile.name || 'Pasted Image';
-
-                if (targetCell) {
-                    img.className = 'max-w-full max-h-48 object-contain rounded border border-blue-400 my-1 inline-block cursor-pointer';
-                    targetCell.appendChild(img);
-                    this.handleEditorInput();
-                    this.setActiveImage(img);
-                    this.toast.show('Image inserted into table cell!', 'success', 'Cell Image Inscribed', 'fa-solid fa-table-cells text-cyan-400');
-                } else {
-                    img.className = 'retro-image rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2 object-contain inline-block cursor-pointer';
-                    const figure = document.createElement('figure');
-                    figure.className = 'retro-image-figure retro-align-center text-center my-3 mx-auto max-w-full block';
-                    if (figure.setAttribute) figure.setAttribute('data-align', 'center');
-                    if (figure.dataset) figure.dataset.align = 'center';
-                    if (figure.style) {
-                        figure.style.textAlign = 'center';
-                        figure.style.marginLeft = 'auto';
-                        figure.style.marginRight = 'auto';
+            const rawDataUrl = loadEvent.target?.result;
+            if (rawDataUrl) {
+                this.convertDataUrlToWebp(rawDataUrl, (dataUrl) => {
+                    const img = document.createElement('img');
+                    img.src = dataUrl;
+                    img.alt = imageFile.name || 'Pasted Image';
+                    if (img.setAttribute) {
+                        img.setAttribute('loading', 'lazy');
+                        img.setAttribute('decoding', 'async');
                     }
-                    figure.appendChild(img);
 
-                    const figcaption = document.createElement('figcaption');
-                    figcaption.className = 'retro-image-caption text-xs font-mono text-slate-500 dark:text-slate-400 mt-1.5 italic outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 py-0.5 inline-block text-center cursor-text';
-                    if (figcaption.setAttribute) {
-                        figcaption.setAttribute('contenteditable', 'true');
-                        figcaption.setAttribute('data-placeholder', 'Tambahkan caption gambar...');
+                    if (targetCell) {
+                        img.className = 'max-w-full max-h-48 object-contain rounded border border-blue-400 my-1 inline-block cursor-pointer';
+                        targetCell.appendChild(img);
+                        this.handleEditorInput();
+                        this.setActiveImage(img);
+                        this.toast.show('Image inserted into table cell!', 'success', 'Cell Image Inscribed', 'fa-solid fa-table-cells text-cyan-400');
+                    } else {
+                        img.className = 'retro-image rounded-lg border-2 border-blue-500 max-h-96 shadow-md my-2 object-contain inline-block cursor-pointer';
+                        const figure = document.createElement('figure');
+                        figure.className = 'retro-image-figure retro-align-center text-center my-3 mx-auto max-w-full block';
+                        if (figure.setAttribute) figure.setAttribute('data-align', 'center');
+                        if (figure.dataset) figure.dataset.align = 'center';
+                        if (figure.style) {
+                            figure.style.textAlign = 'center';
+                            figure.style.marginLeft = 'auto';
+                            figure.style.marginRight = 'auto';
+                        }
+                        figure.appendChild(img);
+
+                        const figcaption = document.createElement('figcaption');
+                        figcaption.className = 'retro-image-caption text-xs font-mono text-slate-500 dark:text-slate-400 mt-1.5 italic outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 py-0.5 inline-block text-center cursor-text';
+                        if (figcaption.setAttribute) {
+                            figcaption.setAttribute('contenteditable', 'true');
+                            figcaption.setAttribute('data-placeholder', 'Tambahkan caption gambar...');
+                        }
+                        figcaption.textContent = 'Tambahkan caption gambar...';
+                        figure.appendChild(figcaption);
+
+                        const breakP = document.createElement('p');
+                        breakP.innerHTML = '<br>';
+                        const htmlToInsert = figure.outerHTML + breakP.outerHTML;
+
+                        document.execCommand('insertHTML', false, htmlToInsert);
+                        this.handleEditorInput();
+                        const insertedImg = this.dom.editorArea?.querySelector ? (this.dom.editorArea.querySelector(`img[src="${dataUrl}"]`) || img) : img;
+                        this.setActiveImage(insertedImg);
+                        this.toast.show('Image pasted into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
                     }
-                    figcaption.textContent = 'Tambahkan caption gambar...';
-                    figure.appendChild(figcaption);
-
-                    const breakP = document.createElement('p');
-                    breakP.innerHTML = '<br>';
-                    const htmlToInsert = figure.outerHTML + breakP.outerHTML;
-
-                    document.execCommand('insertHTML', false, htmlToInsert);
-                    this.handleEditorInput();
-                    const insertedImg = this.dom.editorArea?.querySelector ? (this.dom.editorArea.querySelector(`img[src="${dataUrl}"]`) || img) : img;
-                    this.setActiveImage(insertedImg);
-                    this.toast.show('Image pasted into scroll!', 'success', 'Image Inscribed', 'fa-solid fa-image text-cyan-400');
-                }
+                });
             }
         };
         reader.readAsDataURL(imageFile);

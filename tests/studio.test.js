@@ -2270,6 +2270,21 @@ test('white-box: sanitizeHtml allows loading and decoding attributes on images w
     assert.ok(!removedAttributes.includes('decoding'));
 });
 
+test('white-box: convertDataUrlToWebp preserves webp dataUrls and safely falls back on unsupported environments', () => {
+    const { panel } = harness();
+    let returnedUrl = null;
+
+    panel.convertDataUrlToWebp('data:image/webp;base64,ALREADYWEBP', (res) => {
+        returnedUrl = res;
+    });
+    assert.equal(returnedUrl, 'data:image/webp;base64,ALREADYWEBP');
+
+    panel.convertDataUrlToWebp('data:image/png;base64,FAKEPNG', (res) => {
+        returnedUrl = res;
+    });
+    assert.equal(returnedUrl, 'data:image/png;base64,FAKEPNG');
+});
+
 test('white-box: initPasteInterceptor wraps pasted image in retro figure with center align and editable caption', () => {
     const listeners = new Map();
     const mockEditorArea = {
