@@ -75,10 +75,12 @@ class SecurityHeadersMiddleware
             $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
         } elseif ($request->is('assets/*')) {
             $response->headers->set('Cache-Control', 'public, max-age=2592000, no-transform');
-        } elseif ($request->is('studio*', 'profile*', 'api/*', 'categories*', 'folders*')) {
+        } elseif ($request->is('studio*', 'profile*', 'api/*', 'categories*', 'folders*', 'login*', 'register*', 'panel*', 'logout*')) {
             $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
             $response->headers->set('Pragma', 'no-cache');
-            $response->headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+            if ($request->is('studio*', 'profile*', 'api/*', 'categories*', 'folders*', 'panel*')) {
+                $response->headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+            }
         }
 
         return $response;
