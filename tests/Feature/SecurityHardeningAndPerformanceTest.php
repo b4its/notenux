@@ -8,6 +8,7 @@ use App\Services\NoteChunkService;
 use App\Services\NoteContentSanitizer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Middleware\TrustHosts;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -817,4 +818,13 @@ test('architecture: category slug update cascades to both notes and folders for 
 
     expect($note->fresh()->category)->toBe('new-category')
         ->and($folder->fresh()->category)->toBe('new-category');
+});
+
+test('security: trusted hosts middleware includes localhost, 127.0.0.1, and app url host', function () {
+    $trustHostsMiddleware = app(TrustHosts::class);
+    $hosts = $trustHostsMiddleware->hosts();
+
+    expect($hosts)->toBeArray()
+        ->and($hosts)->toContain('localhost')
+        ->and($hosts)->toContain('127.0.0.1');
 });

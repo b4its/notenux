@@ -13,10 +13,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $trustedHosts = env('TRUSTED_HOSTS');
-        if ($trustedHosts !== null && $trustedHosts !== '') {
-            $middleware->trustHosts(at: array_map('trim', explode(',', $trustedHosts)));
-        }
+        $middleware->trustHosts(at: function () {
+            $hosts = ['localhost', '127.0.0.1'];
+            if ($appHost = parse_url((string) config('app.url'), PHP_URL_HOST)) {
+                $hosts[] = $appHost;
+            }
+            $configured = env('TRUSTED_HOSTS');
+            if ($configured) {
+                $hosts = array_merge($hosts, array_map('trim', explode(',', (string) $configured)));
+            }
+
+            return array_values(array_unique($hosts));
+        }, subdomains: true);
 
         $trustedProxies = env('TRUSTED_PROXIES');
         $middleware->trustProxies(
