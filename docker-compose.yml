@@ -1,5 +1,6 @@
 services:
   app:
+    image: notenux-app:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -53,7 +54,6 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-notenux}-db
     restart: unless-stopped
     command:
-      - --default-authentication-plugin=caching_sha2_password
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --local-infile=0
