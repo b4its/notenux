@@ -828,3 +828,7 @@ test('security: trusted hosts middleware includes localhost, 127.0.0.1, and app 
         ->and($hosts)->toContain('localhost')
         ->and($hosts)->toContain('127.0.0.1');
 });
+
+test('security: local private filesystem disk disables automatic file serving to prevent unintended exposure', function () {
+    expect(config('filesystems.disks.local.serve'))->toBeFalse();
+});
