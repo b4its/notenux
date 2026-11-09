@@ -691,6 +691,9 @@ test('performance: nginx configuration specifies sendfile, tcp_nopush, tcp_nodel
         ->and($conf)->toContain('tcp_nopush on;')
         ->and($conf)->toContain('tcp_nodelay on;')
         ->and($conf)->toContain('keepalive_timeout 65;')
+        ->and($conf)->toContain('reset_timedout_connection on;')
+        ->and($conf)->toContain('client_body_timeout 15s;')
+        ->and($conf)->toContain('client_header_timeout 15s;')
         ->and($conf)->toContain('fastcgi_hide_header Server;')
         ->and($conf)->toContain('add_header X-Content-Type-Options "nosniff" always;');
 });
