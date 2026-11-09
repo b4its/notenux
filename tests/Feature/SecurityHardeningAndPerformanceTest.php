@@ -240,13 +240,15 @@ test('security: sensitive dynamic endpoints attach private no-store cache contro
     $response->assertOk();
     $cacheHeader = (string) $response->headers->get('Cache-Control');
     expect($cacheHeader)->toContain('no-store')
-        ->and($cacheHeader)->toContain('private');
+        ->and($cacheHeader)->toContain('private')
+        ->and($response->headers->get('X-Robots-Tag'))->toBe('noindex, nofollow, noarchive');
 
     $studioResponse = $this->actingAs($user)->get('/studio');
     $studioResponse->assertOk();
     $studioCache = (string) $studioResponse->headers->get('Cache-Control');
     expect($studioCache)->toContain('no-store')
-        ->and($studioCache)->toContain('private');
+        ->and($studioCache)->toContain('private')
+        ->and($studioResponse->headers->get('X-Robots-Tag'))->toBe('noindex, nofollow, noarchive');
 });
 
 test('performance: folder allDescendantIds resolves deep hierarchy in a single indexed query', function () {

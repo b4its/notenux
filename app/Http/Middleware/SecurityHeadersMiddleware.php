@@ -70,9 +70,10 @@ class SecurityHeadersMiddleware
         // Cache control: High-performance caching for immutable Vite assets, prevent caching of sensitive state
         if ($request->is('build/*')) {
             $response->headers->set('Cache-Control', 'public, max-age=31536000, immutable');
-        } elseif ($request->is('studio*', 'profile*', 'api/*')) {
+        } elseif ($request->is('studio*', 'profile*', 'api/*', 'categories*', 'folders*')) {
             $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
             $response->headers->set('Pragma', 'no-cache');
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow, noarchive');
         }
 
         return $response;
