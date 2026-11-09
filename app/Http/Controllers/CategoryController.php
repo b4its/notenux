@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Folder;
 use App\Models\Note;
 use App\Models\NoteChunk;
 use App\Models\User;
@@ -121,8 +122,9 @@ class CategoryController extends Controller
             $newSlug = isset($validated['slug']) ? $this->allocateSlug($validated['slug'], $category->id) : $oldSlug;
 
             if ($newSlug !== $oldSlug) {
-                // Safely cascade slug change to all existing notes belonging to this user
-                Note::where('category', $oldSlug)->where('user_id', $user->id)->update(['category' => $newSlug]);
+                // Safely cascade slug change to all existing notes and folders belonging to this user
+                Note::forUser($user)->where('category', $oldSlug)->update(['category' => $newSlug]);
+                Folder::forUser($user)->where('category', $oldSlug)->update(['category' => $newSlug]);
             }
 
             $category->update([

@@ -802,3 +802,19 @@ test('pwa: webmanifest specifies standard 192x192 and 512x512 webp icons', funct
             ->and($webp)->toBe('WEBP');
     }
 });
+
+test('architecture: category slug update cascades to both notes and folders for the user', function () {
+    $user = User::factory()->create();
+    $cat = Category::factory()->create(['user_id' => $user->id, 'name' => 'Old Category', 'slug' => 'old-category']);
+    $note = Note::factory()->create(['user_id' => $user->id, 'category' => 'old-category']);
+    $folder = Folder::create(['user_id' => $user->id, 'name' => 'Categorized Folder', 'category' => 'old-category']);
+
+    $res = $this->actingAs($user)->putJson(route('categories.update', $cat), [
+        'name' => 'New Category',
+        'slug' => 'new-category',
+    ]);
+    $res->assertOk();
+
+    expect($note->fresh()->category)->toBe('new-category')
+        ->and($folder->fresh()->category)->toBe('new-category');
+});

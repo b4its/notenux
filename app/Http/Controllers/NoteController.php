@@ -134,8 +134,10 @@ class NoteController extends Controller
         $stats = $this->calculateStats($user);
         $initialNote = $notes->first();
         if ($initialNote) {
-            $initialNote = Note::with('chunks')->find($initialNote->id);
-            $initialNote->content = $this->sanitizer->sanitize($initialNote->content);
+            $initialNote = Note::forUser($user)->with('chunks')->find($initialNote->id);
+            if ($initialNote) {
+                $initialNote->content = $this->sanitizer->sanitize($initialNote->content);
+            }
         }
 
         $categories = Category::forUser($user)
