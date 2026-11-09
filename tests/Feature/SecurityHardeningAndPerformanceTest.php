@@ -680,3 +680,13 @@ test('performance and security: content sanitizer permits loading lazy and decod
         ->and($clean)->toContain('decoding="async"')
         ->and($clean)->not->toContain('onload');
 });
+
+test('performance: nginx configuration specifies sendfile, tcp_nopush, tcp_nodelay, and keepalive', function () {
+    $conf = file_get_contents(base_path('docker/nginx/default.conf'));
+
+    expect($conf)->toContain('sendfile on;')
+        ->and($conf)->toContain('tcp_nopush on;')
+        ->and($conf)->toContain('tcp_nodelay on;')
+        ->and($conf)->toContain('keepalive_timeout 65;')
+        ->and($conf)->toContain('add_header X-Content-Type-Options "nosniff" always;');
+});
