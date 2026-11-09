@@ -61,6 +61,8 @@ class NoteContentSanitizer
                     || ($name === 'href' && $tag === 'a' && preg_match('~^(https?://|mailto:|\#|/(?!/))~i', $value))
                     || ($name === 'target' && $tag === 'a' && in_array(strtolower($value), ['_blank', '_self'], true))
                     || ($name === 'rel' && $tag === 'a' && preg_match('/^[a-z\s_-]+$/i', $value))
+                    || ($name === 'loading' && $tag === 'img' && in_array(strtolower($value), ['lazy', 'eager'], true))
+                    || ($name === 'decoding' && $tag === 'img' && in_array(strtolower($value), ['async', 'sync', 'auto'], true))
                     || ($name === 'src' && $tag === 'img' && preg_match('~^(https?://|data:image/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)~is', trim($value)));
 
                 if (! $safe) {

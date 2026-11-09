@@ -294,10 +294,12 @@
                     <!-- Adaptive Horizontal Logo -->
                     <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.webp') }}"
                          alt="Notenux Studio"
-                         class="h-6 sm:h-8 w-auto object-contain hidden dark:block transition-transform duration-200 group-hover:scale-105">
+                         class="h-6 sm:h-8 w-auto object-contain hidden dark:block transition-transform duration-200 group-hover:scale-105"
+                         decoding="async">
                     <img src="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}"
                          alt="Notenux Studio"
-                         class="h-6 sm:h-8 w-auto object-contain block dark:hidden transition-transform duration-200 group-hover:scale-105">
+                         class="h-6 sm:h-8 w-auto object-contain block dark:hidden transition-transform duration-200 group-hover:scale-105"
+                         decoding="async">
                     <span class="sr-only">NOTENUX</span>
                     <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden sm:inline-block">STUDIO v3.0</span>
                 </a>
@@ -387,8 +389,8 @@
 
             <div class="p-3 border-b-2 border-black/10 dark:border-white/10 flex items-center justify-between lg:hidden">
                 <div class="flex items-center gap-2">
-                    <img src="{{ asset('assets/logo/dark/icon_dark.webp') }}" alt="Notenux Icon" class="w-5 h-5 object-contain hidden dark:inline-block">
-                    <img src="{{ asset('assets/logo/light/icon_light.webp') }}" alt="Notenux Icon" class="w-5 h-5 object-contain inline-block dark:hidden">
+                    <img src="{{ asset('assets/logo/dark/icon_dark.webp') }}" alt="Notenux Icon" class="w-5 h-5 object-contain hidden dark:inline-block" loading="lazy" decoding="async">
+                    <img src="{{ asset('assets/logo/light/icon_light.webp') }}" alt="Notenux Icon" class="w-5 h-5 object-contain inline-block dark:hidden" loading="lazy" decoding="async">
                     <span class="font-pixel text-[11px] text-blue-500">
                         NAVIGATION
                     </span>

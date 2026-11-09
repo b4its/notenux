@@ -45,6 +45,8 @@ function sanitizeHtml(html) {
                 || (name === 'href' && element.localName === 'a' && /^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(value))
                 || (name === 'target' && element.localName === 'a' && ['_blank', '_self'].includes((value || '').toLowerCase()))
                 || (name === 'rel' && element.localName === 'a' && /^[a-z\s_-]+$/i.test(value))
+                || (name === 'loading' && element.localName === 'img' && ['lazy', 'eager'].includes((value || '').toLowerCase()))
+                || (name === 'decoding' && element.localName === 'img' && ['async', 'sync', 'auto'].includes((value || '').toLowerCase()))
                 || (name === 'src' && element.localName === 'img' && /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)/i.test((value || '').trim()));
             if (!safe) element.removeAttribute(name);
         }

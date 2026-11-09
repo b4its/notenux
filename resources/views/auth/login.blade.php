@@ -169,10 +169,12 @@
                 <!-- Adaptive Horizontal Logo -->
                 <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.webp') }}"
                      alt="Notenux Studio"
-                     class="h-7 sm:h-8 w-auto object-contain hidden dark:block transition-transform group-hover:scale-105">
+                     class="h-7 sm:h-8 w-auto object-contain hidden dark:block transition-transform group-hover:scale-105"
+                     decoding="async">
                 <img src="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}"
                      alt="Notenux Studio"
-                     class="h-7 sm:h-8 w-auto object-contain block dark:hidden transition-transform group-hover:scale-105">
+                     class="h-7 sm:h-8 w-auto object-contain block dark:hidden transition-transform group-hover:scale-105"
+                     decoding="async">
                 <span class="sr-only">NOTENUX</span>
                 <span class="text-[9px] font-mono bg-blue-900/20 text-blue-600 dark:text-cyan-300 px-1.5 py-0.5 rounded border border-blue-500/40 font-bold uppercase hidden xs:inline-block">AUTH</span>
             </a>
@@ -218,10 +220,14 @@
                     <div class="flex justify-center mb-1">
                         <img src="{{ asset('assets/logo/dark/icon_vertical_dark.webp') }}"
                              alt="Notenux Scribe"
-                             class="w-16 sm:w-20 h-auto object-contain hidden dark:block mx-auto drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                             class="w-16 sm:w-20 h-auto object-contain hidden dark:block mx-auto drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]"
+                             fetchpriority="high"
+                             decoding="async">
                         <img src="{{ asset('assets/logo/light/icon_vertical_light.webp') }}"
                              alt="Notenux Scribe"
-                             class="w-16 sm:w-20 h-auto object-contain block dark:hidden mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                             class="w-16 sm:w-20 h-auto object-contain block dark:hidden mx-auto drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
+                             fetchpriority="high"
+                             decoding="async">
                     </div>
                     <h1 class="font-pixel text-sm sm:text-base text-blue-950 dark:text-cyan-300 tracking-wider">MASUK SCRIBE</h1>
                     <p class="text-xs font-mono text-slate-600 dark:text-slate-400">Masukkan kredensial untuk membuka Studio Notenux</p>

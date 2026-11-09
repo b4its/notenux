@@ -123,10 +123,12 @@
                     <!-- Adaptive Horizontal Logo -->
                     <img src="{{ asset('assets/logo/dark/icon_horizontal_dark.webp') }}"
                          alt="Notenux Studio"
-                         class="h-6 sm:h-7 w-auto object-contain hidden dark:block transition-transform hover:scale-105">
+                         class="h-6 sm:h-7 w-auto object-contain hidden dark:block transition-transform hover:scale-105"
+                         decoding="async">
                     <img src="{{ asset('assets/logo/light/icon_horizontal_light.webp') }}"
                          alt="Notenux Studio"
-                         class="h-6 sm:h-7 w-auto object-contain block dark:hidden transition-transform hover:scale-105">
+                         class="h-6 sm:h-7 w-auto object-contain block dark:hidden transition-transform hover:scale-105"
+                         decoding="async">
                     <div class="min-w-0">
                         <div class="flex items-center gap-1 sm:gap-1.5">
                             <span class="font-pixel text-xs sm:text-sm text-blue-600 dark:text-cyan-400 tracking-wider truncate">CATEGORY GUILD</span>
