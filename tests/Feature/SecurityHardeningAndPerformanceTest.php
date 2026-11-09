@@ -695,6 +695,8 @@ test('performance: nginx configuration specifies sendfile, tcp_nopush, tcp_nodel
         ->and($conf)->toContain('client_body_timeout 15s;')
         ->and($conf)->toContain('client_header_timeout 15s;')
         ->and($conf)->toContain('fastcgi_hide_header Server;')
+        ->and($conf)->toContain('application/manifest+json')
+        ->and($conf)->toContain('webmanifest')
         ->and($conf)->toContain('add_header X-Content-Type-Options "nosniff" always;');
 });
 
@@ -751,6 +753,8 @@ test('security and performance: htaccess specifies CGI protection, method blocki
         ->and($htaccess)->toContain('RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|CONNECT) [NC]')
         ->and($htaccess)->toContain('Header always set X-Content-Type-Options "nosniff"')
         ->and($htaccess)->toContain('sqlite|sqlite3|db')
+        ->and($htaccess)->toContain('AddType application/manifest+json .webmanifest')
+        ->and($htaccess)->toContain('ExpiresByType application/manifest+json "access plus 1 week"')
         ->and($htaccess)->toContain('ExpiresByType image/webp "access plus 1 month"');
 });
 
