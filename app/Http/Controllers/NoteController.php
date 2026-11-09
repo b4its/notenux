@@ -197,6 +197,10 @@ class NoteController extends Controller
             $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
         }
 
+        if (array_key_exists('category', $validated) && $validated['category'] !== null) {
+            $validated['category'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['category']));
+        }
+
         $noteCategory = $validated['category'] ?? 'catatan';
         if (! empty($validated['folder_id'])) {
             $folder = Folder::forUser($user)->find($validated['folder_id']);
@@ -275,6 +279,10 @@ class NoteController extends Controller
 
         if (array_key_exists('title', $validated)) {
             $validated['title'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['title']));
+        }
+
+        if (array_key_exists('category', $validated) && $validated['category'] !== null) {
+            $validated['category'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['category']));
         }
 
         $targetFolderId = array_key_exists('folder_id', $validated)
@@ -393,6 +401,10 @@ class NoteController extends Controller
             'font_size' => ['nullable', 'string', 'max:16'],
             'theme_color' => ['nullable', 'string', 'max:32'],
         ]);
+
+        if (array_key_exists('category', $validated) && $validated['category'] !== null) {
+            $validated['category'] = (string) preg_replace('/[\x00-\x1F\x7F]/', '', trim((string) $validated['category']));
+        }
 
         $notes = Note::whereIn('id', $validated['ids'])->get();
 

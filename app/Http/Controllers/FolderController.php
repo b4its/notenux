@@ -66,7 +66,7 @@ class FolderController extends Controller
             'is_expanded' => ['nullable', 'boolean'],
         ]);
 
-        $folderCategory = ! empty($validated['category']) ? $validated['category'] : null;
+        $folderCategory = ! empty($validated['category']) ? trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $validated['category'])) : null;
 
         if (! empty($validated['parent_id'])) {
             $parent = Folder::forUser($user)->find($validated['parent_id']);
@@ -117,8 +117,12 @@ class FolderController extends Controller
             'is_expanded' => ['sometimes', 'boolean'],
         ]);
 
+        if (array_key_exists('category', $validated)) {
+            $validated['category'] = ! empty($validated['category']) ? trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $validated['category'])) : null;
+        }
+
         $targetCategory = array_key_exists('category', $validated)
-            ? (! empty($validated['category']) ? $validated['category'] : null)
+            ? $validated['category']
             : $folder->category;
 
         if (array_key_exists('parent_id', $validated) && $validated['parent_id'] !== null) {
