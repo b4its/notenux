@@ -1009,15 +1009,41 @@ figcaption.retro-image-caption {
 }
 
 /* Performance containment: Skip layout/paint for off-screen blocks in massive manuscripts */
-#editor-content > * {
+#editor-content > *,
+#editor-content p,
+#editor-content div,
+#editor-content blockquote,
+#editor-content table,
+#editor-content pre,
+#editor-content ul,
+#editor-content ol,
+#editor-content h1,
+#editor-content h2,
+#editor-content h3,
+#editor-content h4,
+#editor-content h5,
+#editor-content h6 {
     content-visibility: auto;
     contain-intrinsic-size: auto 36px;
+}
+
+#editor-content table {
+    contain-intrinsic-size: auto 120px;
+}
+
+#editor-content pre {
+    contain-intrinsic-size: auto 80px;
 }
 
 /* Performance containment: Skip layout/paint for off-screen cards in large lists */
 #notes-list .note-list-card {
     content-visibility: auto;
     contain-intrinsic-size: auto 82px;
+}
+
+#notes-list .folder-node {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 40px;
 }
 
 

@@ -4898,7 +4898,8 @@ class NotenuxPanel {
         }
         if (this.undoStack[this.undoStack.length - 1] !== current) {
             this.undoStack.push(current);
-            if (this.undoStack.length > (this.maxHistory || 80)) {
+            const max = (current && current.length > 200000) ? 15 : (this.maxHistory || 80);
+            if (this.undoStack.length > max) {
                 this.undoStack.shift();
             }
             this.redoStack = [];
@@ -5629,10 +5630,14 @@ class NotenuxPanel {
     async selectNote(note) {
         const version = ++this.selectionVersion;
         this.pendingNoteId = note.id;
+        this.updateCardSelection?.(note.id);
         this.dom.editorArea?.setAttribute?.('aria-busy', 'true');
         if (note.content === undefined || note.content === null) {
             if (this.dom.saveStatusText) {
                 this.dom.saveStatusText.innerHTML = '<span class="text-cyan-600 dark:text-cyan-400 font-bold"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Memuat...</span>';
+            }
+            if (this.dom.noteTitleInput && note.title) {
+                this.dom.noteTitleInput.value = note.title;
             }
         }
         if (!await this.flushNote()) return;
@@ -5664,7 +5669,11 @@ class NotenuxPanel {
         this.activeNote = note;
         this.pendingNoteId = null;
         this.closeChunkInspector();
-        this.renderNotesList();
+        if (this.updateCardSelection) {
+            this.updateCardSelection(note.id);
+        } else {
+            this.renderNotesList();
+        }
         if (typeof requestAnimationFrame === 'function') {
             await new Promise(r => requestAnimationFrame(r));
         }
@@ -5752,36 +5761,6 @@ class NotenuxPanel {
             this.dom.noteFolderSelect.value = note.folder_id ? String(note.folder_id) : '';
         }
 
-        if (this.dom.editorArea) {
-            this.dom.editorArea.setAttribute?.('contenteditable', 'true');
-            this.dom.editorArea.innerHTML = sanitizeHtml(note.content || '');
-            this.initHistory(this.dom.editorArea.innerHTML);
-        }
-
-        if (this.dom.markdownRawEditor) {
-            this.dom.markdownRawEditor.value = '';
-            this.rawViewOriginalMarkdown = '';
-            this.rawViewOriginalHtml = '';
-            if (this.isRawMarkdownMode) {
-                this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(note.content || '');
-                this.rawViewOriginalMarkdown = this.dom.markdownRawEditor.value;
-                this.rawViewOriginalHtml = this.dom.editorArea ? this.dom.editorArea.innerHTML : (note.content || '');
-            }
-        }
-
-        if (this.dom.plainTextEditor) {
-            this.dom.plainTextEditor.value = '';
-            this.plainTextOriginalText = '';
-            this.plainTextOriginalHtml = '';
-            if (this.isPlainTextMode) {
-                const plain = this.htmlToPlainText(note.content || '');
-                this.dom.plainTextEditor.value = plain;
-                this.plainTextOriginalText = plain;
-                this.plainTextOriginalHtml = this.dom.editorArea ? this.dom.editorArea.innerHTML : (note.content || '');
-                this.updatePlainTextStats();
-            }
-        }
-
         const font = note.font_family || 'sans';
         const size = note.font_size || '16px';
         note.font_family = font;
@@ -5792,6 +5771,39 @@ class NotenuxPanel {
 
         this.applyFontFamily(font);
         this.applyFontSize(size);
+
+        let editorHtml = note.content || '';
+        if (this.dom.editorArea) {
+            this.dom.editorArea.setAttribute?.('contenteditable', 'true');
+            this.dom.editorArea.innerHTML = sanitizeHtml(editorHtml);
+            const historyHtml = (editorHtml.length > 100000) ? editorHtml : (this.dom.editorArea.innerHTML || editorHtml);
+            this.initHistory(historyHtml);
+        }
+
+        if (this.dom.markdownRawEditor) {
+            this.dom.markdownRawEditor.value = '';
+            this.rawViewOriginalMarkdown = '';
+            this.rawViewOriginalHtml = '';
+            if (this.isRawMarkdownMode) {
+                this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(editorHtml);
+                this.rawViewOriginalMarkdown = this.dom.markdownRawEditor.value;
+                this.rawViewOriginalHtml = this.dom.editorArea ? this.dom.editorArea.innerHTML : editorHtml;
+            }
+        }
+
+        if (this.dom.plainTextEditor) {
+            this.dom.plainTextEditor.value = '';
+            this.plainTextOriginalText = '';
+            this.plainTextOriginalHtml = '';
+            if (this.isPlainTextMode) {
+                const plain = this.htmlToPlainText(editorHtml);
+                this.dom.plainTextEditor.value = plain;
+                this.plainTextOriginalText = plain;
+                this.plainTextOriginalHtml = this.dom.editorArea ? this.dom.editorArea.innerHTML : editorHtml;
+                this.updatePlainTextStats();
+            }
+        }
+
         this.updateWordAndCharMetrics(Number.isFinite(note.word_count) && Number.isFinite(note.char_count)
             ? { words: note.word_count, chars: note.char_count } : null);
         this.updatePinButtonUI();
@@ -6205,6 +6217,58 @@ class NotenuxPanel {
 
         // Initialize drag-and-drop interactions on folder and note cards
         this.initDragAndDrop();
+    }
+
+    updateCardSelection(activeId) {
+        if (!this.dom.notesList || typeof this.dom.notesList.querySelectorAll !== 'function') return;
+        this.dom.notesList.querySelectorAll('.note-list-card').forEach(card => {
+            const cardId = parseInt(card.dataset.noteId, 10);
+            const isActive = cardId === activeId;
+            const titleEl = card.querySelector('h4');
+            const metaContainer = card.querySelector('.mt-2.pt-1');
+            const subMeta = card.querySelector('.opacity-80');
+            const badge = card.querySelector('.font-mono.shrink-0');
+
+            if (isActive) {
+                card.classList.add('bg-blue-600', 'text-white', 'border-black', 'dark:border-cyan-400', 'shadow-[3px_3px_0px_#000]');
+                card.classList.remove('bg-surface', 'hover:bg-slate-100', 'dark:hover:bg-blue-900/40', 'border-black/20', 'dark:border-blue-900/60', 'shadow-[2px_2px_0px_rgba(0,0,0,0.15)]', 'text-main');
+                if (titleEl) {
+                    titleEl.classList.add('text-white');
+                    titleEl.classList.remove('text-main');
+                }
+                if (metaContainer) {
+                    metaContainer.classList.add('border-white/20', 'text-blue-100');
+                    metaContainer.classList.remove('border-black/10', 'dark:border-white/10', 'text-slate-500', 'dark:text-slate-400');
+                }
+                if (subMeta) {
+                    subMeta.classList.add('border-white/20', 'text-white/90');
+                    subMeta.classList.remove('border-black/10', 'dark:border-white/10', 'text-slate-600', 'dark:text-slate-400');
+                }
+                if (badge) {
+                    badge.className = 'text-[10px] font-mono shrink-0 px-1.5 py-0.5 rounded border border-black/30 flex items-center gap-1 bg-black/30 text-white border-white/50';
+                }
+            } else {
+                card.classList.remove('bg-blue-600', 'text-white', 'border-black', 'dark:border-cyan-400', 'shadow-[3px_3px_0px_#000]');
+                card.classList.add('bg-surface', 'border-black/20', 'dark:border-blue-900/60', 'shadow-[2px_2px_0px_rgba(0,0,0,0.15)]', 'text-main');
+                if (titleEl) {
+                    titleEl.classList.remove('text-white');
+                    titleEl.classList.add('text-main');
+                }
+                if (metaContainer) {
+                    metaContainer.classList.remove('border-white/20', 'text-blue-100');
+                    metaContainer.classList.add('border-black/10', 'dark:border-white/10', 'text-slate-500', 'dark:text-slate-400');
+                }
+                if (subMeta) {
+                    subMeta.classList.remove('border-white/20', 'text-white/90');
+                    subMeta.classList.add('border-black/10', 'dark:border-white/10', 'text-slate-600', 'dark:text-slate-400');
+                }
+                const cat = card.dataset.noteCategory || 'catatan';
+                const catBadge = this.getCategoryBadge ? this.getCategoryBadge(cat) : { classes: 'bg-blue-100 text-blue-900' };
+                if (badge) {
+                    badge.className = `text-[10px] font-mono shrink-0 px-1.5 py-0.5 rounded border border-black/30 flex items-center gap-1 ${catBadge.classes}`;
+                }
+            }
+        });
     }
 
     /* ---------------- BULK SELECT & DELETE SCROLLS ---------------- */
