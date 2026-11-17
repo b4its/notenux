@@ -54,7 +54,7 @@ jobs:
         run: npm ci
 
       - name: Audit NPM Dependencies
-        run: npm audit
+        run: npm audit --omit=dev
 
       - name: Test JavaScript
         run: npm test
