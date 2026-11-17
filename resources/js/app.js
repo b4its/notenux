@@ -45,14 +45,21 @@ function sanitizeHtml(html, asFragment = false) {
     const cleanRaw = html.replace(/<!--[\s\S]*?-->/g, '');
     const template = document.createElement('template');
     template.innerHTML = cleanRaw;
-    for (const element of template.content.querySelectorAll('*')) {
+    const elements = template.content.querySelectorAll('*');
+    if (!elements || elements.length === 0) {
+        return asFragment ? template.content : (template.innerHTML || cleanRaw);
+    }
+    for (let eIdx = 0; eIdx < elements.length; eIdx++) {
+        const element = elements[eIdx];
         const tag = element.localName;
         if (!SANITIZE_ALLOWED_TAGS.has(tag)) {
             element.remove();
             continue;
         }
         if (typeof element.hasAttributes === 'function' ? !element.hasAttributes() : (!element.attributes || element.attributes.length === 0)) continue;
-        for (const attribute of [...element.attributes]) {
+        const attrs = element.attributes;
+        for (let i = attrs.length - 1; i >= 0; i--) {
+            const attribute = attrs[i];
             const { name, value } = attribute;
             let safe = false;
             if (SANITIZE_SAFE_ATTRS.has(name)) {
@@ -5635,9 +5642,6 @@ class NotenuxPanel {
         if (note.content === undefined || note.content === null) {
             if (this.dom.saveStatusText) {
                 this.dom.saveStatusText.innerHTML = '<span class="text-cyan-600 dark:text-cyan-400 font-bold"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Memuat...</span>';
-            }
-            if (this.dom.noteTitleInput && note.title) {
-                this.dom.noteTitleInput.value = note.title;
             }
         }
         if (!await this.flushNote()) return;
