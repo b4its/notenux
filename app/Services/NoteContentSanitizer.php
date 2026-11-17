@@ -46,6 +46,10 @@ class NoteContentSanitizer
                 continue;
             }
 
+            if (! $element->hasAttributes()) {
+                continue;
+            }
+
             foreach (iterator_to_array($element->attributes) as $attribute) {
                 $name = strtolower($attribute->name);
                 $value = $attribute->value;

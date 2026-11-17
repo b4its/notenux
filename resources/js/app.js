@@ -11,28 +11,31 @@ const fetch = (url, options = {}) => window.fetch(url, {
     },
 });
 
+const SANITIZE_ALLOWED_TAGS = new Set('p div span br h1 h2 h3 h4 h5 h6 strong b em i u s del sub sup blockquote pre code ul ol li table thead tbody tfoot tr th td hr a img input font figure figcaption'.split(' '));
+const SANITIZE_RESERVED_IDS = new Set([
+    'editorarea', 'plain-text-editor', 'markdownraweditor', 'note-title-input',
+    'note-category-select', 'save-now-btn', 'mobile-save-now-btn', 'delete-note-btn',
+    'save-status-text', 'app-favicon', 'csrf-token', 'studio-dynamic-island',
+    'dynamic-island-tray', 'dynamic-island-toggle-btn', 'mobile-dynamic-island-toggle-btn',
+    'favorite-note-btn', 'pin-note-btn', 'location', 'window', 'document', 'form',
+    'body', 'cookie', 'self', 'top', 'parent', 'opener', 'frames', 'history',
+    'navigator', 'scripts', 'anchors', 'images', 'links'
+]);
+
 function sanitizeHtml(html) {
     if (typeof html !== 'string') return '';
     const cleanRaw = html.replace(/<!--[\s\S]*?-->/g, '');
     const template = document.createElement('template');
     template.innerHTML = cleanRaw;
-    const allowed = new Set('p div span br h1 h2 h3 h4 h5 h6 strong b em i u s del sub sup blockquote pre code ul ol li table thead tbody tfoot tr th td hr a img input font figure figcaption'.split(' '));
     for (const element of template.content.querySelectorAll('*')) {
-        if (!allowed.has(element.localName)) {
+        if (!SANITIZE_ALLOWED_TAGS.has(element.localName)) {
             element.remove();
             continue;
         }
+        if (typeof element.hasAttributes === 'function' ? !element.hasAttributes() : (!element.attributes || element.attributes.length === 0)) continue;
         for (const attribute of [...element.attributes]) {
             const { name, value } = attribute;
-            const isReservedId = name === 'id' && [
-                'editorarea', 'plain-text-editor', 'markdownraweditor', 'note-title-input',
-                'note-category-select', 'save-now-btn', 'mobile-save-now-btn', 'delete-note-btn',
-                'save-status-text', 'app-favicon', 'csrf-token', 'studio-dynamic-island',
-                'dynamic-island-tray', 'dynamic-island-toggle-btn', 'mobile-dynamic-island-toggle-btn',
-                'favorite-note-btn', 'pin-note-btn', 'location', 'window', 'document', 'form',
-                'body', 'cookie', 'self', 'top', 'parent', 'opener', 'frames', 'history',
-                'navigator', 'scripts', 'anchors', 'images', 'links'
-            ].includes((value || '').toLowerCase());
+            const isReservedId = name === 'id' && SANITIZE_RESERVED_IDS.has((value || '').toLowerCase());
             const safe = (!isReservedId && ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable'].includes(name))
                 || (name === 'data-color-token' && /^[a-z0-9_-]+$/i.test(value))
                 || (name === 'id' && !isReservedId && /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(value))
