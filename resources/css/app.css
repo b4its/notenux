@@ -1008,4 +1008,16 @@ figcaption.retro-image-caption {
     transition: padding 0.25s ease, border-color 0.25s ease;
 }
 
+/* Performance containment: Skip layout/paint for off-screen blocks in massive manuscripts */
+#editor-content > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 36px;
+}
+
+/* Performance containment: Skip layout/paint for off-screen cards in large lists */
+#notes-list .note-list-card {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 82px;
+}
+
 

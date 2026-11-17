@@ -21,39 +21,69 @@ const SANITIZE_RESERVED_IDS = new Set([
     'body', 'cookie', 'self', 'top', 'parent', 'opener', 'frames', 'history',
     'navigator', 'scripts', 'anchors', 'images', 'links'
 ]);
+const SANITIZE_SAFE_ATTRS = new Set(['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable']);
+const SANITIZE_TABLE_NUMERIC_ATTRS = new Set(['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing']);
+const SANITIZE_COLOR_ATTRS = new Set(['color', 'bgcolor', 'bordercolor']);
+const SANITIZE_ALIGN_ATTRS = new Set(['align', 'valign']);
+const SANITIZE_ALIGN_VALS = new Set(['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline']);
+const SANITIZE_TARGET_VALS = new Set(['_blank', '_self']);
+const SANITIZE_IMG_LOADING_VALS = new Set(['lazy', 'eager']);
+const SANITIZE_IMG_DECODING_VALS = new Set(['async', 'sync', 'auto']);
 
-function sanitizeHtml(html) {
+const REGEX_COLOR_TOKEN = /^[a-z0-9_-]+$/i;
+const REGEX_SAFE_ID = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
+const REGEX_DIGITS = /^\d+$/;
+const REGEX_COLOR_VAL = /^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i;
+const REGEX_STYLE_DANGEROUS = /(\\\\|expression|behavior|binding|javascript|vbscript|data:|import|url\s*[\(\/])/i;
+const REGEX_STYLE_SAFE = /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'\"-]+;?\s*)+$/i;
+const REGEX_HREF_SAFE = /^(https?:\/\/|mailto:|#|\/(?!\/))/i;
+const REGEX_REL_SAFE = /^[a-z\s_-]+$/i;
+const REGEX_IMG_SRC_SAFE = /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)/i;
+
+function sanitizeHtml(html, asFragment = false) {
     if (typeof html !== 'string') return '';
     const cleanRaw = html.replace(/<!--[\s\S]*?-->/g, '');
     const template = document.createElement('template');
     template.innerHTML = cleanRaw;
     for (const element of template.content.querySelectorAll('*')) {
-        if (!SANITIZE_ALLOWED_TAGS.has(element.localName)) {
+        const tag = element.localName;
+        if (!SANITIZE_ALLOWED_TAGS.has(tag)) {
             element.remove();
             continue;
         }
         if (typeof element.hasAttributes === 'function' ? !element.hasAttributes() : (!element.attributes || element.attributes.length === 0)) continue;
         for (const attribute of [...element.attributes]) {
             const { name, value } = attribute;
-            const isReservedId = name === 'id' && SANITIZE_RESERVED_IDS.has((value || '').toLowerCase());
-            const safe = (!isReservedId && ['class', 'title', 'alt', 'data-align', 'data-placeholder', 'contenteditable'].includes(name))
-                || (name === 'data-color-token' && /^[a-z0-9_-]+$/i.test(value))
-                || (name === 'id' && !isReservedId && /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(value))
-                || (name === 'type' && element.localName === 'input' && value === 'checkbox')
-                || (['checked', 'disabled'].includes(name) && element.localName === 'input')
-                || (['colspan', 'rowspan', 'width', 'height', 'size', 'start', 'border', 'cellpadding', 'cellspacing'].includes(name) && /^\d+$/.test(value))
-                || (['color', 'bgcolor', 'bordercolor'].includes(name) && /^(#[a-f0-9]{3,8}|[a-z]+|rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)|rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[0-9.]+\s*\))$/i.test(value))
-                || (['align', 'valign'].includes(name) && ['left', 'center', 'right', 'justify', 'top', 'middle', 'bottom', 'baseline'].includes((value || '').toLowerCase()))
-                || (name === 'style' && /^(\s*(color|background-color|background|text-align|vertical-align|border|border-color|border-width|border-style|border-radius|padding|padding-left|padding-right|padding-top|padding-bottom|margin|margin-left|margin-right|margin-top|margin-bottom|width|height|min-width|max-width|min-height|max-height|font-size|font-family|font-weight|font-style|text-decoration|display)\s*:\s*[a-z0-9#(),.%\s'"-]+;?\s*)+$/i.test(value) && !/(\\\\|expression|behavior|binding|javascript|vbscript|data:|import|url\s*[\(\/])/i.test(value))
-                || (name === 'href' && element.localName === 'a' && /^(https?:\/\/|mailto:|#|\/(?!\/))/i.test(value))
-                || (name === 'target' && element.localName === 'a' && ['_blank', '_self'].includes((value || '').toLowerCase()))
-                || (name === 'rel' && element.localName === 'a' && /^[a-z\s_-]+$/i.test(value))
-                || (name === 'loading' && element.localName === 'img' && ['lazy', 'eager'].includes((value || '').toLowerCase()))
-                || (name === 'decoding' && element.localName === 'img' && ['async', 'sync', 'auto'].includes((value || '').toLowerCase()))
-                || (name === 'src' && element.localName === 'img' && /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=\s]+$)/i.test((value || '').trim()));
+            let safe = false;
+            if (SANITIZE_SAFE_ATTRS.has(name)) {
+                safe = true;
+            } else if (name === 'id') {
+                safe = !SANITIZE_RESERVED_IDS.has((value || '').toLowerCase()) && REGEX_SAFE_ID.test(value);
+            } else if (name === 'data-color-token') {
+                safe = REGEX_COLOR_TOKEN.test(value);
+            } else if (SANITIZE_TABLE_NUMERIC_ATTRS.has(name)) {
+                safe = REGEX_DIGITS.test(value);
+            } else if (SANITIZE_COLOR_ATTRS.has(name)) {
+                safe = REGEX_COLOR_VAL.test(value);
+            } else if (SANITIZE_ALIGN_ATTRS.has(name)) {
+                safe = SANITIZE_ALIGN_VALS.has((value || '').toLowerCase());
+            } else if (name === 'style') {
+                safe = !REGEX_STYLE_DANGEROUS.test(value) && REGEX_STYLE_SAFE.test(value);
+            } else if (tag === 'a') {
+                if (name === 'href') safe = REGEX_HREF_SAFE.test(value);
+                else if (name === 'target') safe = SANITIZE_TARGET_VALS.has((value || '').toLowerCase());
+                else if (name === 'rel') safe = REGEX_REL_SAFE.test(value);
+            } else if (tag === 'img') {
+                if (name === 'src') safe = REGEX_IMG_SRC_SAFE.test((value || '').trim());
+                else if (name === 'loading') safe = SANITIZE_IMG_LOADING_VALS.has((value || '').toLowerCase());
+                else if (name === 'decoding') safe = SANITIZE_IMG_DECODING_VALS.has((value || '').toLowerCase());
+            } else if (tag === 'input') {
+                if (name === 'type') safe = value === 'checkbox';
+                else if (name === 'checked' || name === 'disabled') safe = true;
+            }
             if (!safe) element.removeAttribute(name);
         }
-        if (element.localName === 'a' && typeof element.getAttribute === 'function' && typeof element.setAttribute === 'function') {
+        if (tag === 'a' && typeof element.getAttribute === 'function' && typeof element.setAttribute === 'function') {
             const target = (element.getAttribute('target') || '').toLowerCase();
             if (target === '_blank') {
                 const existingRel = (element.getAttribute('rel') || '').trim();
@@ -62,9 +92,9 @@ function sanitizeHtml(html) {
                 }
             }
         }
-        if (element.localName === 'input' && element.type !== 'checkbox') element.remove();
+        if (tag === 'input' && element.type !== 'checkbox') element.remove();
     }
-    return template.innerHTML;
+    return asFragment ? template.content : template.innerHTML;
 }
 
 class RetroAudio {
@@ -4957,7 +4987,7 @@ class NotenuxPanel {
         this.dom.editorArea.focus?.();
     }
 
-    updateWordAndCharMetrics() {
+    updateWordAndCharMetrics(metrics = null) {
         if (!this.activeNote) {
             if (this.dom.wordCountBadge) this.dom.wordCountBadge.innerHTML = '<i class="fa-solid fa-pen-nib mr-1 text-blue-500"></i> 0 Words';
             if (this.dom.charCountBadge) this.dom.charCountBadge.innerHTML = '<i class="fa-solid fa-font mr-1 text-blue-500"></i> 0 Chars';
@@ -4966,9 +4996,26 @@ class NotenuxPanel {
             return;
         }
 
-        const text = this.dom.editorArea?.innerText || '';
-        const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-        const chars = text.length;
+        let words, chars;
+        if (metrics) {
+            ({ words, chars } = metrics);
+        } else {
+            const text = (this.dom.editorArea && 'textContent' in this.dom.editorArea
+                ? this.dom.editorArea.textContent
+                : (this.dom.editorArea?.innerText || '')) || '';
+            chars = text.length;
+            words = 0;
+            let inWord = false;
+            for (let i = 0; i < chars; i++) {
+                const ch = text.charCodeAt(i);
+                if (ch <= 32) {
+                    inWord = false;
+                } else if (!inWord) {
+                    inWord = true;
+                    words++;
+                }
+            }
+        }
         const minutes = Math.max(1, Math.ceil(words / 180));
 
         if (this.dom.wordCountBadge) this.dom.wordCountBadge.innerHTML = `<i class="fa-solid fa-pen-nib mr-1 text-blue-500"></i> ${words} Words`;
@@ -5581,6 +5628,13 @@ class NotenuxPanel {
 
     async selectNote(note) {
         const version = ++this.selectionVersion;
+        this.pendingNoteId = note.id;
+        this.dom.editorArea?.setAttribute?.('aria-busy', 'true');
+        if (note.content === undefined || note.content === null) {
+            if (this.dom.saveStatusText) {
+                this.dom.saveStatusText.innerHTML = '<span class="text-cyan-600 dark:text-cyan-400 font-bold"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Memuat...</span>';
+            }
+        }
         if (!await this.flushNote()) return;
         if (version !== this.selectionVersion) return;
         this.audio.playBlip();
@@ -5608,8 +5662,13 @@ class NotenuxPanel {
 
         if (version !== this.selectionVersion) return;
         this.activeNote = note;
+        this.pendingNoteId = null;
         this.closeChunkInspector();
         this.renderNotesList();
+        if (typeof requestAnimationFrame === 'function') {
+            await new Promise(r => requestAnimationFrame(r));
+        }
+        if (version !== this.selectionVersion) return;
         this.loadNoteIntoEditor(note);
         if (window.innerWidth < 1024) {
             this.closeMobileDrawers();
@@ -5700,17 +5759,27 @@ class NotenuxPanel {
         }
 
         if (this.dom.markdownRawEditor) {
-            this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(note.content || '');
-            this.rawViewOriginalMarkdown = this.dom.markdownRawEditor.value;
-            this.rawViewOriginalHtml = this.dom.editorArea.innerHTML;
+            this.dom.markdownRawEditor.value = '';
+            this.rawViewOriginalMarkdown = '';
+            this.rawViewOriginalHtml = '';
+            if (this.isRawMarkdownMode) {
+                this.dom.markdownRawEditor.value = MarkdownEngine.toMarkdown(note.content || '');
+                this.rawViewOriginalMarkdown = this.dom.markdownRawEditor.value;
+                this.rawViewOriginalHtml = this.dom.editorArea ? this.dom.editorArea.innerHTML : (note.content || '');
+            }
         }
 
         if (this.dom.plainTextEditor) {
-            const plain = this.htmlToPlainText(note.content || '');
-            this.dom.plainTextEditor.value = plain;
-            this.plainTextOriginalText = plain;
-            this.plainTextOriginalHtml = this.dom.editorArea ? this.dom.editorArea.innerHTML : (note.content || '');
-            this.updatePlainTextStats();
+            this.dom.plainTextEditor.value = '';
+            this.plainTextOriginalText = '';
+            this.plainTextOriginalHtml = '';
+            if (this.isPlainTextMode) {
+                const plain = this.htmlToPlainText(note.content || '');
+                this.dom.plainTextEditor.value = plain;
+                this.plainTextOriginalText = plain;
+                this.plainTextOriginalHtml = this.dom.editorArea ? this.dom.editorArea.innerHTML : (note.content || '');
+                this.updatePlainTextStats();
+            }
         }
 
         const font = note.font_family || 'sans';
@@ -5723,7 +5792,8 @@ class NotenuxPanel {
 
         this.applyFontFamily(font);
         this.applyFontSize(size);
-        this.updateWordAndCharMetrics();
+        this.updateWordAndCharMetrics(Number.isFinite(note.word_count) && Number.isFinite(note.char_count)
+            ? { words: note.word_count, chars: note.char_count } : null);
         this.updatePinButtonUI();
         this.updateFavoriteButtonUI();
 
@@ -5853,7 +5923,7 @@ class NotenuxPanel {
         }
 
         const renderNoteCard = (note) => {
-            const isActive = this.activeNote && this.activeNote.id === note.id;
+            const isActive = (this.activeNote && this.activeNote.id === note.id) || (this.pendingNoteId === note.id);
             const isSelected = this.selectedNoteIds?.has(note.id) ?? false;
             const categoryBadge = this.getCategoryBadge(note.category);
             const chunkCount = note.chunks ? note.chunks.length : (note.chunks_count || 1);
